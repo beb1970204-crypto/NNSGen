@@ -47,8 +47,18 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Home from './pages/Home';
+import ChartCreator from './pages/ChartCreator';
+import ChartViewer from './pages/ChartViewer';
 
-export const pagesConfig = {
-	Pages: {}
+
+export const PAGES = {
+    "Home": Home,
+    "ChartCreator": ChartCreator,
+    "ChartViewer": ChartViewer,
 }
 
+export const pagesConfig = {
+    mainPage: "Home",
+    Pages: PAGES,
+};
