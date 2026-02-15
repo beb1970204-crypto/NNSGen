@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Music } from "lucide-react";
+import { ArrowLeft, Loader2, Music, Upload, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import SectionInput from "@/components/chart/SectionInput";
+import { Textarea } from "@/components/ui/textarea";
 
 const KEYS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B"];
 const MINOR_KEYS = ["Cm", "C#m", "Dm", "D#m", "Ebm", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bbm", "Bm"];
@@ -26,6 +27,41 @@ export default function ChartCreator() {
   });
   const [sections, setSections] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [referenceText, setReferenceText] = useState("");
+  const [useAI, setUseAI] = useState(false);
+
+  const handleGenerateWithAI = async () => {
+    if (!formData.title) {
+      toast.error("Please enter a song title");
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const response = await base44.functions.invoke('generateChartAI', {
+        title: formData.title,
+        artist: formData.artist,
+        key: formData.key,
+        time_signature: formData.time_signature,
+        reference_file_url: referenceText ? null : null // Could upload file here
+      });
+
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+
+      // Set the generated sections
+      setSections(response.data.sections || []);
+      setUseAI(false);
+      toast.success("Chart generated! Review and edit as needed.");
+    } catch (error) {
+      toast.error("Failed to generate chart with AI");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!formData.title) {
@@ -34,7 +70,7 @@ export default function ChartCreator() {
     }
 
     if (sections.length === 0) {
-      toast.error("Please add at least one section");
+      toast.error("Please add at least one section or generate with AI");
       return;
     }
 
@@ -167,12 +203,65 @@ export default function ChartCreator() {
               </div>
             </div>
 
-            {/* Section Input */}
-            <SectionInput 
-              sections={sections}
-              setSections={setSections}
-              timeSignature={formData.time_signature}
-            />
+            {/* AI Generation Toggle */}
+            <div className="pb-6 border-b border-slate-200">
+              <Button
+                type="button"
+                onClick={() => setUseAI(!useAI)}
+                variant={useAI ? "default" : "outline"}
+                className={useAI ? "bg-indigo-600 hover:bg-indigo-700 gap-2" : "gap-2"}
+              >
+                <Sparkles className="w-4 h-4" />
+                {useAI ? "Using AI Generation" : "Generate with AI"}
+              </Button>
+              <p className="text-xs text-slate-500 mt-2">
+                Let AI create a basic chart structure for you
+              </p>
+            </div>
+
+            {useAI ? (
+              /* AI Generation Interface */
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="referenceText">Reference Material (Optional)</Label>
+                  <Textarea
+                    id="referenceText"
+                    placeholder="Paste chord chart, lyrics with chords, or any reference material..."
+                    value={referenceText}
+                    onChange={(e) => setReferenceText(e.target.value)}
+                    className="mt-1 h-32"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Paste existing chord charts or lyrics to help AI understand the structure
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleGenerateWithAI}
+                  disabled={isGenerating}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Generating with AI...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Generate Chart with AI
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              /* Manual Section Input */
+              <SectionInput 
+                sections={sections}
+                setSections={setSections}
+                timeSignature={formData.time_signature}
+              />
+            )}
 
             {/* Create Button */}
             <Button
