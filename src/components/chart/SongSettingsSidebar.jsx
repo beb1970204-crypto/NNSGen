@@ -22,11 +22,11 @@ export default function SongSettingsSidebar({
   onToggleNotation 
 }) {
   return (
-    <div className="w-72 bg-[#141414] border-r border-[#2a2a2a] h-full overflow-y-auto">
-      <div className="p-6 space-y-6">
+    <div className="w-72 bg-[#141414] border-r border-[#2a2a2a] h-full overflow-y-auto transition-all">
+      <div className="p-6 space-y-8">
         {/* Song Settings */}
         <div>
-          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Song Settings</h3>
+          <h3 className="text-xs font-bold text-white mb-4 uppercase tracking-widest opacity-60">Song Settings</h3>
           
           <div className="space-y-4">
             <div>
@@ -97,8 +97,8 @@ export default function SongSettingsSidebar({
 
         {/* Structure */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Structure</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-white uppercase tracking-widest opacity-60">Structure</h3>
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
               <Plus className="w-4 h-4" />
             </Button>
@@ -110,11 +110,11 @@ export default function SongSettingsSidebar({
               return (
                 <div
                   key={section.id || idx}
-                  className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 hover:bg-[#252525] transition-colors cursor-pointer"
+                  className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium text-white">{section.label}</div>
+                      <div className="text-sm font-semibold text-white group-hover:text-red-500 transition-colors">{section.label}</div>
                       <div className="text-xs text-[#6b6b6b]">{barCount} bars</div>
                     </div>
                     {section.repeat_count > 1 && (
@@ -131,7 +131,7 @@ export default function SongSettingsSidebar({
 
         {/* Tools */}
         <div>
-          <h3 className="text-sm font-semibold text-white mb-3 uppercase tracking-wider">Tools</h3>
+          <h3 className="text-xs font-bold text-white mb-4 uppercase tracking-widest opacity-60">Tools</h3>
           <div className="space-y-2">
             <Button variant="outline" size="sm" className="w-full justify-start gap-2">
               <Upload className="w-4 h-4" />

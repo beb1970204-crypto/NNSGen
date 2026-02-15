@@ -200,7 +200,7 @@ export default function ChartViewer() {
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
       {/* Top Bar */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 flex items-center justify-between">
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-4">
           <Link to={createPageUrl("Home")}>
             <Button variant="ghost" size="sm">
@@ -219,12 +219,12 @@ export default function ChartViewer() {
             variant="outline"
             onClick={handleExportPDF}
             disabled={exportingPDF}
-            className="gap-2"
+            className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all"
           >
             <Download className="w-4 h-4" />
             Export PDF
           </Button>
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2 shadow-lg shadow-red-600/20">
             <Save className="w-4 h-4" />
             Save
           </Button>
@@ -256,7 +256,7 @@ export default function ChartViewer() {
             onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
           />
           
-          <div className="flex-1 overflow-auto bg-[#0a0a0a] p-6">
+          <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
             {sections.length === 0 ? (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center text-[#6b6b6b]">

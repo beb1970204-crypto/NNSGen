@@ -33,9 +33,9 @@ export default function MeasurePropertiesSidebar({
 
   if (!selectedMeasure) {
     return (
-      <div className="w-80 bg-[#141414] border-l border-[#2a2a2a] h-full flex items-center justify-center">
-        <div className="text-center text-[#6b6b6b] px-6">
-          <div className="text-2xl mb-2">◆</div>
+      <div className="w-80 bg-[#141414] border-l border-[#2a2a2a] h-full flex items-center justify-center transition-all">
+        <div className="text-center text-[#6b6b6b] px-6 animate-pulse">
+          <div className="text-4xl mb-3 opacity-40">◆</div>
           <p className="text-sm">Select a measure to edit its properties</p>
         </div>
       </div>
@@ -65,12 +65,12 @@ export default function MeasurePropertiesSidebar({
   };
 
   return (
-    <div className="w-80 bg-[#141414] border-l border-[#2a2a2a] h-full overflow-y-auto">
-      <div className="p-6 space-y-6">
+    <div className="w-80 bg-[#141414] border-l border-[#2a2a2a] h-full overflow-y-auto transition-all">
+      <div className="p-6 space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div>
+        <div className="pb-4 border-b border-[#2a2a2a]">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Measure Properties</h3>
+            <h3 className="text-xs font-bold text-white uppercase tracking-widest">Measure Properties</h3>
             <button 
               onClick={onClose}
               className="text-[#6b6b6b] hover:text-white text-xl leading-none"
@@ -124,10 +124,10 @@ export default function MeasurePropertiesSidebar({
               <button
                 key={value}
                 onClick={() => { handleSymbolToggle(value); setTimeout(handleSave, 0); }}
-                className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                className={`px-3 py-2 rounded-lg border text-sm transition-all transform hover:scale-105 ${
                   localSymbols.includes(value)
-                    ? "bg-red-600 border-red-600 text-white"
-                    : "bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:bg-[#252525]"
+                    ? "bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/20"
+                    : "bg-[#1a1a1a] border-[#2a2a2a] text-[#a0a0a0] hover:bg-[#252525] hover:border-[#3a3a3a]"
                 }`}
               >
                 <div className="font-mono text-lg">{symbol}</div>

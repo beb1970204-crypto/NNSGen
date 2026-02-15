@@ -71,7 +71,7 @@ export default function ChartDisplay({
       <div
         key={measureIdx}
         onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
-        className={`bg-[#1a1a1a] border ${isSelected ? 'border-2 border-red-600 shadow-lg shadow-red-600/20' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#252525] hover:border-[#3a3a3a] transition-all`}
+        className={`bg-[#1a1a1a] border ${isSelected ? 'border-2 border-red-600 shadow-xl shadow-red-600/30 scale-[1.02]' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.01] transition-all duration-200`}
         style={{ minWidth: '160px' }}
       >
         <div className={`text-white ${baseFontSize} font-bold chart-chord relative`}>

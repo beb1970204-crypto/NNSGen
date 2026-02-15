@@ -16,12 +16,12 @@ export default function ChartToolbar({
   onZoomOut
 }) {
   return (
-    <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-2 flex items-center justify-between">
+    <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between transition-all">
       <div className="flex items-center gap-1">
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           disabled={!hasSelection}
           onClick={onBold}
         >
@@ -30,7 +30,7 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           disabled={!hasSelection}
           onClick={onBox}
         >
@@ -40,7 +40,7 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           disabled={!hasSelection}
           onClick={onUp}
         >
@@ -49,7 +49,7 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           disabled={!hasSelection}
           onClick={onDown}
         >
@@ -59,7 +59,7 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           onClick={onToggleView}
         >
           <Eye className="w-4 h-4" />
@@ -67,7 +67,7 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-green-600/10 hover:text-green-500 transition-all"
           onClick={onAddMeasure}
         >
           <Plus className="w-4 h-4" />
@@ -75,7 +75,7 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+          className="h-9 w-9 p-0 text-red-500 hover:bg-red-600/20 hover:text-red-400 transition-all"
           disabled={!hasSelection}
           onClick={onDelete}
         >
@@ -87,16 +87,16 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           onClick={onZoomOut}
         >
           <ZoomOut className="w-4 h-4" />
         </Button>
-        <span className="text-xs text-[#a0a0a0] min-w-[3rem] text-center">{zoomLevel}%</span>
+        <span className="text-xs text-[#a0a0a0] min-w-[3.5rem] text-center font-semibold">{zoomLevel}%</span>
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           onClick={onZoomIn}
         >
           <ZoomIn className="w-4 h-4" />
