@@ -96,97 +96,94 @@ export default function ChartCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="max-w-3xl mx-auto p-6">
-        <Link to={createPageUrl("Home")}>
-          <Button variant="ghost" className="mb-6 gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Charts
-          </Button>
-        </Link>
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-black text-white mb-3 tracking-tight">Create New Chart</h1>
+          <p className="text-[#a0a0a0] text-lg">AI-powered chart generation from your song details</p>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-red-500" />
-              Generate Chart with AI
-            </CardTitle>
-            <p className="text-sm text-[#a0a0a0]">
-              Enter song details and let AI create your chart
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8 shadow-2xl">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="title">Song Title *</Label>
+              <Label htmlFor="title" className="text-sm text-[#a0a0a0] mb-2 block font-medium">Song Title *</Label>
               <Input
                 id="title"
                 placeholder="e.g., Amazing Grace"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mt-1"
+                className="h-11"
               />
             </div>
 
             <div>
-              <Label htmlFor="artist">Artist (Optional)</Label>
+              <Label htmlFor="artist" className="text-sm text-[#a0a0a0] mb-2 block font-medium">Artist (Optional)</Label>
               <Input
                 id="artist"
                 placeholder="e.g., Traditional"
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
-                className="mt-1"
+                className="h-11"
               />
             </div>
 
             <div>
-              <Label htmlFor="referenceFile">Upload Reference Chart (Optional)</Label>
-              <div className="mt-1 flex items-center gap-3">
-                <Input
-                  id="referenceFile"
-                  type="file"
-                  accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  onChange={handleFileUpload}
-                  disabled={uploadingFile}
-                  className="flex-1"
-                />
-                {uploadingFile && (
-                  <Loader2 className="w-5 h-5 animate-spin text-red-500" />
-                )}
-                {referenceFile && !uploadingFile && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReferenceFile(null)}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    Remove
-                  </Button>
+              <Label htmlFor="referenceFile" className="text-sm text-[#a0a0a0] mb-2 block font-medium">
+                Upload Reference Chart (Optional)
+              </Label>
+              <div className="border-2 border-dashed border-[#2a2a2a] rounded-lg p-10 text-center hover:border-red-600/50 hover:bg-[#252525] transition-all">
+                {uploadingFile ? (
+                  <div>
+                    <Loader2 className="w-12 h-12 animate-spin text-red-500 mx-auto mb-4" />
+                    <p className="text-sm text-[#a0a0a0]">Uploading...</p>
+                  </div>
+                ) : referenceFile ? (
+                  <div>
+                    <div className="text-green-500 mb-3 text-lg font-semibold">✓ File uploaded successfully</div>
+                    <button
+                      onClick={() => setReferenceFile(null)}
+                      className="text-sm text-red-500 hover:text-red-400 font-medium transition-colors"
+                    >
+                      Remove file
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={handleFileUpload}
+                    />
+                    <div className="text-[#6b6b6b]">
+                      <div className="text-5xl mb-3">📄</div>
+                      <p className="text-base font-medium text-white mb-1">Click to upload or drag and drop</p>
+                      <p className="text-sm">PDF, DOC, TXT, JPG, PNG</p>
+                    </div>
+                  </label>
                 )}
               </div>
-              <p className="text-xs text-[#6b6b6b] mt-1">
-                Upload an existing chord chart, lyric sheet, or image to help AI understand the song
-              </p>
             </div>
 
             <Button
               onClick={handleGenerateChart}
               disabled={isGenerating || !title}
-              className="w-full text-lg py-6"
+              className="w-full h-14 text-lg font-semibold shadow-xl shadow-red-600/30 hover:shadow-2xl hover:shadow-red-600/40 transition-all"
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
                   Generating Chart...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Chart
+                  Generate Chart with AI
                 </>
               )}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
