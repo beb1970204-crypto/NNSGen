@@ -12,6 +12,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const isChartViewer = currentPageName === "ChartViewer";
   const isChartCreator = currentPageName === "ChartCreator";
+  const currentView = new URLSearchParams(location.search).get('view') || 'all';
   
   const { data: user } = useQuery({
     queryKey: ['current-user'],
@@ -23,9 +24,6 @@ export default function Layout({ children, currentPageName }) {
     queryFn: () => base44.entities.Chart.list(),
     initialData: [],
   });
-
-  const location = useLocation();
-  const currentView = new URLSearchParams(location.search).get('view') || 'all';
   
   const navItems = [
     { label: "My Charts", icon: LayoutGrid, path: "Home", view: "all", active: currentView === "all" },
