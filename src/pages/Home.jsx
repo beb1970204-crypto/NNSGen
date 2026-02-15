@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export default function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentView = new URLSearchParams(location.search).get('view') || 'all';
+  const searchInputRef = useRef(null);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filterKey, setFilterKey] = useState("all");
@@ -167,6 +168,29 @@ export default function Home() {
     setFilterTimeSignature("all");
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modKey = isMac ? e.metaKey : e.ctrlKey;
+      
+      // Cmd/Ctrl + K: Focus search
+      if (modKey && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      
+      // Cmd/Ctrl + N: New chart
+      if (modKey && e.key === 'n') {
+        e.preventDefault();
+        navigate(createPageUrl("ChartCreator"));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-8">
       {/* Header */}
@@ -187,6 +211,7 @@ export default function Home() {
             <Button className="gap-2 shadow-lg shadow-red-600/20">
               <Plus className="w-4 h-4" />
               New Chart
+              <span className="ml-1 text-xs opacity-60">⌘N</span>
             </Button>
           </Link>
         </div>
@@ -199,9 +224,10 @@ export default function Home() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b6b6b]" />
             <Input
+              ref={searchInputRef}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by title, artist, or key..."
+              placeholder="Search by title, artist, or key... (⌘K)"
               className="pl-10 bg-[#0a0a0a] border-[#2a2a2a] text-white"
             />
             {searchQuery && (
