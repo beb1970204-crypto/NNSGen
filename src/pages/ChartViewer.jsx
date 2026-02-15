@@ -14,6 +14,7 @@ export default function ChartViewer() {
   const urlParams = new URLSearchParams(window.location.search);
   const chartId = urlParams.get('id');
   const queryClient = useQueryClient();
+  const [editMode, setEditMode] = useState(false);
 
   const { data: chart, isLoading } = useQuery({
     queryKey: ['chart', chartId],
@@ -65,6 +66,33 @@ export default function ChartViewer() {
     }
   });
 
+  const updateSection = useMutation({
+    mutationFn: ({ sectionId, data }) => base44.entities.Section.update(sectionId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+    },
+    onError: () => {
+      toast.error('Failed to update section');
+    }
+  });
+
+  const handleUpdateSection = (sectionId, data) => {
+    updateSection.mutate({ sectionId, data });
+  };
+
+  const handleAddMeasure = (sectionId) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+    
+    const newMeasure = {
+      chords: [{ chord: '-', beats: 4, symbols: [] }],
+      cue: ''
+    };
+    
+    const updatedMeasures = [...section.measures, newMeasure];
+    handleUpdateSection(sectionId, { measures: updatedMeasures });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -105,11 +133,16 @@ export default function ChartViewer() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button 
+              variant={editMode ? "default" : "outline"}
+              size="sm" 
+              className={editMode ? "bg-indigo-600 hover:bg-indigo-700 gap-2" : "gap-2"}
+              onClick={() => setEditMode(!editMode)}
+            >
               <Edit className="w-4 h-4" />
-              Edit
+              {editMode ? 'Done Editing' : 'Edit Chart'}
             </Button>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 gap-2">
+            <Button size="sm" variant="outline" className="gap-2">
               <Download className="w-4 h-4" />
               Export PDF
             </Button>
@@ -171,6 +204,9 @@ export default function ChartViewer() {
             sections={sections}
             chartKey={chart.key}
             displayMode={chart.display_mode}
+            editMode={editMode}
+            onUpdateSection={handleUpdateSection}
+            onAddMeasure={handleAddMeasure}
           />
         )}
       </div>

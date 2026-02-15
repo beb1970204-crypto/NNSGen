@@ -1,7 +1,17 @@
 import React from "react";
 import { chordToNNS } from "@/components/chordConversion";
+import EditableMeasure from "./EditableMeasure";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
-export default function ChartDisplay({ sections, chartKey, displayMode }) {
+export default function ChartDisplay({ 
+  sections, 
+  chartKey, 
+  displayMode, 
+  editMode = false,
+  onUpdateSection,
+  onAddMeasure 
+}) {
   const renderChord = (chord) => {
     if (displayMode === 'nashville') {
       return chordToNNS(chord, chartKey);
@@ -14,6 +24,26 @@ export default function ChartDisplay({ sections, chartKey, displayMode }) {
   const baseFontSize = totalMeasures > 32 ? 'text-base' : totalMeasures > 24 ? 'text-lg' : 'text-xl';
   const measurePadding = totalMeasures > 32 ? 'p-2' : 'p-3';
   const measureHeight = totalMeasures > 32 ? 'min-h-[70px]' : 'min-h-[80px]';
+
+  const handleUpdateMeasure = (section, measureIdx, updatedMeasure) => {
+    const updatedMeasures = [...section.measures];
+    updatedMeasures[measureIdx] = updatedMeasure;
+    onUpdateSection(section.id, { measures: updatedMeasures });
+  };
+
+  const handleDeleteMeasure = (section, measureIdx) => {
+    const updatedMeasures = section.measures.filter((_, idx) => idx !== measureIdx);
+    onUpdateSection(section.id, { measures: updatedMeasures });
+  };
+
+  const renderSymbols = (symbols) => {
+    if (!symbols || symbols.length === 0) return null;
+    const symbolMap = {
+      diamond: "◆", marcato: "^", push: ">", pull: "<", 
+      fermata: "𝄐", bass_up: "↑", bass_down: "↓"
+    };
+    return symbols.map(s => symbolMap[s] || s).join(' ');
+  };
 
   return (
     <div className="space-y-6 font-mono" style={{ fontVariantNumeric: 'lining-nums tabular-nums' }}>
@@ -37,31 +67,53 @@ export default function ChartDisplay({ sections, chartKey, displayMode }) {
           {/* Measures Grid */}
           <div className="grid grid-cols-4 gap-3 md:gap-4">
             {section.measures?.map((measure, measureIdx) => (
-              <div
-                key={measureIdx}
-                className={`bg-slate-900 border border-slate-600 rounded ${measurePadding} ${measureHeight} flex flex-col justify-center`}
-              >
-                <div className={`text-white space-y-1 ${baseFontSize}`}>
-                  {measure.chords?.map((chordObj, chordIdx) => (
-                    <div key={chordIdx} className="flex items-center gap-2">
-                      <span className={chordObj.chord === '-' ? 'text-slate-500' : ''}>
-                        {renderChord(chordObj.chord)}
-                      </span>
-                      {chordObj.symbols?.length > 0 && (
-                        <span className="text-xs text-purple-400">
-                          {chordObj.symbols.join(' ')}
+              editMode ? (
+                <EditableMeasure
+                  key={measureIdx}
+                  measure={measure}
+                  measureIdx={measureIdx}
+                  onUpdateMeasure={(updated) => handleUpdateMeasure(section, measureIdx, updated)}
+                  onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
+                  baseFontSize={baseFontSize}
+                  measurePadding={measurePadding}
+                  measureHeight={measureHeight}
+                />
+              ) : (
+                <div
+                  key={measureIdx}
+                  className={`bg-slate-900 border border-slate-600 rounded ${measurePadding} ${measureHeight} flex flex-col justify-center`}
+                >
+                  <div className={`text-white space-y-1 ${baseFontSize}`}>
+                    {measure.chords?.map((chordObj, chordIdx) => (
+                      <div key={chordIdx} className="flex items-center gap-2">
+                        <span className={chordObj.chord === '-' ? 'text-slate-500' : ''}>
+                          {renderChord(chordObj.chord)}
                         </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {measure.cue && (
-                  <div className="text-xs text-orange-400 mt-1 italic">
-                    {measure.cue}
+                        {chordObj.symbols?.length > 0 && (
+                          <span className="text-xs text-indigo-300">
+                            {renderSymbols(chordObj.symbols)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                  {measure.cue && (
+                    <div className="text-xs text-orange-400 mt-1 italic">
+                      {measure.cue}
+                    </div>
+                  )}
+                </div>
+              )
             ))}
+
+            {editMode && (
+              <button
+                onClick={() => onAddMeasure(section.id)}
+                className="bg-slate-900 border-2 border-dashed border-slate-600 rounded p-3 min-h-[80px] flex items-center justify-center hover:border-indigo-500 hover:bg-slate-800 transition-colors"
+              >
+                <Plus className="w-6 h-6 text-slate-500" />
+              </button>
+            )}
           </div>
 
           {(!section.measures || section.measures.length === 0) && (
