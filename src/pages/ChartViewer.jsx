@@ -6,7 +6,9 @@ import { ArrowLeft, Download, Edit, Music2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChartDisplay from "@/components/chart/ChartDisplay";
+import KeySelector from "@/components/chart/KeySelector";
 import { toast } from "sonner";
+import { transposeSectionMeasures } from "@/components/transposeUtils";
 
 export default function ChartViewer() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -35,6 +37,31 @@ export default function ChartViewer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
       toast.success(`Switched to ${chart.display_mode === 'chords' ? 'Nashville Numbers' : 'Chords'}`);
+    }
+  });
+
+  const transposeChart = useMutation({
+    mutationFn: async (newKey) => {
+      const originalKey = chart.key;
+      
+      // Update chart key
+      await base44.entities.Chart.update(chartId, { key: newKey });
+      
+      // Transpose all sections
+      const transposePromises = sections.map(section => {
+        const transposedMeasures = transposeSectionMeasures(section.measures, originalKey, newKey);
+        return base44.entities.Section.update(section.id, { measures: transposedMeasures });
+      });
+      
+      await Promise.all(transposePromises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
+      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      toast.success('Chart transposed successfully');
+    },
+    onError: () => {
+      toast.error('Failed to transpose chart');
     }
   });
 
@@ -92,7 +119,7 @@ export default function ChartViewer() {
 
       {/* Chart Info Bar */}
       <div className="bg-slate-800 border-b border-slate-700 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center gap-6 text-sm">
+        <div className="max-w-7xl mx-auto flex items-center gap-6 text-sm flex-wrap">
           <div>
             <span className="text-slate-400">Key:</span>
             <span className="ml-2 font-bold text-lg">{chart.key}</span>
@@ -107,7 +134,12 @@ export default function ChartViewer() {
               <span className="ml-2 font-bold">{chart.tempo} BPM</span>
             </div>
           )}
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <KeySelector 
+              currentKey={chart.key}
+              onKeyChange={(newKey) => transposeChart.mutate(newKey)}
+              disabled={transposeChart.isPending}
+            />
             <Button 
               variant="outline" 
               size="sm"

@@ -9,8 +9,14 @@ export default function ChartDisplay({ sections, chartKey, displayMode }) {
     return chord;
   };
 
+  // Dynamic font sizing based on total measures
+  const totalMeasures = sections.reduce((sum, section) => sum + (section.measures?.length || 0), 0);
+  const baseFontSize = totalMeasures > 32 ? 'text-base' : totalMeasures > 24 ? 'text-lg' : 'text-xl';
+  const measurePadding = totalMeasures > 32 ? 'p-2' : 'p-3';
+  const measureHeight = totalMeasures > 32 ? 'min-h-[70px]' : 'min-h-[80px]';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-mono" style={{ fontVariantNumeric: 'lining-nums tabular-nums' }}>
       {sections.map((section, sectionIdx) => (
         <div key={section.id || sectionIdx} className="bg-slate-800 rounded-lg p-6 border border-slate-700">
           {/* Section Header */}
@@ -29,13 +35,13 @@ export default function ChartDisplay({ sections, chartKey, displayMode }) {
           </div>
 
           {/* Measures Grid */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-3 md:gap-4">
             {section.measures?.map((measure, measureIdx) => (
               <div
                 key={measureIdx}
-                className="bg-slate-900 border border-slate-600 rounded p-3 min-h-[80px] flex flex-col justify-center"
+                className={`bg-slate-900 border border-slate-600 rounded ${measurePadding} ${measureHeight} flex flex-col justify-center`}
               >
-                <div className="font-mono text-lg text-white space-y-1">
+                <div className={`text-white space-y-1 ${baseFontSize}`}>
                   {measure.chords?.map((chordObj, chordIdx) => (
                     <div key={chordIdx} className="flex items-center gap-2">
                       <span className={chordObj.chord === '-' ? 'text-slate-500' : ''}>
