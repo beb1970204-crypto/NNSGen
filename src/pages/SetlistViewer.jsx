@@ -71,8 +71,25 @@ export default function SetlistViewer() {
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-white text-xl">Loading setlist...</div>
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-white text-xl">Loading setlist...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !setlist) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
+        <div className="max-w-md text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Setlist not found</h2>
+          <p className="text-[#a0a0a0] mb-6">This setlist may have been deleted or you don't have access to it.</p>
+          <Link to={createPageUrl("Home") + "?view=setlists"}>
+            <Button>Back to Setlists</Button>
+          </Link>
+        </div>
       </div>
     );
   }

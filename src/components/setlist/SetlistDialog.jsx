@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function SetlistDialog({ open, onOpenChange, onSave, setlist = null }) {
   const [name, setName] = useState(setlist?.name || "");
@@ -12,6 +13,21 @@ export default function SetlistDialog({ open, onOpenChange, onSave, setlist = nu
   const [venue, setVenue] = useState(setlist?.venue || "");
 
   const handleSave = () => {
+    if (!name.trim()) {
+      toast.error('Please enter a setlist name');
+      return;
+    }
+
+    if (name.length > 100) {
+      toast.error('Setlist name is too long (max 100 characters)');
+      return;
+    }
+
+    if (description && description.length > 500) {
+      toast.error('Description is too long (max 500 characters)');
+      return;
+    }
+
     onSave({
       name,
       description,

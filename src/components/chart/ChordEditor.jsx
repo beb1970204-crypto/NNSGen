@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, Music } from "lucide-react";
+import { toast } from "sonner";
 
 const NNS_SYMBOLS = [
   { value: "diamond", label: "◆ Diamond (Stop)", icon: "◆" },
@@ -47,10 +48,24 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   };
 
   const handleSave = () => {
+    const trimmedChord = chordText.trim() || '-';
+    const trimmedBass = bassNote.trim() || null;
+
+    // Validate chord length
+    if (trimmedChord.length > 20) {
+      toast.error('Chord name is too long (max 20 characters)');
+      return;
+    }
+
+    if (trimmedBass && trimmedBass.length > 10) {
+      toast.error('Bass note is too long (max 10 characters)');
+      return;
+    }
+
     const updatedChord = { 
       ...chord, 
-      chord: chordText, 
-      bass_note: bassNote || null,
+      chord: trimmedChord, 
+      bass_note: trimmedBass,
       symbols: selectedSymbols 
     };
     

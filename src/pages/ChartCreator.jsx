@@ -42,6 +42,16 @@ export default function ChartCreator() {
       return;
     }
 
+    if (title.length > 100) {
+      toast.error("Song title is too long (max 100 characters)");
+      return;
+    }
+
+    if (artist && artist.length > 100) {
+      toast.error("Artist name is too long (max 100 characters)");
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
