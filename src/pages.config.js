@@ -50,6 +50,7 @@
 import ChartCreator from './pages/ChartCreator';
 import ChartViewer from './pages/ChartViewer';
 import Home from './pages/Home';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -61,4 +62,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Home",
     Pages: PAGES,
+    Layout: __Layout,
 };
