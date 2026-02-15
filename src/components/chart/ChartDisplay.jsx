@@ -22,11 +22,10 @@ export default function ChartDisplay({
     return chord;
   };
 
-  // Dynamic font sizing based on total measures
-  const totalMeasures = sections.reduce((sum, section) => sum + (section.measures?.length || 0), 0);
-  const baseFontSize = totalMeasures > 32 ? 'text-base' : totalMeasures > 24 ? 'text-lg' : 'text-xl';
-  const measurePadding = totalMeasures > 32 ? 'p-2' : 'p-3';
-  const measureHeight = totalMeasures > 32 ? 'min-h-[70px]' : 'min-h-[80px]';
+  // Larger, more prominent measure cells for the new design
+  const baseFontSize = 'text-3xl';
+  const measurePadding = 'p-6';
+  const measureHeight = 'min-h-[120px]';
 
   const handleUpdateMeasure = (section, measureIdx, updatedMeasure) => {
     const updatedMeasures = [...section.measures];
@@ -50,11 +49,15 @@ export default function ChartDisplay({
 
   const getSectionColor = (label) => {
     const colors = {
-      'Verse': 'border-l-[#4A90E2]',
-      'Chorus': 'border-l-[#D0021B]',
-      'Bridge': 'border-l-[#F5A623]',
+      'Chorus': { border: 'border-l-red-600', bg: 'bg-red-600', text: 'text-red-600' },
+      'Verse': { border: 'border-l-blue-600', bg: 'bg-blue-600', text: 'text-blue-600' },
+      'Bridge': { border: 'border-l-orange-600', bg: 'bg-orange-600', text: 'text-orange-600' },
+      'Intro': { border: 'border-l-purple-600', bg: 'bg-purple-600', text: 'text-purple-600' },
+      'Outro': { border: 'border-l-indigo-600', bg: 'bg-indigo-600', text: 'text-indigo-600' },
+      'Pre': { border: 'border-l-yellow-600', bg: 'bg-yellow-600', text: 'text-yellow-600' },
+      'Instrumental Solo': { border: 'border-l-green-600', bg: 'bg-green-600', text: 'text-green-600' },
     };
-    return colors[label] || 'border-l-slate-600';
+    return colors[label] || { border: 'border-l-gray-600', bg: 'bg-gray-600', text: 'text-gray-600' };
   };
 
   const renderMeasureCell = (measure, measureIdx, section) => {
@@ -68,23 +71,23 @@ export default function ChartDisplay({
       <div
         key={measureIdx}
         onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
-        className={`bg-[#1a1a1a] border-r ${isSelected ? 'border-2 border-red-600' : 'border-[#333333]'} ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#252525] transition-colors`}
-        style={{ minWidth: '140px' }}
+        className={`bg-[#1a1a1a] border ${isSelected ? 'border-2 border-red-600 shadow-lg shadow-red-600/20' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#252525] hover:border-[#3a3a3a] transition-all`}
+        style={{ minWidth: '160px' }}
       >
-        <div className={`text-[#F5F5F5] ${baseFontSize} chart-chord relative`}>
+        <div className={`text-white ${baseFontSize} font-bold chart-chord relative`}>
           {/* Single Chord - Centered */}
           {chordCount === 1 && (
             <div className="flex flex-col items-center justify-center">
               <div className="relative">
                 {hasDotNotation && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs" style={{ color: '#FFD700' }}>●</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg text-yellow-500">●</span>
                 )}
-                <span className={measure.chords[0].chord === '-' ? 'text-[#333333]' : ''}>
+                <span className={measure.chords[0].chord === '-' ? 'text-[#3a3a3a]' : ''}>
                   {renderChord(measure.chords[0].chord)}
-                  {hasSyncopation && <span className="ml-1 text-sm opacity-70">/</span>}
+                  {hasSyncopation && <span className="ml-1 text-lg opacity-70">/</span>}
                 </span>
                 {measure.chords[0].symbols?.length > 0 && (
-                  <span className="ml-2 text-xs" style={{ color: '#FFD700' }}>
+                  <span className="ml-3 text-lg text-yellow-500">
                     {renderSymbols(measure.chords[0].symbols)}
                   </span>
                 )}
@@ -94,18 +97,18 @@ export default function ChartDisplay({
 
           {/* Split Chords - Two Chords with Underline */}
           {hasSplit && (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <div className="flex items-center justify-around w-full relative">
                 {measure.chords.map((chordObj, chordIdx) => (
                   <div key={chordIdx} className="relative flex-1 text-center">
                     {hasDotNotation && chordObj.beats && chordObj.beats !== 2 && (
-                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs" style={{ color: '#FFD700' }}>●</span>
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg text-yellow-500">●</span>
                     )}
-                    <span className={chordObj.chord === '-' ? 'text-[#333333]' : ''}>
+                    <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
                       {renderChord(chordObj.chord)}
                     </span>
                     {chordObj.symbols?.length > 0 && (
-                      <span className="ml-1 text-xs" style={{ color: '#FFD700' }}>
+                      <span className="ml-2 text-lg text-yellow-500">
                         {renderSymbols(chordObj.symbols)}
                       </span>
                     )}
@@ -113,23 +116,23 @@ export default function ChartDisplay({
                 ))}
               </div>
               {/* Underline for split chords */}
-              <div className="w-full h-px bg-[#555555] mx-2" />
+              <div className="w-full h-0.5 bg-[#4a4a4a]" />
             </div>
           )}
 
           {/* More than 2 chords - Stacked vertically */}
           {chordCount > 2 && (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               {measure.chords.map((chordObj, chordIdx) => (
                 <div key={chordIdx} className="flex items-center gap-2">
-                  <span className={chordObj.chord === '-' ? 'text-[#333333]' : ''}>
+                  <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
                     {renderChord(chordObj.chord)}
                     {chordObj.beats && chordObj.beats < 4 && (
-                      <span className="text-sm ml-1">({chordObj.beats})</span>
+                      <span className="text-lg ml-2 text-[#a0a0a0]">({chordObj.beats})</span>
                     )}
                   </span>
                   {chordObj.symbols?.length > 0 && (
-                    <span className="text-xs" style={{ color: '#FFD700' }}>
+                    <span className="text-lg text-yellow-500">
                       {renderSymbols(chordObj.symbols)}
                     </span>
                   )}
@@ -139,7 +142,7 @@ export default function ChartDisplay({
           )}
         </div>
         {measure.cue && (
-          <div className="arrangement-cue text-xs mt-2 pt-1 border-t border-[#333333]">
+          <div className="text-xs mt-3 pt-2 border-t border-[#2a2a2a] text-[#a0a0a0] italic">
             {measure.cue}
           </div>
         )}
@@ -148,38 +151,45 @@ export default function ChartDisplay({
   };
 
   return (
-    <div className="space-y-6 chart-grid">
-      {sections.map((section, sectionIdx) => (
-        <div key={section.id || sectionIdx} className={`bg-[#121212] rounded-lg p-6 border border-[#333333] border-l-4 ${getSectionColor(section.label)}`}>
-          {/* Section Header */}
-          <div className="mb-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="inline-block bg-[#F5F5F5] text-[#121212] px-3 py-1 rounded chart-section-header text-sm">
-                {section.label.toUpperCase()}
-                {section.repeat_count > 1 && (
-                  <span className="ml-2 font-normal">x{section.repeat_count}</span>
+    <div className="space-y-8 chart-grid">
+      {sections.map((section, sectionIdx) => {
+        const sectionColors = getSectionColor(section.label);
+        return (
+          <div key={section.id || sectionIdx} className={`bg-[#0a0a0a] rounded-xl border-2 ${sectionColors.border} overflow-hidden`}>
+            {/* Section Header with Color Bar */}
+            <div className={`${sectionColors.bg} px-6 py-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-black text-white uppercase tracking-wide">
+                    {section.label}
+                  </h3>
+                  {section.repeat_count > 1 && (
+                    <span className="bg-white/20 text-white px-3 py-1 rounded text-sm font-semibold">
+                      x{section.repeat_count}
+                    </span>
+                  )}
+                  {section.modulation_key && (
+                    <span className="bg-yellow-500 text-black px-3 py-1 rounded text-sm font-bold">
+                      MOD to {section.modulation_key}
+                    </span>
+                  )}
+                </div>
+                {section.pivot_cue && (
+                  <div className="text-sm text-white/80 italic">
+                    Pivot: {section.pivot_cue}
+                  </div>
                 )}
               </div>
-              {section.modulation_key && (
-                <div className="inline-block px-3 py-1 rounded text-sm font-bold" style={{ backgroundColor: '#FFD700', color: '#121212' }}>
-                  MOD to {section.modulation_key}
-                </div>
-              )}
-              {section.pivot_cue && (
-                <div className="text-sm text-[#FFD700] italic">
-                  Pivot: {section.pivot_cue}
+              {section.arrangement_cue && (
+                <div className="text-sm text-white/70 mt-2 italic">
+                  {section.arrangement_cue}
                 </div>
               )}
             </div>
-            {section.arrangement_cue && (
-              <div className="arrangement-cue text-sm mt-2">
-                {section.arrangement_cue}
-              </div>
-            )}
-          </div>
 
-          {/* Measures Grid - Responsive: Mobile(4), Tablet(8), Desktop(2-column split) */}
-          <div className="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-8 xl:grid-cols-8 gap-3 md:gap-4">
+            {/* Measures Grid */}
+            <div className="p-6">
+              <div className="grid grid-cols-4 gap-4">
             {section.measures?.map((measure, measureIdx) => (
               editMode ? (
                 <EditableMeasure
@@ -202,24 +212,26 @@ export default function ChartDisplay({
               )
             ))}
 
-            {editMode && (
-              <button
-                onClick={() => onAddMeasure(section.id)}
-                className="bg-[#1a1a1a] border-2 border-dashed border-[#333333] rounded p-3 min-h-[80px] flex items-center justify-center hover:border-[#FFD700] hover:bg-[#121212] transition-colors"
-                style={{ minWidth: '140px' }}
-              >
-                <Plus className="w-6 h-6 text-[#333333]" />
-              </button>
-            )}
-          </div>
+                {editMode && (
+                  <button
+                    onClick={() => onAddMeasure(section.id)}
+                    className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-lg p-6 min-h-[120px] flex items-center justify-center hover:border-red-600 hover:bg-[#252525] transition-all"
+                    style={{ minWidth: '160px' }}
+                  >
+                    <Plus className="w-8 h-8 text-[#6b6b6b]" />
+                  </button>
+                )}
+              </div>
 
-          {(!section.measures || section.measures.length === 0) && (
-            <div className="text-slate-500 text-center py-8 italic">
-              No measures in this section
+              {(!section.measures || section.measures.length === 0) && (
+                <div className="text-[#6b6b6b] text-center py-12 italic">
+                  No measures in this section
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
