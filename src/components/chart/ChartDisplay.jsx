@@ -2,8 +2,10 @@ import React from "react";
 import { chordToNNS } from "@/components/chordConversion";
 import EditableMeasure from "./EditableMeasure";
 import MeasureContextMenu from "./MeasureContextMenu";
+import SectionContextMenu from "./SectionContextMenu";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, GripVertical } from "lucide-react";
+import { Draggable } from "@hello-pangea/dnd";
 
 export default function ChartDisplay({ 
   sections, 
@@ -14,7 +16,11 @@ export default function ChartDisplay({
   onAddMeasure,
   onMeasureClick,
   selectedMeasureIndex,
-  selectedSectionId
+  selectedSectionId,
+  onDeleteSection,
+  onDuplicateSection,
+  onMoveSectionUp,
+  onMoveSectionDown
 }) {
   const renderChord = (chordObj) => {
     const chordText = typeof chordObj === 'string' ? chordObj : chordObj.chord;
@@ -205,11 +211,17 @@ export default function ChartDisplay({
     <div className="space-y-8 chart-grid">
       {sections.map((section, sectionIdx) => {
         const sectionColors = getSectionColor(section.label);
-        return (
+        
+        const sectionContent = (
           <div key={section.id || sectionIdx} className={`bg-[#0a0a0a] rounded-xl border-2 ${sectionColors.border} overflow-hidden`}>
             {/* Section Header with Color Bar */}
-            <div className={`${sectionColors.bg} px-6 py-4`}>
-              <div className="flex items-center justify-between">
+            <div className={`${sectionColors.bg} px-6 py-4 flex items-center gap-3`}>
+              {editMode && (
+                <div className="cursor-grab active:cursor-grabbing">
+                  <GripVertical className="w-5 h-5 text-white/50" />
+                </div>
+              )}
+              <div className="flex items-center justify-between flex-1">
                 <div className="flex items-center gap-4">
                   <h3 className="text-xl font-black text-white uppercase tracking-wide">
                     {section.label}
@@ -264,6 +276,33 @@ export default function ChartDisplay({
             </div>
           </div>
         );
+
+        if (editMode) {
+          return (
+            <Draggable key={section.id} draggableId={section.id} index={sectionIdx}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  className={snapshot.isDragging ? 'opacity-50' : ''}
+                >
+                  <SectionContextMenu
+                    trigger={sectionContent}
+                    onDuplicate={() => onDuplicateSection && onDuplicateSection(section)}
+                    onDelete={() => onDeleteSection && onDeleteSection(section.id)}
+                    onMoveUp={() => onMoveSectionUp && onMoveSectionUp(sectionIdx)}
+                    onMoveDown={() => onMoveSectionDown && onMoveSectionDown(sectionIdx)}
+                    canMoveUp={sectionIdx > 0}
+                    canMoveDown={sectionIdx < sections.length - 1}
+                  />
+                </div>
+              )}
+            </Draggable>
+          );
+        }
+
+        return sectionContent;
       })}
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Save, User } from "lucide-react";
+import { ArrowLeft, Download, Save, User, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChartDisplay from "@/components/chart/ChartDisplay";
@@ -11,6 +11,13 @@ import MeasurePropertiesSidebar from "@/components/chart/MeasurePropertiesSideba
 import ChartToolbar from "@/components/chart/ChartToolbar";
 import { toast } from "sonner";
 import { transposeSectionMeasures } from "@/components/transposeUtils";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ChartViewer() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -154,6 +161,97 @@ export default function ChartViewer() {
     handleUpdateSection(sectionId, { measures: updatedMeasures });
   };
 
+  const createSection = useMutation({
+    mutationFn: async (label) => {
+      const newSection = {
+        chart_id: chartId,
+        label,
+        measures: [{ chords: [{ chord: '-', beats: 4, symbols: [] }], cue: '' }],
+        repeat_count: 1
+      };
+      await base44.entities.Section.create(newSection);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      toast.success('Section added');
+    }
+  });
+
+  const deleteSection = useMutation({
+    mutationFn: async (sectionId) => {
+      await base44.entities.Section.delete(sectionId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      toast.success('Section deleted');
+    }
+  });
+
+  const duplicateSection = useMutation({
+    mutationFn: async (section) => {
+      const duplicated = {
+        chart_id: chartId,
+        label: section.label,
+        measures: section.measures,
+        repeat_count: section.repeat_count,
+        arrangement_cue: section.arrangement_cue,
+        modulation_key: section.modulation_key,
+        pivot_cue: section.pivot_cue
+      };
+      await base44.entities.Section.create(duplicated);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      toast.success('Section duplicated');
+    }
+  });
+
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const reorderedSections = Array.from(sections);
+    const [removed] = reorderedSections.splice(result.source.index, 1);
+    reorderedSections.splice(result.destination.index, 0, removed);
+
+    // Optimistically update UI
+    queryClient.setQueryData(['sections', chartId], reorderedSections);
+
+    // Update each section's position in the background
+    try {
+      await Promise.all(
+        reorderedSections.map((section, index) =>
+          base44.entities.Section.update(section.id, { order: index })
+        )
+      );
+      toast.success('Sections reordered');
+    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      toast.error('Failed to reorder sections');
+    }
+  };
+
+  const moveSectionUp = (sectionIndex) => {
+    if (sectionIndex === 0) return;
+    const newSections = [...sections];
+    [newSections[sectionIndex - 1], newSections[sectionIndex]] = 
+      [newSections[sectionIndex], newSections[sectionIndex - 1]];
+    handleDragEnd({ 
+      source: { index: sectionIndex }, 
+      destination: { index: sectionIndex - 1 } 
+    });
+  };
+
+  const moveSectionDown = (sectionIndex) => {
+    if (sectionIndex === sections.length - 1) return;
+    const newSections = [...sections];
+    [newSections[sectionIndex], newSections[sectionIndex + 1]] = 
+      [newSections[sectionIndex + 1], newSections[sectionIndex]];
+    handleDragEnd({ 
+      source: { index: sectionIndex }, 
+      destination: { index: sectionIndex + 1 } 
+    });
+  };
+
   const handleExportPDF = async () => {
     setExportingPDF(true);
     try {
@@ -259,23 +357,82 @@ export default function ChartViewer() {
           <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
             {sections.length === 0 ? (
               <div className="h-full flex items-center justify-center">
-                <div className="text-center text-[#6b6b6b]">
-                  <p className="text-sm">Chart is empty. Add sections to get started.</p>
+                <div className="text-center">
+                  <p className="text-[#6b6b6b] mb-4">Chart is empty. Add sections to get started.</p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="gap-2">
+                        <Plus className="w-4 h-4" />
+                        Add Section
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      {['Intro', 'Verse', 'Pre', 'Chorus', 'Bridge', 'Instrumental Solo', 'Outro'].map(label => (
+                        <DropdownMenuItem 
+                          key={label}
+                          onClick={() => createSection.mutate(label)}
+                          className="text-white hover:bg-[#252525]"
+                        >
+                          {label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ) : (
               <div style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
-                <ChartDisplay 
-                  sections={sections}
-                  chartKey={chart.key}
-                  displayMode={chart.display_mode}
-                  editMode={true}
-                  onUpdateSection={handleUpdateSection}
-                  onAddMeasure={handleAddMeasure}
-                  onMeasureClick={handleMeasureClick}
-                  selectedMeasureIndex={selectedMeasureIndex}
-                  selectedSectionId={selectedSection?.id}
-                />
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="sections">
+                    {(provided) => (
+                      <div 
+                        {...provided.droppableProps} 
+                        ref={provided.innerRef}
+                        className="space-y-8"
+                      >
+                        <ChartDisplay 
+                          sections={sections}
+                          chartKey={chart.key}
+                          displayMode={chart.display_mode}
+                          editMode={true}
+                          onUpdateSection={handleUpdateSection}
+                          onAddMeasure={handleAddMeasure}
+                          onMeasureClick={handleMeasureClick}
+                          selectedMeasureIndex={selectedMeasureIndex}
+                          selectedSectionId={selectedSection?.id}
+                          onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                          onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                          onMoveSectionUp={moveSectionUp}
+                          onMoveSectionDown={moveSectionDown}
+                        />
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+
+                {/* Add Section Button */}
+                <div className="mt-8">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="gap-2 w-full">
+                        <Plus className="w-4 h-4" />
+                        Add Section
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      {['Intro', 'Verse', 'Pre', 'Chorus', 'Bridge', 'Instrumental Solo', 'Outro'].map(label => (
+                        <DropdownMenuItem 
+                          key={label}
+                          onClick={() => createSection.mutate(label)}
+                          className="text-white hover:bg-[#252525]"
+                        >
+                          {label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             )}
           </div>
