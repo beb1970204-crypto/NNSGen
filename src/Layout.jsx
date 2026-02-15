@@ -24,12 +24,15 @@ export default function Layout({ children, currentPageName }) {
     initialData: [],
   });
 
+  const location = useLocation();
+  const currentView = new URLSearchParams(location.search).get('view') || 'all';
+  
   const navItems = [
-    { label: "My Charts", icon: LayoutGrid, path: "Home", active: currentPageName === "Home" },
-    { label: "Favorites", icon: Star, path: "Home" },
-    { label: "Recent", icon: Clock, path: "Home" },
-    { label: "Setlists", icon: List, path: "Home" },
-    { label: "Shared with me", icon: Share2, path: "Home" },
+    { label: "My Charts", icon: LayoutGrid, path: "Home", view: "all", active: currentView === "all" },
+    { label: "Favorites", icon: Star, path: "Home", view: "favorites", active: currentView === "favorites" },
+    { label: "Recent", icon: Clock, path: "Home", view: "recent", active: currentView === "recent" },
+    { label: "Setlists", icon: List, path: "Home", view: "setlists", active: currentView === "setlists" },
+    { label: "Shared with me", icon: Share2, path: "Home", view: "shared", active: currentView === "shared" },
   ];
 
   const folders = [
@@ -72,7 +75,7 @@ export default function Layout({ children, currentPageName }) {
             {navItems.map((item) => (
               <Link
                 key={item.label}
-                to={createPageUrl(item.path)}
+                to={`${createPageUrl(item.path)}?view=${item.view}`}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                   item.active 
                     ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' 

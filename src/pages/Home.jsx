@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Home() {
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const currentView = new URLSearchParams(location.search).get('view') || 'all';
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [filterKey, setFilterKey] = useState("all");
   const [filterTimeSignature, setFilterTimeSignature] = useState("all");
@@ -27,8 +32,24 @@ export default function Home() {
     initialData: [],
   });
 
+  const toggleStarred = useMutation({
+    mutationFn: async ({ chartId, starred }) => {
+      await base44.entities.Chart.update(chartId, { starred });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+    }
+  });
+
   const filteredAndSortedCharts = useMemo(() => {
     let result = [...charts];
+
+    // View filter
+    if (currentView === 'favorites') {
+      result = result.filter(chart => chart.starred);
+    } else if (currentView === 'recent') {
+      result = result.slice(0, 10); // Show last 10 edited
+    }
 
     // Search filter
     if (searchQuery) {
@@ -62,7 +83,7 @@ export default function Home() {
     }
 
     return result;
-  }, [charts, searchQuery, filterKey, filterTimeSignature, sortBy]);
+  }, [charts, searchQuery, filterKey, filterTimeSignature, sortBy, currentView]);
 
   const uniqueKeys = useMemo(() => {
     const keys = new Set(charts.map(c => c.key));
@@ -87,7 +108,12 @@ export default function Home() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">My Charts</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {currentView === 'favorites' ? 'Favorites' : 
+             currentView === 'recent' ? 'Recent' :
+             currentView === 'setlists' ? 'Setlists' :
+             currentView === 'shared' ? 'Shared with me' : 'My Charts'}
+          </h1>
           <p className="text-sm text-[#a0a0a0]">
             {filteredAndSortedCharts.length} of {charts.length} {charts.length === 1 ? 'chart' : 'charts'}
           </p>
