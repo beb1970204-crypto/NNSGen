@@ -354,8 +354,14 @@ export default function Home() {
                       <span className="text-[#a0a0a0]">{chart.time_signature}</span>
                     </div>
                   </div>
-                  <button className="text-[#6b6b6b] hover:text-yellow-500 transition-all hover:scale-110">
-                    <Star className="w-5 h-5" />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleStarred.mutate({ chartId: chart.id, starred: !chart.starred });
+                    }}
+                    className="text-[#6b6b6b] hover:text-yellow-500 transition-all hover:scale-110"
+                  >
+                    <Star className={`w-5 h-5 ${chart.starred ? 'fill-yellow-500 text-yellow-500' : ''}`} />
                   </button>
                 </div>
                 
