@@ -1,5 +1,5 @@
 import React from "react";
-import { chordToNNS } from "@/components/utils/chordConversion";
+import { chordToNNS } from "@/components/utils/chordConversion.js";
 
 export default function ChartDisplay({ sections, chartKey, displayMode }) {
   const renderChord = (chord) => {
