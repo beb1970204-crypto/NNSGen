@@ -17,6 +17,7 @@ export default function MeasurePropertiesSidebar({
   onClose
 }) {
   const [localChord, setLocalChord] = useState("");
+  const [localBassNote, setLocalBassNote] = useState("");
   const [localDuration, setLocalDuration] = useState("whole");
   const [localSymbols, setLocalSymbols] = useState([]);
   const [localCue, setLocalCue] = useState("");
@@ -25,7 +26,8 @@ export default function MeasurePropertiesSidebar({
     if (selectedMeasure) {
       const firstChord = selectedMeasure.chords?.[0];
       setLocalChord(firstChord?.chord || "");
-      setLocalDuration(firstChord?.beats === 2 ? "half" : "whole");
+      setLocalBassNote(firstChord?.bass_note || "");
+      setLocalDuration(firstChord?.beats === 2 ? "half" : firstChord?.beats === 1 ? "quarter" : "whole");
       setLocalSymbols(firstChord?.symbols || []);
       setLocalCue(selectedMeasure.cue || "");
     }
@@ -51,11 +53,12 @@ export default function MeasurePropertiesSidebar({
   };
 
   const handleSave = () => {
-    const beats = localDuration === "half" ? 2 : 4;
+    const beats = localDuration === "quarter" ? 1 : localDuration === "half" ? 2 : 4;
     const updatedMeasure = {
       ...selectedMeasure,
       chords: [{
         chord: localChord || "-",
+        bass_note: localBassNote || null,
         beats,
         symbols: localSymbols
       }],
@@ -140,7 +143,12 @@ export default function MeasurePropertiesSidebar({
         {/* Bass Note / Inversion */}
         <div>
           <Label className="text-xs text-[#a0a0a0] mb-2 block">Bass Note / Inversion</Label>
-          <Input placeholder="e.g., /G for C/G" />
+          <Input 
+            value={localBassNote}
+            onChange={(e) => setLocalBassNote(e.target.value)}
+            onBlur={handleSave}
+            placeholder="e.g., G for C/G" 
+          />
         </div>
 
         {/* Arrangement Cue */}

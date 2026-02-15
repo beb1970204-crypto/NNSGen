@@ -1,6 +1,7 @@
 import React from "react";
 import { chordToNNS } from "@/components/chordConversion";
 import EditableMeasure from "./EditableMeasure";
+import MeasureContextMenu from "./MeasureContextMenu";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -15,11 +16,21 @@ export default function ChartDisplay({
   selectedMeasureIndex,
   selectedSectionId
 }) {
-  const renderChord = (chord) => {
+  const renderChord = (chordObj) => {
+    const chordText = typeof chordObj === 'string' ? chordObj : chordObj.chord;
+    const bassNote = typeof chordObj === 'object' && chordObj.bass_note ? chordObj.bass_note : null;
+    
+    let displayText = chordText;
     if (displayMode === 'nashville') {
-      return chordToNNS(chord, chartKey);
+      displayText = chordToNNS(chordText, chartKey);
     }
-    return chord;
+    
+    // Add bass note if present
+    if (bassNote) {
+      displayText += `/${bassNote}`;
+    }
+    
+    return displayText;
   };
 
   // Larger, more prominent measure cells for the new design
@@ -60,14 +71,30 @@ export default function ChartDisplay({
     return colors[label] || { border: 'border-l-gray-600', bg: 'bg-gray-600', text: 'text-gray-600' };
   };
 
+  const handleDuplicateMeasure = (section, measureIdx) => {
+    const measure = section.measures[measureIdx];
+    const updatedMeasures = [...section.measures];
+    updatedMeasures.splice(measureIdx + 1, 0, { ...measure });
+    onUpdateSection(section.id, { measures: updatedMeasures });
+  };
+
+  const handleInsertAfter = (section, measureIdx) => {
+    const newMeasure = {
+      chords: [{ chord: '-', beats: 4, symbols: [] }],
+      cue: ''
+    };
+    const updatedMeasures = [...section.measures];
+    updatedMeasures.splice(measureIdx + 1, 0, newMeasure);
+    onUpdateSection(section.id, { measures: updatedMeasures });
+  };
+
   const renderMeasureCell = (measure, measureIdx, section) => {
     const chordCount = measure.chords?.length || 0;
     const hasSplit = chordCount === 2;
     const hasDotNotation = measure.chords?.some(c => c.beats && c.beats !== 4 && c.beats !== 2);
-    const hasSyncopation = measure.chords?.some(c => c.chord?.includes('/'));
     const isSelected = selectedSectionId === section.id && selectedMeasureIndex === measureIdx;
 
-    return (
+    const measureElement = (
       <div
         key={measureIdx}
         onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
@@ -83,8 +110,7 @@ export default function ChartDisplay({
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg text-yellow-500">●</span>
                 )}
                 <span className={measure.chords[0].chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                  {renderChord(measure.chords[0].chord)}
-                  {hasSyncopation && <span className="ml-1 text-lg opacity-70">/</span>}
+                  {renderChord(measure.chords[0])}
                 </span>
                 {measure.chords[0].symbols?.length > 0 && (
                   <span className="ml-3 text-lg text-yellow-500">
@@ -105,7 +131,7 @@ export default function ChartDisplay({
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg text-yellow-500">●</span>
                     )}
                     <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                      {renderChord(chordObj.chord)}
+                      {renderChord(chordObj)}
                     </span>
                     {chordObj.symbols?.length > 0 && (
                       <span className="ml-2 text-lg text-yellow-500">
@@ -126,7 +152,7 @@ export default function ChartDisplay({
               {measure.chords.map((chordObj, chordIdx) => (
                 <div key={chordIdx} className="flex items-center gap-2">
                   <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                    {renderChord(chordObj.chord)}
+                    {renderChord(chordObj)}
                     {chordObj.beats && chordObj.beats < 4 && (
                       <span className="text-lg ml-2 text-[#a0a0a0]">({chordObj.beats})</span>
                     )}
@@ -190,27 +216,9 @@ export default function ChartDisplay({
             {/* Measures Grid */}
             <div className="p-6">
               <div className="grid grid-cols-4 gap-4">
-            {section.measures?.map((measure, measureIdx) => (
-              editMode ? (
-                <EditableMeasure
-                  key={measureIdx}
-                  measure={measure}
-                  measureIdx={measureIdx}
-                  onUpdateMeasure={(updated) => handleUpdateMeasure(section, measureIdx, updated)}
-                  onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
-                  onDuplicateMeasure={(measure) => {
-                    const updatedMeasures = [...section.measures];
-                    updatedMeasures.splice(measureIdx + 1, 0, { ...measure });
-                    onUpdateSection(section.id, { measures: updatedMeasures });
-                  }}
-                  baseFontSize={baseFontSize}
-                  measurePadding={measurePadding}
-                  measureHeight={measureHeight}
-                />
-              ) : (
-                renderMeasureCell(measure, measureIdx, section)
-              )
-            ))}
+            {section.measures?.map((measure, measureIdx) => 
+              renderMeasureCell(measure, measureIdx, section)
+            )}
 
                 {editMode && (
                   <button

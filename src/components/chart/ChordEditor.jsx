@@ -16,6 +16,7 @@ const NNS_SYMBOLS = [
 
 export default function ChordEditor({ chord, onSave, onCancel }) {
   const [chordText, setChordText] = useState(chord.chord);
+  const [bassNote, setBassNote] = useState(chord.bass_note || '');
   const [selectedSymbols, setSelectedSymbols] = useState(chord.symbols || []);
   const [hasDotNotation, setHasDotNotation] = useState(chord.beats && chord.beats !== 4 && chord.beats !== 2);
 
@@ -49,6 +50,7 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
     const updatedChord = { 
       ...chord, 
       chord: chordText, 
+      bass_note: bassNote || null,
       symbols: selectedSymbols 
     };
     
@@ -100,6 +102,18 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
             </span>
           )}
         </div>
+      </div>
+
+      <div>
+        <Input
+          value={bassNote}
+          onChange={(e) => setBassNote(e.target.value)}
+          placeholder="Bass note (e.g., G for C/G)"
+          className="bg-[#0a0a0a] border-[#2a2a2a] text-white"
+        />
+        <p className="text-xs text-[#6b6b6b] mt-1">
+          Optional: Add slash chord bass note
+        </p>
       </div>
 
       <Popover>

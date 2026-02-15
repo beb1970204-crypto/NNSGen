@@ -67,7 +67,10 @@ export default function EditableMeasure({
             {hasDotNotation && (
               <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs text-yellow-500">●</span>
             )}
-            <span className="chart-chord">{measure.chords[0].chord}</span>
+            <span className="chart-chord">
+              {measure.chords[0].chord}
+              {measure.chords[0].bass_note && `/${measure.chords[0].bass_note}`}
+            </span>
             {renderSymbols(measure.chords[0].symbols)}
           </div>
         </div>
@@ -82,7 +85,10 @@ export default function EditableMeasure({
                 {hasDotNotation && chordObj.beats && chordObj.beats !== 2 && (
                   <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs text-yellow-500">●</span>
                 )}
-                <span className="chart-chord">{chordObj.chord}</span>
+                <span className="chart-chord">
+                  {chordObj.chord}
+                  {chordObj.bass_note && `/${chordObj.bass_note}`}
+                </span>
                 {renderSymbols(chordObj.symbols)}
               </div>
             ))}
@@ -108,7 +114,10 @@ export default function EditableMeasure({
                     onClick={() => setEditingChordIdx(chordIdx)}
                     className="flex-1 text-left hover:bg-[#252525] rounded px-1 py-0.5 transition-colors"
                   >
-                    <span className="chart-chord">{chordObj.chord}</span>
+                    <span className="chart-chord">
+                      {chordObj.chord}
+                      {chordObj.bass_note && `/${chordObj.bass_note}`}
+                    </span>
                     {renderSymbols(chordObj.symbols)}
                   </button>
                   {measure.chords.length > 1 && (
