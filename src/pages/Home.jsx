@@ -1,13 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Music, Star, List, Share2, Filter, ChevronDown, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterKey, setFilterKey] = useState("all");
+  const [filterTimeSignature, setFilterTimeSignature] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
 
   const { data: charts, isLoading } = useQuery({
     queryKey: ['charts'],
@@ -15,38 +27,211 @@ export default function Home() {
     initialData: [],
   });
 
-  const filteredCharts = charts.filter(chart => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      chart.title?.toLowerCase().includes(query) ||
-      chart.artist?.toLowerCase().includes(query)
-    );
-  });
+  const filteredAndSortedCharts = useMemo(() => {
+    let result = [...charts];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(chart => 
+        chart.title?.toLowerCase().includes(query) ||
+        chart.artist?.toLowerCase().includes(query) ||
+        chart.key?.toLowerCase().includes(query)
+      );
+    }
+
+    // Key filter
+    if (filterKey !== "all") {
+      result = result.filter(chart => chart.key === filterKey);
+    }
+
+    // Time signature filter
+    if (filterTimeSignature !== "all") {
+      result = result.filter(chart => chart.time_signature === filterTimeSignature);
+    }
+
+    // Sort
+    if (sortBy === "recent") {
+      result.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+    } else if (sortBy === "oldest") {
+      result.sort((a, b) => new Date(a.updated_date) - new Date(b.updated_date));
+    } else if (sortBy === "alphabetical") {
+      result.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === "key") {
+      result.sort((a, b) => a.key.localeCompare(b.key));
+    }
+
+    return result;
+  }, [charts, searchQuery, filterKey, filterTimeSignature, sortBy]);
+
+  const uniqueKeys = useMemo(() => {
+    const keys = new Set(charts.map(c => c.key));
+    return Array.from(keys).sort();
+  }, [charts]);
+
+  const uniqueTimeSignatures = useMemo(() => {
+    const sigs = new Set(charts.map(c => c.time_signature));
+    return Array.from(sigs).sort();
+  }, [charts]);
+
+  const hasActiveFilters = filterKey !== "all" || filterTimeSignature !== "all" || searchQuery;
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterKey("all");
+    setFilterTimeSignature("all");
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">My Charts</h1>
-          <p className="text-sm text-[#a0a0a0]">{charts.length} {charts.length === 1 ? 'chart' : 'charts'}</p>
+          <p className="text-sm text-[#a0a0a0]">
+            {filteredAndSortedCharts.length} of {charts.length} {charts.length === 1 ? 'chart' : 'charts'}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all">
-            <Filter className="w-4 h-4" />
-            Filter
-          </Button>
-          <Button variant="outline" className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all">
-            Sort by: Recent
-            <ChevronDown className="w-4 h-4" />
-          </Button>
           <Link to={createPageUrl("ChartCreator")}>
             <Button className="gap-2 shadow-lg shadow-red-600/20">
               <Plus className="w-4 h-4" />
               New Chart
             </Button>
           </Link>
+        </div>
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 mb-6">
+        <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b6b6b]" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, artist, or key..."
+              className="pl-10 bg-[#0a0a0a] border-[#2a2a2a] text-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b6b6b] hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Key Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="w-4 h-4" />
+                Key: {filterKey === "all" ? "All" : filterKey}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+              <DropdownMenuLabel className="text-[#a0a0a0]">Filter by Key</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-[#2a2a2a]" />
+              <DropdownMenuItem 
+                onClick={() => setFilterKey("all")}
+                className="text-white hover:bg-[#252525]"
+              >
+                All Keys
+              </DropdownMenuItem>
+              {uniqueKeys.map(key => (
+                <DropdownMenuItem 
+                  key={key}
+                  onClick={() => setFilterKey(key)}
+                  className="text-white hover:bg-[#252525]"
+                >
+                  {key}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Time Signature Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Time: {filterTimeSignature === "all" ? "All" : filterTimeSignature}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+              <DropdownMenuLabel className="text-[#a0a0a0]">Filter by Time Signature</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-[#2a2a2a]" />
+              <DropdownMenuItem 
+                onClick={() => setFilterTimeSignature("all")}
+                className="text-white hover:bg-[#252525]"
+              >
+                All Time Signatures
+              </DropdownMenuItem>
+              {uniqueTimeSignatures.map(sig => (
+                <DropdownMenuItem 
+                  key={sig}
+                  onClick={() => setFilterTimeSignature(sig)}
+                  className="text-white hover:bg-[#252525]"
+                >
+                  {sig}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sort */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                Sort: {sortBy === "recent" ? "Recent" : sortBy === "oldest" ? "Oldest" : sortBy === "alphabetical" ? "A-Z" : "By Key"}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+              <DropdownMenuLabel className="text-[#a0a0a0]">Sort by</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-[#2a2a2a]" />
+              <DropdownMenuItem 
+                onClick={() => setSortBy("recent")}
+                className="text-white hover:bg-[#252525]"
+              >
+                Most Recent
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSortBy("oldest")}
+                className="text-white hover:bg-[#252525]"
+              >
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSortBy("alphabetical")}
+                className="text-white hover:bg-[#252525]"
+              >
+                Alphabetical (A-Z)
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSortBy("key")}
+                className="text-white hover:bg-[#252525]"
+              >
+                By Key
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <Button 
+              variant="ghost" 
+              onClick={clearFilters}
+              className="gap-2 text-red-500 hover:text-red-400 hover:bg-red-600/10"
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </Button>
+          )}
         </div>
       </div>
 
@@ -99,21 +284,26 @@ export default function Home() {
         <div className="text-center py-20">
           <div className="animate-pulse text-[#6b6b6b]">Loading charts...</div>
         </div>
-      ) : filteredCharts.length === 0 ? (
+      ) : filteredAndSortedCharts.length === 0 ? (
         <div className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-xl p-24 text-center hover:border-[#3a3a3a] transition-all">
           <div className="w-24 h-24 rounded-full bg-[#2a2a2a] flex items-center justify-center mx-auto mb-6">
             <Music className="w-12 h-12 text-[#4a4a4a]" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">
-            {searchQuery ? "No charts found" : "No charts yet"}
+            {hasActiveFilters ? "No charts found" : "No charts yet"}
           </h2>
           <p className="text-[#a0a0a0] mb-8 text-base">
-            {searchQuery 
-              ? "Try a different search term"
+            {hasActiveFilters 
+              ? "Try adjusting your filters or search"
               : "Start creating your first chord chart"
             }
           </p>
-          {!searchQuery && (
+          {hasActiveFilters ? (
+            <Button onClick={clearFilters} variant="outline" className="gap-2">
+              <X className="w-4 h-4" />
+              Clear Filters
+            </Button>
+          ) : (
             <Link to={createPageUrl("ChartCreator")}>
               <Button className="shadow-lg shadow-red-600/20">
                 <Plus className="w-5 h-5 mr-2" />
@@ -124,7 +314,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCharts.map((chart) => (
+          {filteredAndSortedCharts.map((chart) => (
             <Link key={chart.id} to={createPageUrl("ChartViewer") + `?id=${chart.id}`}>
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl">
                 <div className="flex items-start justify-between mb-4">
