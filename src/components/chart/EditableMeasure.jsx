@@ -93,47 +93,46 @@ export default function EditableMeasure({
 
       {/* Editor or Multi-chord view */}
       {(showEditor || editingChordIdx !== null || isAddingChord || chordCount > 2) && (
-          <div className="space-y-1">
-            {measure.chords?.map((chordObj, chordIdx) => (
-              <div key={chordIdx}>
-                {editingChordIdx === chordIdx ? (
-                  <ChordEditor
-                    chord={chordObj}
-                    onSave={(updated) => handleSaveChord(chordIdx, updated)}
-                    onCancel={() => setEditingChordIdx(null)}
-                  />
-                ) : (
-                  <div className="flex items-center justify-between group/chord">
+        <div className="space-y-1">
+          {measure.chords?.map((chordObj, chordIdx) => (
+            <div key={chordIdx}>
+              {editingChordIdx === chordIdx ? (
+                <ChordEditor
+                  chord={chordObj}
+                  onSave={(updated) => handleSaveChord(chordIdx, updated)}
+                  onCancel={() => setEditingChordIdx(null)}
+                />
+              ) : (
+                <div className="flex items-center justify-between group/chord">
+                  <button
+                    onClick={() => setEditingChordIdx(chordIdx)}
+                    className="flex-1 text-left hover:bg-[#121212] rounded px-1 py-0.5 transition-colors"
+                  >
+                    <span className="chart-chord">{chordObj.chord}</span>
+                    {renderSymbols(chordObj.symbols)}
+                  </button>
+                  {measure.chords.length > 1 && (
                     <button
-                      onClick={() => setEditingChordIdx(chordIdx)}
-                      className="flex-1 text-left hover:bg-[#121212] rounded px-1 py-0.5 transition-colors"
+                      onClick={() => handleDeleteChord(chordIdx)}
+                      className="opacity-0 group-hover/chord:opacity-100 p-1 hover:bg-red-900 rounded transition-opacity"
                     >
-                      <span className="chart-chord">{chordObj.chord}</span>
-                      {renderSymbols(chordObj.symbols)}
+                      <Trash2 className="w-3 h-3 text-red-300" />
                     </button>
-                    {measure.chords.length > 1 && (
-                      <button
-                        onClick={() => handleDeleteChord(chordIdx)}
-                        className="opacity-0 group-hover/chord:opacity-100 p-1 hover:bg-red-900 rounded transition-opacity"
-                      >
-                        <Trash2 className="w-3 h-3 text-red-300" />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
 
-            {isAddingChord && (
-              <ChordEditor
-                chord={{ chord: '', symbols: [] }}
-                onSave={handleAddChord}
-                onCancel={() => setIsAddingChord(false)}
-              />
-            )}
-          </div>
-        )}
-      </div>
+          {isAddingChord && (
+            <ChordEditor
+              chord={{ chord: '', symbols: [] }}
+              onSave={handleAddChord}
+              onCancel={() => setIsAddingChord(false)}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 
