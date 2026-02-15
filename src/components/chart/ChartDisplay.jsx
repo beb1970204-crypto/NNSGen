@@ -10,7 +10,10 @@ export default function ChartDisplay({
   displayMode, 
   editMode = false,
   onUpdateSection,
-  onAddMeasure 
+  onAddMeasure,
+  onMeasureClick,
+  selectedMeasureIndex,
+  selectedSectionId
 }) {
   const renderChord = (chord) => {
     if (displayMode === 'nashville') {
@@ -59,11 +62,13 @@ export default function ChartDisplay({
     const hasSplit = chordCount === 2;
     const hasDotNotation = measure.chords?.some(c => c.beats && c.beats !== 4 && c.beats !== 2);
     const hasSyncopation = measure.chords?.some(c => c.chord?.includes('/'));
+    const isSelected = selectedSectionId === section.id && selectedMeasureIndex === measureIdx;
 
     return (
       <div
         key={measureIdx}
-        className={`bg-[#1a1a1a] border-r border-[#333333] ${measurePadding} ${measureHeight} flex flex-col justify-center relative`}
+        onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+        className={`bg-[#1a1a1a] border-r ${isSelected ? 'border-2 border-red-600' : 'border-[#333333]'} ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#252525] transition-colors`}
         style={{ minWidth: '140px' }}
       >
         <div className={`text-[#F5F5F5] ${baseFontSize} chart-chord relative`}>
