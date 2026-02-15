@@ -44,7 +44,7 @@ export default function EditableMeasure({
       fermata: "𝄐", bass_up: "↑", bass_down: "↓"
     };
     return (
-      <span className="text-xs ml-1" style={{ color: '#FFD700' }}>
+      <span className="text-xs ml-1 text-yellow-500">
         {symbols.map(s => symbolMap[s]).join(' ')}
       </span>
     );
@@ -59,13 +59,13 @@ export default function EditableMeasure({
   };
 
   const measureContent = (
-    <div className={`text-[#F5F5F5] ${baseFontSize} chart-chord`}>
+    <div className={`text-white ${baseFontSize} chart-chord`}>
       {/* Single Chord - Centered */}
       {chordCount === 1 && !showEditor && (
         <div className="flex flex-col items-center justify-center h-full">
           <div className="relative">
             {hasDotNotation && (
-              <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs" style={{ color: '#FFD700' }}>●</span>
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs text-yellow-500">●</span>
             )}
             <span className="chart-chord">{measure.chords[0].chord}</span>
             {renderSymbols(measure.chords[0].symbols)}
@@ -80,14 +80,14 @@ export default function EditableMeasure({
             {measure.chords.map((chordObj, chordIdx) => (
               <div key={chordIdx} className="relative flex-1 text-center">
                 {hasDotNotation && chordObj.beats && chordObj.beats !== 2 && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs" style={{ color: '#FFD700' }}>●</span>
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs text-yellow-500">●</span>
                 )}
                 <span className="chart-chord">{chordObj.chord}</span>
                 {renderSymbols(chordObj.symbols)}
               </div>
             ))}
           </div>
-          <div className="w-full h-px bg-[#555555] mx-2" />
+          <div className="w-full h-px bg-[#4a4a4a] mx-2" />
         </div>
       )}
 
@@ -106,7 +106,7 @@ export default function EditableMeasure({
                 <div className="flex items-center justify-between group/chord">
                   <button
                     onClick={() => setEditingChordIdx(chordIdx)}
-                    className="flex-1 text-left hover:bg-[#121212] rounded px-1 py-0.5 transition-colors"
+                    className="flex-1 text-left hover:bg-[#252525] rounded px-1 py-0.5 transition-colors"
                   >
                     <span className="chart-chord">{chordObj.chord}</span>
                     {renderSymbols(chordObj.symbols)}
@@ -114,9 +114,9 @@ export default function EditableMeasure({
                   {measure.chords.length > 1 && (
                     <button
                       onClick={() => handleDeleteChord(chordIdx)}
-                      className="opacity-0 group-hover/chord:opacity-100 p-1 hover:bg-red-900 rounded transition-opacity"
+                      className="opacity-0 group-hover/chord:opacity-100 p-1 hover:bg-red-600/20 rounded transition-opacity"
                     >
-                      <Trash2 className="w-3 h-3 text-red-300" />
+                      <Trash2 className="w-3 h-3 text-red-500" />
                     </button>
                   )}
                 </div>
@@ -139,10 +139,10 @@ export default function EditableMeasure({
   return (
     <MeasureContextMenu
       trigger={
-        <div className={`bg-[#1a1a1a] border border-[#333333] rounded ${measurePadding} ${measureHeight} flex flex-col justify-between relative group cursor-pointer hover:border-[#FFD700] transition-colors`} style={{ minWidth: '140px' }}>
+        <div className={`bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-between relative group cursor-pointer hover:border-red-600 hover:bg-[#252525] transition-all`} style={{ minWidth: '160px' }}>
           {measureContent}
           {measure.cue && (
-            <div className="arrangement-cue text-xs mt-2 border-t border-[#333333] pt-1">
+            <div className="text-xs mt-2 border-t border-[#2a2a2a] pt-2 text-[#a0a0a0] italic">
               {measure.cue}
             </div>
           )}

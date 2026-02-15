@@ -63,7 +63,7 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   };
 
   return (
-    <div className="space-y-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#333333]">
+    <div className="space-y-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
       <div>
         <Input
           value={chordText}
@@ -77,7 +77,7 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
             }
           }}
           placeholder="Enter chord (e.g., C, 1, 4-, F/G)"
-          className="bg-[#1a1a1a] border-[#333333] text-[#F5F5F5] chart-chord"
+          className="bg-[#0a0a0a] border-[#2a2a2a] text-white chart-chord"
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -91,11 +91,11 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
           }}
         />
         <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-[#666]">
+          <p className="text-xs text-[#6b6b6b]">
             Tip: Type 6 for 6-, press . for dot notation
           </p>
           {hasDotNotation && (
-            <span className="text-xs px-2 py-0.5 rounded bg-[#FFD700] bg-opacity-20 text-[#FFD700]">
+            <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-500">
               ● Dotted
             </span>
           )}
@@ -116,16 +116,16 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
               <button
                 key={symbol.value}
                 onClick={() => toggleSymbol(symbol.value)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-all ${
                   selectedSymbols.includes(symbol.value)
-                    ? 'bg-indigo-100 text-indigo-900 border border-indigo-300'
-                    : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
+                    ? 'bg-red-600 text-white border border-red-600 shadow-lg shadow-red-600/20'
+                    : 'bg-[#1a1a1a] hover:bg-[#252525] border border-[#2a2a2a] text-white'
                 }`}
               >
                 <span className="text-lg font-bold">{symbol.icon}</span>
                 <span className="flex-1 text-left">{symbol.label}</span>
                 {selectedSymbols.includes(symbol.value) && (
-                  <Check className="w-4 h-4 text-indigo-600" />
+                  <Check className="w-4 h-4 text-white" />
                 )}
               </button>
             ))}
@@ -138,7 +138,7 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
           {selectedSymbols.map(sym => {
             const symbol = NNS_SYMBOLS.find(s => s.value === sym);
             return (
-              <span key={sym} className="px-2 py-1 bg-indigo-900 text-indigo-100 rounded text-xs">
+              <span key={sym} className="px-2 py-1 bg-red-600/20 text-red-500 rounded text-xs font-medium">
                 {symbol?.icon} {symbol?.label.split(' ')[1]}
               </span>
             );
@@ -147,7 +147,7 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
       )}
 
       <div className="flex gap-2">
-        <Button onClick={handleSave} size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={handleSave} size="sm" className="flex-1">
           Save
         </Button>
         <Button onClick={onCancel} variant="outline" size="sm" className="flex-1">
