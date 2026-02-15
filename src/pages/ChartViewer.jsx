@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Edit, Music2 } from "lucide-react";
+import { ArrowLeft, Download, Edit, Music2, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChartDisplay from "@/components/chart/ChartDisplay";
@@ -15,6 +15,8 @@ export default function ChartViewer() {
   const chartId = urlParams.get('id');
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
+
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const { data: chart, isLoading } = useQuery({
     queryKey: ['chart', chartId],
@@ -93,6 +95,28 @@ export default function ChartViewer() {
     handleUpdateSection(sectionId, { measures: updatedMeasures });
   };
 
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      const response = await base44.functions.invoke('exportChartPDF', { chart_id: chartId });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${chart.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      toast.error('Failed to export PDF');
+      console.error(error);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -142,9 +166,24 @@ export default function ChartViewer() {
               <Edit className="w-4 h-4" />
               {editMode ? 'Done Editing' : 'Edit Chart'}
             </Button>
-            <Button size="sm" variant="outline" className="gap-2">
-              <Download className="w-4 h-4" />
-              Export PDF
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="gap-2"
+              onClick={handleExportPDF}
+              disabled={exportingPDF}
+            >
+              {exportingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Export PDF
+                </>
+              )}
             </Button>
           </div>
         </div>
