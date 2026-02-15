@@ -3,11 +3,19 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X } from "lucide-react";
+import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X, Trash2, Calendar, MapPin, MoreVertical } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import ChartCardMenu from "@/components/chart/ChartCardMenu";
+import SetlistDialog from "@/components/setlist/SetlistDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +36,7 @@ export default function Home() {
   const [filterKey, setFilterKey] = useState("all");
   const [filterTimeSignature, setFilterTimeSignature] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [showSetlistDialog, setShowSetlistDialog] = useState(false);
 
   const { data: charts, isLoading } = useQuery({
     queryKey: ['charts'],
@@ -103,6 +112,23 @@ export default function Home() {
     },
     onError: () => {
       toast.error('Failed to delete chart');
+    }
+  });
+
+  const createSetlist = useMutation({
+    mutationFn: (data) => base44.entities.Setlist.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+      toast.success('Setlist created');
+      setShowSetlistDialog(false);
+    }
+  });
+
+  const deleteSetlist = useMutation({
+    mutationFn: (setlistId) => base44.entities.Setlist.delete(setlistId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+      toast.success('Setlist deleted');
     }
   });
 
