@@ -96,7 +96,7 @@ export default function ChartCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-3xl mx-auto p-6">
         <Link to={createPageUrl("Home")}>
           <Button variant="ghost" className="mb-6 gap-2">
@@ -105,13 +105,13 @@ export default function ChartCreator() {
           </Button>
         </Link>
 
-        <Card className="bg-white shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600" />
+              <Sparkles className="w-6 h-6 text-red-500" />
               Generate Chart with AI
             </CardTitle>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-[#a0a0a0]">
               Enter song details and let AI create your chart
             </p>
           </CardHeader>
@@ -150,7 +150,7 @@ export default function ChartCreator() {
                   className="flex-1"
                 />
                 {uploadingFile && (
-                  <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+                  <Loader2 className="w-5 h-5 animate-spin text-red-500" />
                 )}
                 {referenceFile && !uploadingFile && (
                   <Button
@@ -163,7 +163,7 @@ export default function ChartCreator() {
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#6b6b6b] mt-1">
                 Upload an existing chord chart, lyric sheet, or image to help AI understand the song
               </p>
             </div>
@@ -171,7 +171,7 @@ export default function ChartCreator() {
             <Button
               onClick={handleGenerateChart}
               disabled={isGenerating || !title}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg py-6"
+              className="w-full text-lg py-6"
             >
               {isGenerating ? (
                 <>
