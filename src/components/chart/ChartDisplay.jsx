@@ -148,10 +148,22 @@ export default function ChartDisplay({
         <div key={section.id || sectionIdx} className={`bg-[#121212] rounded-lg p-6 border border-[#333333] border-l-4 ${getSectionColor(section.label)}`}>
           {/* Section Header */}
           <div className="mb-4">
-            <div className="inline-block bg-[#F5F5F5] text-[#121212] px-3 py-1 rounded chart-section-header text-sm">
-              {section.label.toUpperCase()}
-              {section.repeat_count > 1 && (
-                <span className="ml-2 font-normal">x{section.repeat_count}</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="inline-block bg-[#F5F5F5] text-[#121212] px-3 py-1 rounded chart-section-header text-sm">
+                {section.label.toUpperCase()}
+                {section.repeat_count > 1 && (
+                  <span className="ml-2 font-normal">x{section.repeat_count}</span>
+                )}
+              </div>
+              {section.modulation_key && (
+                <div className="inline-block px-3 py-1 rounded text-sm font-bold" style={{ backgroundColor: '#FFD700', color: '#121212' }}>
+                  MOD to {section.modulation_key}
+                </div>
+              )}
+              {section.pivot_cue && (
+                <div className="text-sm text-[#FFD700] italic">
+                  Pivot: {section.pivot_cue}
+                </div>
               )}
             </div>
             {section.arrangement_cue && (
