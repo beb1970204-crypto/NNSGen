@@ -113,6 +113,27 @@ export default function SectionInput({ sections, setSections, timeSignature }) {
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Modulation Key (Optional)</Label>
+                <Input
+                  placeholder="e.g., D, Em"
+                  value={section.modulation_key || ""}
+                  onChange={(e) => updateSection(index, 'modulation_key', e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Pivot Cue (Optional)</Label>
+                <Input
+                  placeholder="e.g., V/V, bVII"
+                  value={section.pivot_cue || ""}
+                  onChange={(e) => updateSection(index, 'pivot_cue', e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
             <div>
               <Label className="text-xs">
                 Chord Progression <span className="text-slate-400">(use | to separate measures)</span>
