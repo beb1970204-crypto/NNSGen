@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Edit, Music2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ChartDisplay from "@/components/chart/ChartDisplay";
+import { toast } from "sonner";
 
 export default function ChartViewer() {
   const urlParams = new URLSearchParams(window.location.search);
   const chartId = urlParams.get('id');
+  const queryClient = useQueryClient();
 
   const { data: chart, isLoading } = useQuery({
     queryKey: ['chart', chartId],
@@ -21,6 +24,18 @@ export default function ChartViewer() {
     queryFn: () => base44.entities.Section.filter({ chart_id: chartId }),
     enabled: !!chartId,
     initialData: []
+  });
+
+  const toggleDisplayMode = useMutation({
+    mutationFn: async () => {
+      const newMode = chart.display_mode === 'chords' ? 'nashville' : 'chords';
+      await base44.entities.Chart.update(chartId, { display_mode: newMode });
+      return newMode;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
+      toast.success(`Switched to ${chart.display_mode === 'chords' ? 'Nashville Numbers' : 'Chords'}`);
+    }
   });
 
   if (isLoading) {
@@ -93,7 +108,12 @@ export default function ChartViewer() {
             </div>
           )}
           <div className="ml-auto">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => toggleDisplayMode.mutate()}
+              disabled={toggleDisplayMode.isPending}
+            >
               Switch to {chart.display_mode === 'chords' ? 'Nashville Numbers' : 'Chords'}
             </Button>
           </div>
@@ -106,29 +126,20 @@ export default function ChartViewer() {
           <div className="text-center py-20">
             <Music2 className="w-20 h-20 text-slate-600 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Chart is Empty</h2>
-            <p className="text-slate-400 mb-6">Add sections and measures to build your chart</p>
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
-              <Edit className="w-4 h-4 mr-2" />
-              Start Editing
-            </Button>
+            <p className="text-slate-400 mb-6">This chart has no sections yet</p>
+            <Link to={createPageUrl("Home")}>
+              <Button className="bg-indigo-600 hover:bg-indigo-700">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Charts
+              </Button>
+            </Link>
           </div>
         ) : (
-          <div className="space-y-8">
-            {sections.map((section, idx) => (
-              <div key={section.id} className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-                <h3 className="text-xl font-bold mb-4 text-indigo-400">[{section.label}]</h3>
-                {section.arrangement_cue && (
-                  <div className="text-sm text-yellow-400 mb-3 italic">
-                    {section.arrangement_cue}
-                  </div>
-                )}
-                <div className="font-mono text-lg">
-                  {/* TODO: Render measures in grid format */}
-                  <p className="text-slate-400">Measures will be displayed here</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ChartDisplay 
+            sections={sections}
+            chartKey={chart.key}
+            displayMode={chart.display_mode}
+          />
         )}
       </div>
     </div>

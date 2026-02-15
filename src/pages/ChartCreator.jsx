@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Music } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import SectionInput from "@/components/chart/SectionInput";
 
 const KEYS = ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B"];
 const MINOR_KEYS = ["Cm", "C#m", "Dm", "D#m", "Ebm", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bbm", "Bm"];
@@ -23,58 +24,46 @@ export default function ChartCreator() {
     time_signature: "4/4",
     display_mode: "chords"
   });
-  const [referenceFile, setReferenceFile] = useState(null);
+  const [sections, setSections] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const createChartMutation = useMutation({
-    mutationFn: async (data) => {
-      const chart = await base44.entities.Chart.create(data);
-      return chart;
-    },
-    onSuccess: (chart) => {
-      toast.success("Chart created successfully!");
-      navigate(createPageUrl("ChartViewer") + `?id=${chart.id}`);
-    },
-    onError: (error) => {
-      toast.error("Failed to create chart");
-      console.error(error);
-    }
-  });
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setReferenceFile(file);
-    }
-  };
-
-  const handleGenerate = async () => {
+  const handleCreate = async () => {
     if (!formData.title) {
       toast.error("Please enter a song title");
+      return;
+    }
+
+    if (sections.length === 0) {
+      toast.error("Please add at least one section");
       return;
     }
 
     setIsGenerating(true);
 
     try {
-      // TODO: Implement AI chart generation with Time-Grid Reconstruction
-      // For now, create a basic chart structure
-      const chartData = {
+      // Create the chart
+      const chart = await base44.entities.Chart.create({
         ...formData,
         sections: []
-      };
+      });
 
-      // If reference file exists, upload it
-      if (referenceFile) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', referenceFile);
-        const { data: uploadResult } = await base44.integrations.Core.UploadFile({ file: referenceFile });
-        chartData.reference_file_url = uploadResult.file_url;
-      }
+      // Create sections with their measures
+      const sectionPromises = sections.map((section, index) => 
+        base44.entities.Section.create({
+          chart_id: chart.id,
+          label: section.label,
+          measures: section.measures,
+          repeat_count: section.repeat_count || 1,
+          arrangement_cue: section.arrangement_cue || ""
+        })
+      );
 
-      createChartMutation.mutate(chartData);
+      await Promise.all(sectionPromises);
+
+      toast.success("Chart created successfully!");
+      navigate(createPageUrl("ChartViewer") + `?id=${chart.id}`);
     } catch (error) {
-      toast.error("Failed to generate chart");
+      toast.error("Failed to create chart");
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -94,16 +83,16 @@ export default function ChartCreator() {
         <Card className="bg-white shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600" />
+              <Music className="w-6 h-6 text-indigo-600" />
               Create New Chart
             </CardTitle>
             <p className="text-sm text-slate-500">
-              Enter song details and optionally upload a reference file for AI-powered chart generation
+              Enter song details and build your chart section by section
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Song Information */}
-            <div className="space-y-4">
+            <div className="space-y-4 pb-6 border-b border-slate-200">
               <div>
                 <Label htmlFor="title">Song Title *</Label>
                 <Input
@@ -178,39 +167,28 @@ export default function ChartCreator() {
               </div>
             </div>
 
-            {/* Reference File Upload */}
-            <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
-              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-700 mb-2">Upload Reference File (Optional)</h3>
-              <p className="text-sm text-slate-500 mb-4">
-                PDF, DOC, or TXT file with chord progression or lyrics
-              </p>
-              <Input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={handleFileChange}
-                className="max-w-xs mx-auto"
-              />
-              {referenceFile && (
-                <p className="text-sm text-green-600 mt-2">✓ {referenceFile.name}</p>
-              )}
-            </div>
+            {/* Section Input */}
+            <SectionInput 
+              sections={sections}
+              setSections={setSections}
+              timeSignature={formData.time_signature}
+            />
 
-            {/* Generate Button */}
+            {/* Create Button */}
             <Button
-              onClick={handleGenerate}
-              disabled={isGenerating || !formData.title}
+              onClick={handleCreate}
+              disabled={isGenerating || !formData.title || sections.length === 0}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg py-6"
             >
               {isGenerating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Generating Chart...
+                  Creating Chart...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Chart
+                  <Music className="w-5 h-5 mr-2" />
+                  Create Chart
                 </>
               )}
             </Button>
