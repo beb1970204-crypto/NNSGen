@@ -171,6 +171,11 @@ export default function ChartDisplay({
                   measureIdx={measureIdx}
                   onUpdateMeasure={(updated) => handleUpdateMeasure(section, measureIdx, updated)}
                   onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
+                  onDuplicateMeasure={(measure) => {
+                    const updatedMeasures = [...section.measures];
+                    updatedMeasures.splice(measureIdx + 1, 0, { ...measure });
+                    onUpdateSection(section.id, { measures: updatedMeasures });
+                  }}
                   baseFontSize={baseFontSize}
                   measurePadding={measurePadding}
                   measureHeight={measureHeight}

@@ -28,7 +28,26 @@ export default function ChartCreator() {
   const [sections, setSections] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [referenceText, setReferenceText] = useState("");
+  const [referenceFile, setReferenceFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [useAI, setUseAI] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setReferenceFile(file_url);
+      toast.success("File uploaded successfully");
+    } catch (error) {
+      toast.error("Failed to upload file");
+      console.error(error);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   const handleGenerateWithAI = async () => {
     if (!formData.title) {
@@ -44,7 +63,7 @@ export default function ChartCreator() {
         artist: formData.artist,
         key: formData.key,
         time_signature: formData.time_signature,
-        reference_file_url: referenceText ? null : null // Could upload file here
+        reference_file_url: referenceFile || null
       });
 
       if (response.data.error) {
@@ -223,7 +242,37 @@ export default function ChartCreator() {
               /* AI Generation Interface */
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="referenceText">Reference Material (Optional)</Label>
+                  <Label htmlFor="referenceFile">Upload Reference File (Optional)</Label>
+                  <div className="mt-1 flex items-center gap-3">
+                    <Input
+                      id="referenceFile"
+                      type="file"
+                      accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={handleFileUpload}
+                      disabled={uploadingFile}
+                      className="flex-1"
+                    />
+                    {uploadingFile && (
+                      <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+                    )}
+                    {referenceFile && !uploadingFile && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReferenceFile(null)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Upload chord charts, lyrics, or images to help AI understand the song structure
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="referenceText">Or Paste Reference Text (Optional)</Label>
                   <Textarea
                     id="referenceText"
                     placeholder="Paste chord chart, lyrics with chords, or any reference material..."
@@ -231,9 +280,6 @@ export default function ChartCreator() {
                     onChange={(e) => setReferenceText(e.target.value)}
                     className="mt-1 h-32"
                   />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Paste existing chord charts or lyrics to help AI understand the structure
-                  </p>
                 </div>
 
                 <Button

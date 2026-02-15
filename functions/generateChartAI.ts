@@ -17,10 +17,20 @@ Deno.serve(async (req) => {
 
     // Extract text from reference file if provided
     let referenceText = '';
+    let fileUrls = [];
     if (reference_file_url) {
       try {
-        const fileResponse = await fetch(reference_file_url);
-        referenceText = await fileResponse.text();
+        // Check if it's an image or document
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(reference_file_url);
+        
+        if (isImage) {
+          // For images, pass them to the LLM directly
+          fileUrls = [reference_file_url];
+        } else {
+          // For text/PDF documents, try to extract text
+          const fileResponse = await fetch(reference_file_url);
+          referenceText = await fileResponse.text();
+        }
       } catch (error) {
         console.log('Could not extract text from file:', error.message);
       }
@@ -66,6 +76,7 @@ Use common chord progressions appropriate for the key of ${key}.
 
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: {
         type: "object",
         properties: {

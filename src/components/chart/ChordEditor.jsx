@@ -17,6 +17,7 @@ const NNS_SYMBOLS = [
 export default function ChordEditor({ chord, onSave, onCancel }) {
   const [chordText, setChordText] = useState(chord.chord);
   const [selectedSymbols, setSelectedSymbols] = useState(chord.symbols || []);
+  const [hasDotNotation, setHasDotNotation] = useState(chord.beats && chord.beats !== 4 && chord.beats !== 2);
 
   const handleSmartEntry = (value) => {
     let formatted = value;
@@ -32,6 +33,10 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
     setChordText(formatted);
   };
 
+  const handleDotNotation = () => {
+    setHasDotNotation(!hasDotNotation);
+  };
+
   const toggleSymbol = (symbol) => {
     setSelectedSymbols(prev => 
       prev.includes(symbol) 
@@ -41,7 +46,20 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   };
 
   const handleSave = () => {
-    onSave({ ...chord, chord: chordText, symbols: selectedSymbols });
+    const updatedChord = { 
+      ...chord, 
+      chord: chordText, 
+      symbols: selectedSymbols 
+    };
+    
+    // Set beats to indicate dot notation (3 beats for a dotted note in 4/4)
+    if (hasDotNotation) {
+      updatedChord.beats = 3;
+    } else if (chord.beats === 3) {
+      updatedChord.beats = 4;
+    }
+    
+    onSave(updatedChord);
   };
 
   return (
@@ -66,12 +84,22 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
               handleSave();
             } else if (e.key === 'Escape') {
               onCancel();
+            } else if (e.key === '.') {
+              e.preventDefault();
+              handleDotNotation();
             }
           }}
         />
-        <p className="text-xs text-[#666] mt-1">
-          Tip: Type 6 for 6- (minor), press Enter to save
-        </p>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-xs text-[#666]">
+            Tip: Type 6 for 6-, press . for dot notation
+          </p>
+          {hasDotNotation && (
+            <span className="text-xs px-2 py-0.5 rounded bg-[#FFD700] bg-opacity-20 text-[#FFD700]">
+              ● Dotted
+            </span>
+          )}
+        </div>
       </div>
 
       <Popover>
