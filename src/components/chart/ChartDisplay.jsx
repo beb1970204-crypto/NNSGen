@@ -45,20 +45,29 @@ export default function ChartDisplay({
     return symbols.map(s => symbolMap[s] || s).join(' ');
   };
 
+  const getSectionColor = (label) => {
+    const colors = {
+      'Verse': 'border-l-[#4A90E2]',
+      'Chorus': 'border-l-[#D0021B]',
+      'Bridge': 'border-l-[#F5A623]',
+    };
+    return colors[label] || 'border-l-slate-600';
+  };
+
   return (
-    <div className="space-y-6 font-mono" style={{ fontVariantNumeric: 'lining-nums tabular-nums' }}>
+    <div className="space-y-6 chart-grid">
       {sections.map((section, sectionIdx) => (
-        <div key={section.id || sectionIdx} className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div key={section.id || sectionIdx} className={`bg-[#121212] rounded-lg p-6 border border-[#333333] border-l-4 ${getSectionColor(section.label)}`}>
           {/* Section Header */}
           <div className="mb-4">
-            <h3 className="text-xl font-bold text-indigo-400 inline-block">
-              [{section.label}]
+            <div className="inline-block bg-[#F5F5F5] text-[#121212] px-3 py-1 rounded chart-section-header text-sm">
+              {section.label.toUpperCase()}
               {section.repeat_count > 1 && (
-                <span className="ml-2 text-sm text-slate-400">x{section.repeat_count}</span>
+                <span className="ml-2 font-normal">x{section.repeat_count}</span>
               )}
-            </h3>
+            </div>
             {section.arrangement_cue && (
-              <div className="text-sm text-yellow-400 mt-1 italic">
+              <div className="arrangement-cue text-sm mt-2">
                 {section.arrangement_cue}
               </div>
             )}
@@ -81,24 +90,31 @@ export default function ChartDisplay({
               ) : (
                 <div
                   key={measureIdx}
-                  className={`bg-slate-900 border border-slate-600 rounded ${measurePadding} ${measureHeight} flex flex-col justify-center`}
+                  className={`bg-[#1a1a1a] border-r border-[#333333] ${measurePadding} ${measureHeight} flex flex-col justify-center relative`}
+                  style={{ minWidth: '140px' }}
                 >
-                  <div className={`text-white space-y-1 ${baseFontSize}`}>
+                  <div className={`text-[#F5F5F5] space-y-1 ${baseFontSize} chart-chord`}>
                     {measure.chords?.map((chordObj, chordIdx) => (
                       <div key={chordIdx} className="flex items-center gap-2">
-                        <span className={chordObj.chord === '-' ? 'text-slate-500' : ''}>
+                        <span className={chordObj.chord === '-' ? 'text-[#333333]' : ''}>
                           {renderChord(chordObj.chord)}
+                          {chordObj.beats && chordObj.beats < 4 && measure.chords.length > 1 && (
+                            <span className="text-sm ml-1">({chordObj.beats})</span>
+                          )}
                         </span>
                         {chordObj.symbols?.length > 0 && (
-                          <span className="text-xs text-indigo-300">
+                          <span className="text-xs" style={{ color: '#FFD700' }}>
                             {renderSymbols(chordObj.symbols)}
                           </span>
                         )}
                       </div>
                     ))}
+                    {measure.chords?.length === 2 && (
+                      <div className="absolute bottom-2 left-2 right-2 h-px bg-[#333333]" />
+                    )}
                   </div>
                   {measure.cue && (
-                    <div className="text-xs text-orange-400 mt-1 italic">
+                    <div className="arrangement-cue text-xs mt-2 pt-1 border-t border-[#333333]">
                       {measure.cue}
                     </div>
                   )}
@@ -109,9 +125,10 @@ export default function ChartDisplay({
             {editMode && (
               <button
                 onClick={() => onAddMeasure(section.id)}
-                className="bg-slate-900 border-2 border-dashed border-slate-600 rounded p-3 min-h-[80px] flex items-center justify-center hover:border-indigo-500 hover:bg-slate-800 transition-colors"
+                className="bg-[#1a1a1a] border-2 border-dashed border-[#333333] rounded p-3 min-h-[80px] flex items-center justify-center hover:border-[#FFD700] hover:bg-[#121212] transition-colors"
+                style={{ minWidth: '140px' }}
               >
-                <Plus className="w-6 h-6 text-slate-500" />
+                <Plus className="w-6 h-6 text-[#333333]" />
               </button>
             )}
           </div>

@@ -116,9 +116,9 @@ export default function ChartViewer() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen text-white" style={{ backgroundColor: '#0a0a0a' }}>
       {/* Header */}
-      <div className="bg-slate-800 border-b border-slate-700 px-6 py-4">
+      <div className="bg-[#121212] border-b border-[#333333] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to={createPageUrl("Home")}>
@@ -151,7 +151,7 @@ export default function ChartViewer() {
       </div>
 
       {/* Chart Info Bar */}
-      <div className="bg-slate-800 border-b border-slate-700 px-6 py-3">
+      <div className="bg-[#121212] border-b border-[#333333] px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center gap-6 text-sm flex-wrap">
           <div>
             <span className="text-slate-400">Key:</span>

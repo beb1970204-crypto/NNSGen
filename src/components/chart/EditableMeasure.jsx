@@ -41,15 +41,15 @@ export default function EditableMeasure({
       fermata: "𝄐", bass_up: "↑", bass_down: "↓"
     };
     return (
-      <span className="text-xs text-indigo-300 ml-1">
+      <span className="text-xs ml-1" style={{ color: '#FFD700' }}>
         {symbols.map(s => symbolMap[s]).join(' ')}
       </span>
     );
   };
 
   return (
-    <div className={`bg-slate-900 border border-slate-600 rounded ${measurePadding} ${measureHeight} flex flex-col justify-between relative group`}>
-      <div className={`text-white space-y-1 ${baseFontSize}`}>
+    <div className={`bg-[#1a1a1a] border border-[#333333] rounded ${measurePadding} ${measureHeight} flex flex-col justify-between relative group`} style={{ minWidth: '140px' }}>
+      <div className={`text-[#F5F5F5] space-y-1 ${baseFontSize} chart-chord`}>
         {measure.chords?.map((chordObj, chordIdx) => (
           <div key={chordIdx}>
             {editingChordIdx === chordIdx ? (
@@ -62,9 +62,9 @@ export default function EditableMeasure({
               <div className="flex items-center justify-between group/chord">
                 <button
                   onClick={() => setEditingChordIdx(chordIdx)}
-                  className="flex-1 text-left hover:bg-slate-800 rounded px-1 py-0.5 transition-colors"
+                  className="flex-1 text-left hover:bg-[#121212] rounded px-1 py-0.5 transition-colors"
                 >
-                  {chordObj.chord}
+                  <span className="chart-chord">{chordObj.chord}</span>
                   {renderSymbols(chordObj.symbols)}
                 </button>
                 {measure.chords.length > 1 && (
@@ -110,7 +110,7 @@ export default function EditableMeasure({
       </div>
 
       {measure.cue && (
-        <div className="text-xs text-slate-400 italic mt-2 border-t border-slate-700 pt-1">
+        <div className="arrangement-cue text-xs mt-2 border-t border-[#333333] pt-1">
           {measure.cue}
         </div>
       )}

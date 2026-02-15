@@ -18,6 +18,20 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   const [chordText, setChordText] = useState(chord.chord);
   const [selectedSymbols, setSelectedSymbols] = useState(chord.symbols || []);
 
+  const handleSmartEntry = (value) => {
+    let formatted = value;
+    
+    // Auto-format minor chords with dash notation
+    if (/^[1-7]$/.test(value) && ['2', '3', '6', '7'].includes(value)) {
+      // Common minor degrees in Nashville
+      if (value === '6' || value === '2' || value === '3') {
+        formatted = value + '-';
+      }
+    }
+    
+    setChordText(formatted);
+  };
+
   const toggleSymbol = (symbol) => {
     setSelectedSymbols(prev => 
       prev.includes(symbol) 
@@ -31,15 +45,33 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   };
 
   return (
-    <div className="space-y-3 p-3 bg-slate-800 rounded-lg border border-slate-600">
+    <div className="space-y-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#333333]">
       <div>
         <Input
           value={chordText}
-          onChange={(e) => setChordText(e.target.value)}
-          placeholder="Enter chord (e.g., C, Dm7, F/G)"
-          className="bg-slate-900 border-slate-700 text-white font-mono"
+          onChange={(e) => {
+            const value = e.target.value;
+            // Smart entry for single digit Nashville numbers
+            if (value.length === 1 && /^[1-7]$/.test(value)) {
+              handleSmartEntry(value);
+            } else {
+              setChordText(value);
+            }
+          }}
+          placeholder="Enter chord (e.g., C, 1, 4-, F/G)"
+          className="bg-[#1a1a1a] border-[#333333] text-[#F5F5F5] chart-chord"
           autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSave();
+            } else if (e.key === 'Escape') {
+              onCancel();
+            }
+          }}
         />
+        <p className="text-xs text-[#666] mt-1">
+          Tip: Type 6 for 6- (minor), press Enter to save
+        </p>
       </div>
 
       <Popover>
