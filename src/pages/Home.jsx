@@ -9,6 +9,8 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import ChartCardMenu from "@/components/chart/ChartCardMenu";
 import SetlistDialog from "@/components/setlist/SetlistDialog";
+import ChartCardSkeleton from "@/components/ChartCardSkeleton";
+import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +32,7 @@ export default function Home() {
   const [filterTimeSignature, setFilterTimeSignature] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [showSetlistDialog, setShowSetlistDialog] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const { data: charts, isLoading } = useQuery({
     queryKey: ['charts'],
@@ -193,6 +196,22 @@ export default function Home() {
     setFilterTimeSignature("all");
   };
 
+  // Dynamic stats
+  const statsData = useMemo(() => {
+    const favoritesCount = charts.filter(c => c.starred).length;
+    const recentCount = charts.filter(c => {
+      const diff = new Date() - new Date(c.updated_date);
+      return diff < 7 * 24 * 60 * 60 * 1000; // Last 7 days
+    }).length;
+    
+    return {
+      total: charts.length,
+      favorites: favoritesCount,
+      setlists: setlists.length,
+      recent: recentCount
+    };
+  }, [charts, setlists]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -209,6 +228,12 @@ export default function Home() {
       if (modKey && e.key === 'n') {
         e.preventDefault();
         navigate(createPageUrl("ChartCreator"));
+      }
+      
+      // ?: Show shortcuts
+      if (e.key === '?' && !e.shiftKey) {
+        e.preventDefault();
+        setShowShortcuts(true);
       }
     };
 
@@ -480,8 +505,8 @@ export default function Home() {
               <Music className="w-5 h-5 text-blue-500" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-white mb-1">{charts.length}</div>
-          <div className="text-xs text-green-500 font-medium">+3 this week</div>
+          <div className="text-3xl font-bold text-white mb-1">{statsData.total}</div>
+          <div className="text-xs text-green-500 font-medium">+{statsData.recent} this week</div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
@@ -490,8 +515,8 @@ export default function Home() {
               <Star className="w-5 h-5 text-yellow-500" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-white mb-1">18</div>
-          <div className="text-xs text-[#6b6b6b]">Most played</div>
+          <div className="text-3xl font-bold text-white mb-1">{statsData.favorites}</div>
+          <div className="text-xs text-[#6b6b6b]">Starred charts</div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
@@ -500,8 +525,8 @@ export default function Home() {
               <List className="w-5 h-5 text-orange-500" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-white mb-1">6</div>
-          <div className="text-xs text-[#6b6b6b]">Active gigs</div>
+          <div className="text-3xl font-bold text-white mb-1">{statsData.setlists}</div>
+          <div className="text-xs text-[#6b6b6b]">Total setlists</div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
@@ -517,8 +542,10 @@ export default function Home() {
 
       {/* Charts Grid */}
       {isLoading ? (
-        <div className="text-center py-20">
-          <div className="animate-pulse text-[#6b6b6b]">Loading charts...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <ChartCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredAndSortedCharts.length === 0 ? (
         <div className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-xl p-24 text-center hover:border-[#3a3a3a] transition-all">
@@ -616,6 +643,12 @@ export default function Home() {
         open={showSetlistDialog}
         onOpenChange={setShowSetlistDialog}
         onSave={(data) => createSetlist.mutate(data)}
+      />
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        open={showShortcuts}
+        onOpenChange={setShowShortcuts}
       />
     </div>
   );

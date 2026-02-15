@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,8 @@ export default function ChartViewer() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   const { data: chart, isLoading } = useQuery({
     queryKey: ['chart', chartId],
@@ -96,6 +98,64 @@ export default function ChartViewer() {
   const handleUpdateSection = (sectionId, data) => {
     updateSection.mutate({ sectionId, data });
   };
+
+  const handleSave = () => {
+    toast.success('All changes saved');
+  };
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      // Implement undo logic here
+      toast.info('Undo functionality coming soon');
+    }
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modKey = isMac ? e.metaKey : e.ctrlKey;
+      
+      // Cmd/Ctrl + S: Save
+      if (modKey && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+      
+      // Cmd/Ctrl + Z: Undo
+      if (modKey && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      }
+      
+      // Delete: Delete selected measure
+      if (e.key === 'Delete' && selectedMeasure) {
+        e.preventDefault();
+        handleDeleteSelectedMeasure();
+      }
+      
+      // Arrow keys: Navigate measures
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        if (selectedSection && selectedMeasureIndex !== null) {
+          e.preventDefault();
+          const newIndex = e.key === 'ArrowLeft' 
+            ? Math.max(0, selectedMeasureIndex - 1)
+            : Math.min(selectedSection.measures.length - 1, selectedMeasureIndex + 1);
+          
+          if (newIndex !== selectedMeasureIndex) {
+            handleMeasureClick(
+              selectedSection.measures[newIndex],
+              newIndex,
+              selectedSection
+            );
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedMeasure, selectedMeasureIndex, selectedSection, historyIndex]);
 
   const handleMeasureClick = (measure, measureIdx, section) => {
     setSelectedMeasure(measure);
@@ -277,7 +337,10 @@ export default function ChartViewer() {
   if (isLoading) {
     return (
       <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-white text-xl">Loading chart...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-white text-xl">Loading chart...</div>
+        </div>
       </div>
     );
   }
