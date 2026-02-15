@@ -6,8 +6,6 @@ const NOTE_TO_NUMBER = {
   'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
 };
 
-const SCALE_DEGREES = ['1', '2', '3', '4', '5', '6', '7'];
-
 // Parse chord into root, quality, and extensions
 function parseChord(chord) {
   if (!chord || chord === '-') return null;
