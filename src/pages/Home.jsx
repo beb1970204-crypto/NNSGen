@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import ChartCardMenu from "@/components/chart/ChartCardMenu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ import {
 
 export default function Home() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentView = new URLSearchParams(location.search).get('view') || 'all';
   
@@ -38,6 +40,68 @@ export default function Home() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['charts'] });
+    }
+  });
+
+  const duplicateChart = useMutation({
+    mutationFn: async (chart) => {
+      // Get all sections for this chart
+      const sections = await base44.entities.Section.filter({ chart_id: chart.id });
+      
+      // Create duplicate chart
+      const newChart = await base44.entities.Chart.create({
+        title: `${chart.title} (Copy)`,
+        artist: chart.artist,
+        key: chart.key,
+        time_signature: chart.time_signature,
+        tempo: chart.tempo,
+        display_mode: chart.display_mode,
+        arrangement_notes: chart.arrangement_notes,
+        starred: false
+      });
+      
+      // Duplicate all sections
+      await Promise.all(
+        sections.map(section =>
+          base44.entities.Section.create({
+            chart_id: newChart.id,
+            label: section.label,
+            measures: section.measures,
+            repeat_count: section.repeat_count,
+            arrangement_cue: section.arrangement_cue,
+            modulation_key: section.modulation_key,
+            pivot_cue: section.pivot_cue
+          })
+        )
+      );
+      
+      return newChart;
+    },
+    onSuccess: (newChart) => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success('Chart duplicated successfully');
+      navigate(createPageUrl("ChartViewer") + `?id=${newChart.id}`);
+    },
+    onError: () => {
+      toast.error('Failed to duplicate chart');
+    }
+  });
+
+  const deleteChart = useMutation({
+    mutationFn: async (chartId) => {
+      // Delete all sections first
+      const sections = await base44.entities.Section.filter({ chart_id: chartId });
+      await Promise.all(sections.map(section => base44.entities.Section.delete(section.id)));
+      
+      // Delete the chart
+      await base44.entities.Chart.delete(chartId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success('Chart deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete chart');
     }
   });
 
@@ -354,15 +418,32 @@ export default function Home() {
                       <span className="text-[#a0a0a0]">{chart.time_signature}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleStarred.mutate({ chartId: chart.id, starred: !chart.starred });
-                    }}
-                    className="text-[#6b6b6b] hover:text-yellow-500 transition-all hover:scale-110"
-                  >
-                    <Star className={`w-5 h-5 ${chart.starred ? 'fill-yellow-500 text-yellow-500' : ''}`} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleStarred.mutate({ chartId: chart.id, starred: !chart.starred });
+                      }}
+                      className="text-[#6b6b6b] hover:text-yellow-500 transition-all hover:scale-110 p-1"
+                    >
+                      <Star className={`w-5 h-5 ${chart.starred ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                    </button>
+                    <ChartCardMenu
+                      onDuplicate={() => duplicateChart.mutate(chart)}
+                      onDelete={() => {
+                        if (window.confirm(`Delete "${chart.title}"? This cannot be undone.`)) {
+                          deleteChart.mutate(chart.id);
+                        }
+                      }}
+                      onShare={() => {
+                        navigator.clipboard.writeText(window.location.origin + createPageUrl("ChartViewer") + `?id=${chart.id}`);
+                        toast.success('Link copied to clipboard');
+                      }}
+                      onOpenNewTab={() => {
+                        window.open(createPageUrl("ChartViewer") + `?id=${chart.id}`, '_blank');
+                      }}
+                    />
+                  </div>
                 </div>
                 
                 <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4 mb-4">
