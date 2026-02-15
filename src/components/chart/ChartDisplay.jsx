@@ -54,6 +54,94 @@ export default function ChartDisplay({
     return colors[label] || 'border-l-slate-600';
   };
 
+  const renderMeasureCell = (measure, measureIdx, section) => {
+    const chordCount = measure.chords?.length || 0;
+    const hasSplit = chordCount === 2;
+    const hasDotNotation = measure.chords?.some(c => c.beats && c.beats !== 4 && c.beats !== 2);
+    const hasSyncopation = measure.chords?.some(c => c.chord?.includes('/'));
+
+    return (
+      <div
+        key={measureIdx}
+        className={`bg-[#1a1a1a] border-r border-[#333333] ${measurePadding} ${measureHeight} flex flex-col justify-center relative`}
+        style={{ minWidth: '140px' }}
+      >
+        <div className={`text-[#F5F5F5] ${baseFontSize} chart-chord relative`}>
+          {/* Single Chord - Centered */}
+          {chordCount === 1 && (
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative">
+                {hasDotNotation && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs" style={{ color: '#FFD700' }}>●</span>
+                )}
+                <span className={measure.chords[0].chord === '-' ? 'text-[#333333]' : ''}>
+                  {renderChord(measure.chords[0].chord)}
+                  {hasSyncopation && <span className="ml-1 text-sm opacity-70">/</span>}
+                </span>
+                {measure.chords[0].symbols?.length > 0 && (
+                  <span className="ml-2 text-xs" style={{ color: '#FFD700' }}>
+                    {renderSymbols(measure.chords[0].symbols)}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Split Chords - Two Chords with Underline */}
+          {hasSplit && (
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center justify-around w-full relative">
+                {measure.chords.map((chordObj, chordIdx) => (
+                  <div key={chordIdx} className="relative flex-1 text-center">
+                    {hasDotNotation && chordObj.beats && chordObj.beats !== 2 && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs" style={{ color: '#FFD700' }}>●</span>
+                    )}
+                    <span className={chordObj.chord === '-' ? 'text-[#333333]' : ''}>
+                      {renderChord(chordObj.chord)}
+                    </span>
+                    {chordObj.symbols?.length > 0 && (
+                      <span className="ml-1 text-xs" style={{ color: '#FFD700' }}>
+                        {renderSymbols(chordObj.symbols)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Underline for split chords */}
+              <div className="w-full h-px bg-[#555555] mx-2" />
+            </div>
+          )}
+
+          {/* More than 2 chords - Stacked vertically */}
+          {chordCount > 2 && (
+            <div className="flex flex-col items-center gap-1">
+              {measure.chords.map((chordObj, chordIdx) => (
+                <div key={chordIdx} className="flex items-center gap-2">
+                  <span className={chordObj.chord === '-' ? 'text-[#333333]' : ''}>
+                    {renderChord(chordObj.chord)}
+                    {chordObj.beats && chordObj.beats < 4 && (
+                      <span className="text-sm ml-1">({chordObj.beats})</span>
+                    )}
+                  </span>
+                  {chordObj.symbols?.length > 0 && (
+                    <span className="text-xs" style={{ color: '#FFD700' }}>
+                      {renderSymbols(chordObj.symbols)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {measure.cue && (
+          <div className="arrangement-cue text-xs mt-2 pt-1 border-t border-[#333333]">
+            {measure.cue}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 chart-grid">
       {sections.map((section, sectionIdx) => (
@@ -73,8 +161,8 @@ export default function ChartDisplay({
             )}
           </div>
 
-          {/* Measures Grid */}
-          <div className="grid grid-cols-4 gap-3 md:gap-4">
+          {/* Measures Grid - Responsive: Mobile(4), Tablet(8), Desktop(2-column split) */}
+          <div className="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-8 xl:grid-cols-8 gap-3 md:gap-4">
             {section.measures?.map((measure, measureIdx) => (
               editMode ? (
                 <EditableMeasure
@@ -88,37 +176,7 @@ export default function ChartDisplay({
                   measureHeight={measureHeight}
                 />
               ) : (
-                <div
-                  key={measureIdx}
-                  className={`bg-[#1a1a1a] border-r border-[#333333] ${measurePadding} ${measureHeight} flex flex-col justify-center relative`}
-                  style={{ minWidth: '140px' }}
-                >
-                  <div className={`text-[#F5F5F5] space-y-1 ${baseFontSize} chart-chord`}>
-                    {measure.chords?.map((chordObj, chordIdx) => (
-                      <div key={chordIdx} className="flex items-center gap-2">
-                        <span className={chordObj.chord === '-' ? 'text-[#333333]' : ''}>
-                          {renderChord(chordObj.chord)}
-                          {chordObj.beats && chordObj.beats < 4 && measure.chords.length > 1 && (
-                            <span className="text-sm ml-1">({chordObj.beats})</span>
-                          )}
-                        </span>
-                        {chordObj.symbols?.length > 0 && (
-                          <span className="text-xs" style={{ color: '#FFD700' }}>
-                            {renderSymbols(chordObj.symbols)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    {measure.chords?.length === 2 && (
-                      <div className="absolute bottom-2 left-2 right-2 h-px bg-[#333333]" />
-                    )}
-                  </div>
-                  {measure.cue && (
-                    <div className="arrangement-cue text-xs mt-2 pt-1 border-t border-[#333333]">
-                      {measure.cue}
-                    </div>
-                  )}
-                </div>
+                renderMeasureCell(measure, measureIdx, section)
               )
             ))}
 
