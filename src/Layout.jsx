@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { 
   LayoutGrid, Star, Clock, List, Share2, FolderOpen, 
   Settings, HelpCircle, User, Music2 
@@ -45,6 +46,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-[#141414] border-b border-[#2a2a2a] z-50 flex items-center px-6 shadow-lg">
@@ -131,5 +133,6 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

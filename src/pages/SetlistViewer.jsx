@@ -20,7 +20,7 @@ export default function SetlistViewer() {
   const queryClient = useQueryClient();
   const [addChartDialogOpen, setAddChartDialogOpen] = useState(false);
 
-  const { data: setlist, isLoading } = useQuery({
+  const { data: setlist, isLoading, error } = useQuery({
     queryKey: ['setlist', setlistId],
     queryFn: () => base44.entities.Setlist.get(setlistId),
     enabled: !!setlistId

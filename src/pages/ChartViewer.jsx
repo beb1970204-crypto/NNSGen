@@ -32,7 +32,7 @@ export default function ChartViewer() {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  const { data: chart, isLoading } = useQuery({
+  const { data: chart, isLoading, error } = useQuery({
     queryKey: ['chart', chartId],
     queryFn: () => base44.entities.Chart.get(chartId),
     enabled: !!chartId
@@ -345,13 +345,14 @@ export default function ChartViewer() {
     );
   }
 
-  if (!chart) {
+  if (error || !chart) {
     return (
-      <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-white text-xl mb-4">Chart not found</div>
+      <div className="h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
+        <div className="max-w-md text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Chart not found</h2>
+          <p className="text-[#a0a0a0] mb-6">This chart may have been deleted or you don't have access to it.</p>
           <Link to={createPageUrl("Home")}>
-            <Button variant="outline">Back to Charts</Button>
+            <Button>Back to Charts</Button>
           </Link>
         </div>
       </div>

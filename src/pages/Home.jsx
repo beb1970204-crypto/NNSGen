@@ -34,13 +34,13 @@ export default function Home() {
   const [showSetlistDialog, setShowSetlistDialog] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  const { data: charts, isLoading } = useQuery({
+  const { data: charts, isLoading, error: chartsError } = useQuery({
     queryKey: ['charts'],
     queryFn: () => base44.entities.Chart.list('-updated_date'),
     initialData: [],
   });
 
-  const { data: setlists = [] } = useQuery({
+  const { data: setlists = [], error: setlistsError } = useQuery({
     queryKey: ['setlists'],
     queryFn: () => base44.entities.Setlist.list('-created_date'),
     initialData: []
@@ -540,8 +540,19 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Charts Grid */}
-      {isLoading ? (
+      {/* Error State */}
+      {chartsError ? (
+        <div className="bg-[#1a1a1a] border border-red-600/20 rounded-xl p-12 text-center">
+          <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Failed to load charts</h2>
+          <p className="text-[#a0a0a0] mb-6">There was an error loading your charts. Please try again.</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['charts'] })}>
+            Retry
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <ChartCardSkeleton key={i} />
@@ -582,7 +593,7 @@ export default function Home() {
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-bold text-white mb-2 truncate group-hover:text-red-500 transition-colors">
+                    <h3 className="text-xl font-bold text-white mb-2 truncate group-hover:text-red-500 transition-colors" title={chart.title}>
                       {chart.title}
                     </h3>
                     <div className="flex items-center gap-3 text-sm">
