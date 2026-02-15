@@ -15,13 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
@@ -42,6 +35,12 @@ export default function Home() {
     queryKey: ['charts'],
     queryFn: () => base44.entities.Chart.list('-updated_date'),
     initialData: [],
+  });
+
+  const { data: setlists = [] } = useQuery({
+    queryKey: ['setlists'],
+    queryFn: () => base44.entities.Setlist.list('-created_date'),
+    initialData: []
   });
 
   const toggleStarred = useMutation({
@@ -377,6 +376,101 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Setlists View */}
+      {currentView === 'setlists' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Setlists</h2>
+              <p className="text-[#6b6b6b] text-sm mt-1">Organize your charts for performances</p>
+            </div>
+            <Button onClick={() => setShowSetlistDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Setlist
+            </Button>
+          </div>
+
+          {setlists.length === 0 ? (
+            <div className="text-center py-12 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a]">
+              <List className="w-12 h-12 text-[#6b6b6b] mx-auto mb-4" />
+              <p className="text-[#6b6b6b] mb-4">No setlists yet</p>
+              <Button onClick={() => setShowSetlistDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Setlist
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {setlists.map((setlist) => (
+                <Link
+                  key={setlist.id}
+                  to={createPageUrl("SetlistViewer") + `?id=${setlist.id}`}
+                  className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:border-red-600 hover:bg-[#1e1e1e] transition-all group"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">{setlist.name}</h3>
+                      {setlist.description && (
+                        <p className="text-[#a0a0a0] text-sm mb-3">{setlist.description}</p>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-[#6b6b6b]">
+                        <span>{setlist.chart_ids?.length || 0} charts</span>
+                        {setlist.event_date && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(setlist.event_date).toLocaleDateString()}
+                            </div>
+                          </>
+                        )}
+                        {setlist.venue && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {setlist.venue}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-[#6b6b6b] hover:text-white"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (window.confirm(`Delete "${setlist.name}"?`)) {
+                              deleteSetlist.mutate(setlist.id);
+                            }
+                          }}
+                          className="text-red-500 hover:bg-red-600/20"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Setlist
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Charts View */}
+      {currentView !== 'setlists' && (
+        <>
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-6 mb-10">
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
@@ -514,6 +608,15 @@ export default function Home() {
           ))}
         </div>
       )}
+        </>
+      )}
+
+      {/* Setlist Dialog */}
+      <SetlistDialog
+        open={showSetlistDialog}
+        onOpenChange={setShowSetlistDialog}
+        onSave={(data) => createSetlist.mutate(data)}
+      />
     </div>
   );
 }
