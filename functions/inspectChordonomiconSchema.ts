@@ -11,9 +11,8 @@ Deno.serve(async (req) => {
 
     const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
     
-    // Query for a known song: Sweet Caroline
-    const whereClause = `"title"='Sweet Caroline' AND "artist"='Neil Diamond'`;
-    const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&offset=0&length=1`;
+    // Query for a known song using simpler filter
+    const filterUrl = `https://datasets-server.huggingface.co/slice?dataset=ailsntua/Chordonomicon&config=default&split=train&offset=0&length=5`;
     
     const headers = { 'Accept': 'application/json' };
     if (hfToken) {
