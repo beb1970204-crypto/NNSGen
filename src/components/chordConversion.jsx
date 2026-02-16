@@ -1,5 +1,5 @@
 // Chord to Nashville Number System conversion utilities using TonalJS
-import { Chord, Key, Distance, Note } from "tonal";
+import { Chord, Key, distance, Note } from "tonal";
 
 // Convert chord to NNS notation using TonalJS
 export function chordToNNS(chord, chartKey) {
@@ -18,7 +18,7 @@ export function chordToNNS(chord, chartKey) {
   }
   
   // Calculate the interval from the key tonic to the chord root
-  const interval = Distance.interval(chartKey.replace('m', ''), chordData.tonic);
+  const interval = distance(chartKey.replace('m', ''), chordData.tonic);
   
   // Map intervals to scale degrees
   const intervalToDegree = {

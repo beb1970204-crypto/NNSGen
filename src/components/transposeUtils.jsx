@@ -1,12 +1,12 @@
 // Transposition utilities for chord charts using TonalJS
-import { Chord, Distance, transpose } from "tonal";
+import { transpose, distance } from "tonal";
 
 // Transpose a single chord using TonalJS
 export function transposeChord(chord, fromKey, toKey) {
   if (!chord || chord === '-') return chord;
   
   // Calculate the interval between keys using TonalJS
-  const interval = Distance.interval(fromKey, toKey);
+  const interval = distance(fromKey, toKey);
   
   if (!interval) return chord;
   
