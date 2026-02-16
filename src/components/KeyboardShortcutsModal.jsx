@@ -28,14 +28,14 @@ export default function KeyboardShortcutsModal({ open, onOpenChange }) {
               <span className="text-[#a0a0a0]">{shortcut.action}</span>
               <div className="flex items-center gap-1">
                 {shortcut.keys.map((key, keyIdx) => (
-                  <React.Fragment key={keyIdx}>
+                  <div key={keyIdx}>
                     <kbd className="px-2 py-1 text-xs font-semibold bg-[#2a2a2a] border border-[#3a3a3a] rounded">
                       {key}
                     </kbd>
                     {keyIdx < shortcut.keys.length - 1 && (
                       <span className="text-[#6b6b6b]">+</span>
                     )}
-                  </React.Fragment>
+                  </div>
                 ))}
               </div>
             </div>
