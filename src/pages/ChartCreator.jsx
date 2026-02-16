@@ -55,12 +55,12 @@ export default function ChartCreator() {
     setIsGenerating(true);
 
     try {
-      // Generate chart with AI
+      // Call the orchestrator function which handles Chordonomicon lookup and LLM fallback
       const response = await base44.functions.invoke('generateChartAI', {
         title,
-        artist,
-        key: "C",
-        time_signature: "4/4",
+        artist: artist || null,
+        key: "C",  // Default, will be overridden if found in Chordonomicon
+        time_signature: "4/4",  // Default, will be overridden if found in Chordonomicon
         reference_file_url: referenceFile || null
       });
 
@@ -68,37 +68,15 @@ export default function ChartCreator() {
         throw new Error(response.data.error);
       }
 
-      const generatedData = response.data;
+      const { chart_id, source, message } = response.data;
 
-      // Create the chart with AI-generated data
-      const chart = await base44.entities.Chart.create({
-        title,
-        artist,
-        key: generatedData.key || "C",
-        time_signature: generatedData.time_signature || "4/4",
-        display_mode: "chords",
-        reference_file_url: referenceFile || null
-      });
-
-      // Create sections
-      const sectionPromises = (generatedData.sections || []).map((section) => 
-        base44.entities.Section.create({
-          chart_id: chart.id,
-          label: section.label,
-          measures: section.measures,
-          repeat_count: section.repeat_count || 1,
-          arrangement_cue: section.arrangement_cue || "",
-          modulation_key: section.modulation_key || null,
-          pivot_cue: section.pivot_cue || null
-        })
-      );
-
-      await Promise.all(sectionPromises);
-
-      toast.success("Chart created successfully!");
-      navigate(createPageUrl("ChartViewer") + `?id=${chart.id}`);
+      // Show success message based on source
+      toast.success(message || "Chart created successfully!");
+      
+      // Navigate to the newly created chart
+      navigate(createPageUrl("ChartViewer") + `?id=${chart_id}`);
     } catch (error) {
-      toast.error("Failed to generate chart");
+      toast.error(error.message || "Failed to generate chart");
       console.error(error);
     } finally {
       setIsGenerating(false);
