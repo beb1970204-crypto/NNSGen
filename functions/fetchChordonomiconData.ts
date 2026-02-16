@@ -140,19 +140,28 @@ async function searchByTitleArtist(title, artist, hfToken) {
     }
 
     // Find the best match by comparing title and artist case-insensitively
-    const titleLower = title.toLowerCase();
-    const artistLower = artist.toLowerCase();
+    const titleLower = title.toLowerCase().trim();
+    const artistLower = artist.toLowerCase().trim();
     
     const bestMatch = data.rows.find(item => {
       const rowData = item.row;
-      return rowData.title?.toLowerCase() === titleLower && 
-             rowData.artist?.toLowerCase() === artistLower;
+      const rowTitle = rowData.title?.toLowerCase().trim();
+      const rowArtist = rowData.artist?.toLowerCase().trim();
+      return rowTitle === titleLower && rowArtist === artistLower;
     });
 
     if (!bestMatch) {
+      // Log what we got for debugging
+      console.log(`No exact match found. Looking for: "${titleLower}" by "${artistLower}"`);
+      console.log('Search results:', data.rows.map(r => ({ title: r.row.title, artist: r.row.artist })));
+      
       return Response.json({ 
         found: false,
-        message: 'No exact match found in search results'
+        message: 'No exact match found in search results',
+        debug: {
+          searched_for: { title: titleLower, artist: artistLower },
+          results: data.rows.slice(0, 3).map(r => ({ title: r.row.title, artist: r.row.artist }))
+        }
       });
     }
 
