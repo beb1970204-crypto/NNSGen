@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.log('Spotify search failed:', error.message);
+    console.error('Spotify error details:', error.response?.data || error.message);
   }
 
   // Step 2: Try to fetch from Chordonomicon database using Spotify IDs
@@ -73,6 +74,7 @@ Deno.serve(async (req) => {
       }
     } catch (error) {
       console.log('Chordonomicon lookup failed, falling back to LLM:', error.message);
+      console.error('Chordonomicon error details:', error.response?.data || error.message);
     }
   }
 
