@@ -31,12 +31,9 @@ Deno.serve(async (req) => {
     } 
     // Strategy 2: Search by title and artist (fallback for version mismatches)
     else if (title && artist) {
-      const sanitizedTitle = title.replace(/'/g, "''");
-      const sanitizedArtist = artist.replace(/'/g, "''");
-      
-      // Note: Hugging Face /filter doesn't support LOWER() function
-      // So we search with exact case matching
-      whereClause = `"title"='${sanitizedTitle}' AND "artist"='${sanitizedArtist}'`;
+      // Note: The /filter endpoint doesn't support LOWER() or LIKE operations
+      // Instead, we'll use the /search endpoint which supports fuzzy matching
+      return await searchByTitleArtist(title, artist, hfToken);
     } else {
       return Response.json({ error: 'Insufficient search criteria' }, { status: 400 });
     }
@@ -110,6 +107,89 @@ Deno.serve(async (req) => {
     }, { status: 500 });
   }
 });
+
+// Search by title and artist using the /search endpoint (for fuzzy matching)
+async function searchByTitleArtist(title, artist, hfToken) {
+  try {
+    // Use the /search endpoint which supports full-text search
+    const searchUrl = `https://datasets-server.huggingface.co/search?dataset=ailsntua/Chordonomicon&config=default&split=train&query=${encodeURIComponent(title + ' ' + artist)}&limit=10`;
+    
+    const headers = {
+      'Accept': 'application/json'
+    };
+    
+    if (hfToken) {
+      headers['Authorization'] = `Bearer ${hfToken}`;
+    }
+
+    const response = await fetch(searchUrl, { headers });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Hugging Face search API error:', response.status, errorText);
+      throw new Error(`Hugging Face search API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.rows || data.rows.length === 0) {
+      return Response.json({ 
+        found: false,
+        message: 'Song not found in Chordonomicon database via title/artist search'
+      });
+    }
+
+    // Find the best match by comparing title and artist case-insensitively
+    const titleLower = title.toLowerCase();
+    const artistLower = artist.toLowerCase();
+    
+    const bestMatch = data.rows.find(item => {
+      const rowData = item.row;
+      return rowData.title?.toLowerCase() === titleLower && 
+             rowData.artist?.toLowerCase() === artistLower;
+    });
+
+    if (!bestMatch) {
+      return Response.json({ 
+        found: false,
+        message: 'No exact match found in search results'
+      });
+    }
+
+    const rowData = bestMatch.row;
+    const chordsString = rowData.chords;
+    
+    if (!chordsString) {
+      return Response.json({ 
+        found: false,
+        message: 'No chord data available for this song'
+      });
+    }
+
+    const sections = parseChordProgressionToSections(chordsString);
+
+    return Response.json({
+      found: true,
+      data: {
+        chart_data: {
+          spotify_song_id: rowData.spotify_song_id,
+          spotify_artist_id: rowData.spotify_artist_id,
+          genres: rowData.genres,
+          release_date: rowData.release_date,
+          decade: rowData.decade
+        },
+        sections: sections
+      }
+    });
+  } catch (error) {
+    console.error('Title/artist search error:', error);
+    return Response.json({ 
+      found: false,
+      error: 'Failed to search by title/artist',
+      details: error.message
+    }, { status: 500 });
+  }
+}
 
 // Parse Chordonomicon's chord string format into sections
 function parseChordProgressionToSections(chordsString) {
