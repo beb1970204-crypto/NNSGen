@@ -40,7 +40,7 @@ export default function ChartViewer() {
 
   const { data: sections = [] } = useQuery({
     queryKey: ['sections', chartId],
-    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, undefined, undefined, 'dev'),
+    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, '-updated_date', 100, 'dev'),
     enabled: !!chartId,
     initialData: []
   });
