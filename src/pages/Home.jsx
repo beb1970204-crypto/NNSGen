@@ -36,19 +36,19 @@ export default function Home() {
 
   const { data: charts, isLoading, error: chartsError } = useQuery({
     queryKey: ['charts'],
-    queryFn: () => base44.entities.Chart.list('-updated_date'),
+    queryFn: () => base44.entities.Chart.list('-updated_date', undefined, 'dev'),
     initialData: [],
   });
 
   const { data: setlists = [], error: setlistsError } = useQuery({
     queryKey: ['setlists'],
-    queryFn: () => base44.entities.Setlist.list('-created_date'),
+    queryFn: () => base44.entities.Setlist.list('-created_date', undefined, 'dev'),
     initialData: []
   });
 
   const toggleStarred = useMutation({
     mutationFn: async ({ chartId, starred }) => {
-      await base44.entities.Chart.update(chartId, { starred });
+      await base44.entities.Chart.update(chartId, { starred }, 'dev');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['charts'] });
@@ -58,7 +58,7 @@ export default function Home() {
   const duplicateChart = useMutation({
     mutationFn: async (chart) => {
       // Get all sections for this chart
-      const sections = await base44.entities.Section.filter({ chart_id: chart.id });
+      const sections = await base44.entities.Section.filter({ chart_id: chart.id }, undefined, undefined, 'dev');
       
       // Create duplicate chart
       const newChart = await base44.entities.Chart.create({
@@ -70,7 +70,7 @@ export default function Home() {
         display_mode: chart.display_mode,
         arrangement_notes: chart.arrangement_notes,
         starred: false
-      });
+      }, 'dev');
       
       // Duplicate all sections
       await Promise.all(
@@ -83,7 +83,7 @@ export default function Home() {
             arrangement_cue: section.arrangement_cue,
             modulation_key: section.modulation_key,
             pivot_cue: section.pivot_cue
-          })
+          }, 'dev')
         )
       );
       
@@ -102,11 +102,11 @@ export default function Home() {
   const deleteChart = useMutation({
     mutationFn: async (chartId) => {
       // Delete all sections first
-      const sections = await base44.entities.Section.filter({ chart_id: chartId });
-      await Promise.all(sections.map(section => base44.entities.Section.delete(section.id)));
+      const sections = await base44.entities.Section.filter({ chart_id: chartId }, undefined, undefined, 'dev');
+      await Promise.all(sections.map(section => base44.entities.Section.delete(section.id, 'dev')));
       
       // Delete the chart
-      await base44.entities.Chart.delete(chartId);
+      await base44.entities.Chart.delete(chartId, 'dev');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['charts'] });
@@ -118,7 +118,7 @@ export default function Home() {
   });
 
   const createSetlist = useMutation({
-    mutationFn: (data) => base44.entities.Setlist.create(data),
+    mutationFn: (data) => base44.entities.Setlist.create(data, 'dev'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['setlists'] });
       toast.success('Setlist created');
@@ -127,7 +127,7 @@ export default function Home() {
   });
 
   const deleteSetlist = useMutation({
-    mutationFn: (setlistId) => base44.entities.Setlist.delete(setlistId),
+    mutationFn: (setlistId) => base44.entities.Setlist.delete(setlistId, 'dev'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['setlists'] });
       toast.success('Setlist deleted');
