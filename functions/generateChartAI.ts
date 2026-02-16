@@ -36,10 +36,20 @@ Deno.serve(async (req) => {
 
   if (spotifyData) {
     try {
-      const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+      // Pass 1: Try exact Spotify ID match
+      let chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
         spotify_song_id: spotifyData.spotify_song_id,
         spotify_artist_id: spotifyData.spotify_artist_id
       });
+
+      // Pass 2: If not found, try title/artist match (catches version mismatches)
+      if (!chordonomiconResponse.data?.found) {
+        console.log('Spotify ID not found, trying title/artist match...');
+        chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+          title: title,
+          artist: artist
+        });
+      }
 
       if (chordonomiconResponse.data?.found) {
         // We found the song in Chordonomicon!

@@ -8,23 +8,35 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { spotify_song_id, spotify_artist_id } = await req.json();
+  const { spotify_song_id, spotify_artist_id, title, artist } = await req.json();
 
-  if (!spotify_song_id) {
-    return Response.json({ error: 'Spotify song ID is required' }, { status: 400 });
+  if (!spotify_song_id && !title) {
+    return Response.json({ error: 'Either spotify_song_id or title is required' }, { status: 400 });
   }
 
   try {
     const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
     
-    // Sanitize inputs to prevent injection
-    const sanitizedSongId = spotify_song_id.replace(/'/g, "''");
-    const sanitizedArtistId = spotify_artist_id ? spotify_artist_id.replace(/'/g, "''") : null;
+    let whereClause;
     
-    // Build the where clause with proper syntax: "column"='value'
-    let whereClause = `"spotify_song_id"='${sanitizedSongId}'`;
-    if (sanitizedArtistId) {
-      whereClause += ` AND "spotify_artist_id"='${sanitizedArtistId}'`;
+    // Strategy 1: Search by Spotify IDs (most precise)
+    if (spotify_song_id) {
+      const sanitizedSongId = spotify_song_id.replace(/'/g, "''");
+      const sanitizedArtistId = spotify_artist_id ? spotify_artist_id.replace(/'/g, "''") : null;
+      
+      whereClause = `"spotify_song_id"='${sanitizedSongId}'`;
+      if (sanitizedArtistId) {
+        whereClause += ` AND "spotify_artist_id"='${sanitizedArtistId}'`;
+      }
+    } 
+    // Strategy 2: Search by title and artist (fallback for version mismatches)
+    else if (title && artist) {
+      const sanitizedTitle = title.replace(/'/g, "''").toLowerCase();
+      const sanitizedArtist = artist.replace(/'/g, "''").toLowerCase();
+      
+      whereClause = `LOWER("title")='${sanitizedTitle}' AND LOWER("artist")='${sanitizedArtist}'`;
+    } else {
+      return Response.json({ error: 'Insufficient search criteria' }, { status: 400 });
     }
 
     // Use the /filter endpoint with correct SQL-like syntax
