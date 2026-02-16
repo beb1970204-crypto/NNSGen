@@ -29,16 +29,22 @@ Deno.serve(async (req) => {
         whereClause += ` AND "spotify_artist_id"='${sanitizedArtistId}'`;
       }
     } 
-    // Strategy 2: Search by title and artist (fallback for version mismatches)
+    // Strategy 2: Search by title and artist (Fallback with Smart Cleaning)
     else if (title && artist) {
-      // Note: The /filter endpoint doesn't support LOWER() or LIKE operations
-      // Instead, we'll use the /search endpoint which supports fuzzy matching
-      return await searchByTitleArtist(title, artist, hfToken);
+      // Clean the title to remove Spotify metadata (e.g. " - Remastered 2009")
+      // We cannot use SQL functions like LOWER() or LIKE on the HF /filter endpoint
+      const cleanTitle = cleanSpotifyTitle(title);
+      const sanitizedTitle = cleanTitle.replace(/'/g, "''");
+      const sanitizedArtist = artist.replace(/'/g, "''");
+      
+      // Exact match required due to API limits.
+      // We rely on Spotify and Chordonomicon both using Title Case standard.
+      whereClause = `"title"='${sanitizedTitle}' AND "artist"='${sanitizedArtist}'`;
     } else {
       return Response.json({ error: 'Insufficient search criteria' }, { status: 400 });
     }
 
-    // Use the /filter endpoint with correct SQL-like syntax
+    // Use the /filter endpoint
     const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&limit=1`;
     
     const headers = {
@@ -52,9 +58,18 @@ Deno.serve(async (req) => {
     const response = await fetch(filterUrl, { headers });
 
     if (!response.ok) {
+      // If 500 error, it likely means the query syntax is still invalid for the endpoint
+      if (response.status === 500) {
+        console.warn('HF Filter API failed, likely due to query syntax. Falling back.');
+        return Response.json({
+          found: false,
+          message: 'Complex query failed, falling back to LLM'
+        });
+      }
+      
       const errorText = await response.text();
       console.error('Hugging Face API error:', response.status, errorText);
-      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -108,96 +123,17 @@ Deno.serve(async (req) => {
   }
 });
 
-// Search by title and artist using the /search endpoint (for fuzzy matching)
-async function searchByTitleArtist(title, artist, hfToken) {
-  try {
-    // Use the /search endpoint which supports full-text search
-    const searchUrl = `https://datasets-server.huggingface.co/search?dataset=ailsntua/Chordonomicon&config=default&split=train&query=${encodeURIComponent(title + ' ' + artist)}&limit=10`;
-    
-    const headers = {
-      'Accept': 'application/json'
-    };
-    
-    if (hfToken) {
-      headers['Authorization'] = `Bearer ${hfToken}`;
-    }
-
-    const response = await fetch(searchUrl, { headers });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Hugging Face search API error:', response.status, errorText);
-      throw new Error(`Hugging Face search API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.rows || data.rows.length === 0) {
-      return Response.json({ 
-        found: false,
-        message: 'Song not found in Chordonomicon database via title/artist search'
-      });
-    }
-
-    // Find the best match by comparing title and artist case-insensitively
-    const titleLower = title.toLowerCase().trim();
-    const artistLower = artist.toLowerCase().trim();
-    
-    const bestMatch = data.rows.find(item => {
-      const rowData = item.row;
-      const rowTitle = rowData.title?.toLowerCase().trim();
-      const rowArtist = rowData.artist?.toLowerCase().trim();
-      return rowTitle === titleLower && rowArtist === artistLower;
-    });
-
-    if (!bestMatch) {
-      // Log what we got for debugging
-      console.log(`No exact match found. Looking for: "${titleLower}" by "${artistLower}"`);
-      console.log('Search results:', data.rows.map(r => ({ title: r.row.title, artist: r.row.artist })));
-      
-      return Response.json({ 
-        found: false,
-        message: 'No exact match found in search results',
-        debug: {
-          searched_for: { title: titleLower, artist: artistLower },
-          results: data.rows.slice(0, 3).map(r => ({ title: r.row.title, artist: r.row.artist }))
-        }
-      });
-    }
-
-    const rowData = bestMatch.row;
-    const chordsString = rowData.chords;
-    
-    if (!chordsString) {
-      return Response.json({ 
-        found: false,
-        message: 'No chord data available for this song'
-      });
-    }
-
-    const sections = parseChordProgressionToSections(chordsString);
-
-    return Response.json({
-      found: true,
-      data: {
-        chart_data: {
-          spotify_song_id: rowData.spotify_song_id,
-          spotify_artist_id: rowData.spotify_artist_id,
-          genres: rowData.genres,
-          release_date: rowData.release_date,
-          decade: rowData.decade
-        },
-        sections: sections
-      }
-    });
-  } catch (error) {
-    console.error('Title/artist search error:', error);
-    return Response.json({ 
-      found: false,
-      error: 'Failed to search by title/artist',
-      details: error.message
-    }, { status: 500 });
-  }
+// Helper to clean Spotify titles for better matching
+function cleanSpotifyTitle(title) {
+  if (!title) return "";
+  
+  return title
+    // Remove " - Remastered...", " - Live...", " - 2009 Mix"
+    // Matches " - " followed by any text to the end
+    .split(' - ')[0]
+    // Remove parenthetical info that looks like metadata e.g. "(Remastered 2009)"
+    .replace(/\s*\(.*(remaster|mix|live|version|edit|deluxe).*\)/i, '')
+    .trim();
 }
 
 // Parse Chordonomicon's chord string format into sections
@@ -205,7 +141,6 @@ function parseChordProgressionToSections(chordsString) {
   const sections = [];
   
   // Relaxed regex that handles <tag_1>, <tag>, and case insensitivity
-  // Matches: <(word)(optional: _number)>
   const sectionPattern = /<([a-zA-Z]+)(?:_(\d+))?>/g;
   
   // Check if the song starts with chords BEFORE the first tag (Implicit Intro)
@@ -222,13 +157,11 @@ function parseChordProgressionToSections(chordsString) {
   
   // Use standard split behavior
   const parts = chordsString.split(sectionPattern);
-  // split with capturing groups returns: [text, capture1, capture2, text, capture1, capture2...]
-  // If regex is /<([a-zA-Z]+)(?:_(\d+))?>/, we get 3 parts per split (text, label, number)
   
   for (let i = 1; i < parts.length; i += 3) {
-    const type = parts[i]; // e.g. "verse"
-    const number = parts[i + 1] || '1'; // e.g. "1" or undefined -> default to '1'
-    const content = parts[i + 2]; // The chords
+    const type = parts[i];
+    const number = parts[i + 1] || '1';
+    const content = parts[i + 2];
     
     if (content && content.trim()) {
       const label = mapLabel(type);
@@ -297,11 +230,10 @@ function createSection(label, chordsText) {
 function normalizeChordName(chord) {
   if (!chord || chord === '-') return '-';
   
-  // Chordonomicon uses formats like 'Amin' instead of 'Am', 'Cmaj7' etc.
   let normalized = chord
-    .replace(/min$/, 'm')      // Amin -> Am
-    .replace(/maj/, 'maj')     // Keep maj as is
-    .replace(/no3(?:rd)?/i, '5');  // no3/no3rd -> 5 (power chord)
+    .replace(/min$/, 'm')
+    .replace(/maj/, 'maj')
+    .replace(/no3(?:rd)?/i, '5');
   
   return normalized;
 }
