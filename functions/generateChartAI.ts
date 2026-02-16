@@ -1,133 +1,102 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+  const base44 = createClientFromRequest(req);
+  const user = await base44.auth.me();
+  
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { title, artist, key, time_signature, reference_file_url } = await req.json();
+
+  if (!title) {
+    return Response.json({ error: 'Title is required' }, { status: 400 });
+  }
+
+  // Step 1: Try to fetch from Chordonomicon database first
+  let chartData = null;
+  let sectionsData = null;
+  let sourceMethod = 'chordonomicon';
+
+  const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+    song_title: title,
+    artist_name: artist
+  });
+
+  if (chordonomiconResponse.data.found) {
+    // We found the song in Chordonomicon!
+    const chordonomiconData = chordonomiconResponse.data.data;
     
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Use Chordonomicon data but allow user overrides for key/time_signature
+    chartData = {
+      title: title,
+      artist: artist || chordonomiconData.chart_data.artist,
+      key: key || 'C', // Default to C if not provided (Chordonomicon doesn't provide key)
+      time_signature: time_signature || '4/4', // Default to 4/4
+      reference_file_url: reference_file_url,
+      spotify_song_id: chordonomiconData.chart_data.spotify_song_id,
+      spotify_artist_id: chordonomiconData.chart_data.spotify_artist_id,
+      genres: chordonomiconData.chart_data.genres,
+      release_date: chordonomiconData.chart_data.release_date
+    };
+    
+    sectionsData = chordonomiconData.sections;
+  } else {
+    // Step 2: Fallback to LLM generation if not found in Chordonomicon
+    sourceMethod = 'llm';
+    
+    if (!key || !time_signature) {
+      return Response.json({ 
+        error: 'Song not found in database. Please provide key and time signature to generate chart with AI.' 
+      }, { status: 400 });
     }
 
-    const { title, artist, key, time_signature, reference_file_url } = await req.json();
-
-    if (!title || !key || !time_signature) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // Extract text from reference file if provided
-    let referenceText = '';
-    let fileUrls = [];
-    if (reference_file_url) {
-      try {
-        // Check if it's an image or document
-        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(reference_file_url);
-        
-        if (isImage) {
-          // For images, pass them to the LLM directly
-          fileUrls = [reference_file_url];
-        } else {
-          // For text/PDF documents, try to extract text
-          const fileResponse = await fetch(reference_file_url);
-          referenceText = await fileResponse.text();
-        }
-      } catch (error) {
-        console.log('Could not extract text from file:', error.message);
-      }
-    }
-
-    // Build the prompt for LLM
-    const prompt = `You are a professional music chart transcription assistant specializing in Nashville Number System (NNS) charts.
-
-Task: Convert the following song information into a structured chord chart with sections and measures.
-
-Song Details:
-- Title: ${title}
-- Artist: ${artist || 'Unknown'}
-- Key: ${key}
-- Time Signature: ${time_signature}
-
-${referenceText ? `Reference Material (chord chart or lyrics with chords):\n${referenceText}\n` : ''}
-
-Instructions:
-1. Analyze the song structure and identify sections (Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro)
-2. For each section, create measures with chord progressions
-3. Each measure should contain chords that fit the ${time_signature} time signature
-4. If no reference material is provided, create a basic structure with common chord progressions in the key of ${key}
-5. Use standard chord notation (e.g., C, Dm7, F/G, Gsus4)
-6. Keep it simple and playable for musicians
-
-Output Format:
-- Return an array of sections
-- Each section has: label, measures array, repeat_count (default 1), arrangement_cue (optional)
-- Each measure has: chords array with {chord, beats, symbols[]}
-- Ensure beats add up to the time signature (e.g., 4 beats for 4/4)
-
-${!referenceText ? `
-Since no reference material was provided, create a basic song structure:
-- Intro (2-4 measures)
-- Verse (4-8 measures) 
-- Chorus (4-8 measures)
-- Bridge (4 measures)
-- Outro (2-4 measures)
-
-Use common chord progressions appropriate for the key of ${key}.
-` : ''}`;
-
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          sections: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                label: {
-                  type: "string",
-                  enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"]
-                },
-                measures: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      chords: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            chord: { type: "string" },
-                            beats: { type: "number" },
-                            symbols: {
-                              type: "array",
-                              items: { type: "string" }
-                            }
-                          },
-                          required: ["chord", "beats", "symbols"]
-                        }
-                      },
-                      cue: { type: "string" }
-                    },
-                    required: ["chords"]
-                  }
-                },
-                repeat_count: { type: "number" },
-                arrangement_cue: { type: "string" }
-              },
-              required: ["label", "measures"]
-            }
-          }
-        },
-        required: ["sections"]
-      }
+    const llmResponse = await base44.functions.invoke('generateChartWithLLM', {
+      title,
+      artist,
+      key,
+      time_signature,
+      reference_file_url
     });
 
-    return Response.json(response);
-  } catch (error) {
-    console.error('Error generating chart:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    if (!llmResponse.data.sections) {
+      return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
+    }
+
+    chartData = {
+      title,
+      artist: artist || 'Unknown',
+      key,
+      time_signature,
+      reference_file_url
+    };
+    
+    sectionsData = llmResponse.data.sections;
   }
+
+  // Step 3: Create Chart entity
+  const chart = await base44.entities.Chart.create(chartData);
+
+  // Step 4: Create Section entities
+  const sectionPromises = sectionsData.map((section) =>
+    base44.entities.Section.create({
+      chart_id: chart.id,
+      label: section.label,
+      measures: section.measures,
+      repeat_count: section.repeat_count || 1,
+      arrangement_cue: section.arrangement_cue || ''
+    })
+  );
+
+  await Promise.all(sectionPromises);
+
+  return Response.json({ 
+    success: true,
+    chart_id: chart.id,
+    source: sourceMethod,
+    message: sourceMethod === 'chordonomicon' 
+      ? 'Chart generated from Chordonomicon database'
+      : 'Chart generated using AI'
+  });
 });
