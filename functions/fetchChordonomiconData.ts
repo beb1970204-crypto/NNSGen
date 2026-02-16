@@ -1,10 +1,4 @@
-// Polyfill Node.js globals for DuckDB compatibility in Deno
-import { Buffer } from "node:buffer";
-globalThis.Buffer = Buffer;
-globalThis.global = globalThis;
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { DuckDBInstance } from 'npm:@duckdb/node-api@1.1.3';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -21,55 +15,43 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize DuckDB in-memory instance
-    const instance = await DuckDBInstance.create(":memory:");
-    const connection = await instance.connect();
-
-    // Load httpfs extension for hf:// protocol support
-    await connection.runAndReadAll("INSTALL httpfs; LOAD httpfs;");
-
-    // Set Hugging Face authentication token
     const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
-    if (hfToken) {
-      await connection.runAndReadAll(`CREATE SECRET hf_token (TYPE HUGGINGFACE, TOKEN '${hfToken}');`);
-    }
-
-    // Construct SQL query with predicate pushdown to the @~parquet branch
-    // This scans ALL shards efficiently, fetching only relevant row groups
-    let query = `
-      SELECT *
-      FROM read_parquet('hf://datasets/ailsntua/Chordonomicon@~parquet/**/*.parquet')
-      WHERE spotify_song_id = ?
-    `;
-
-    const params = [spotify_song_id];
-
-    // Add artist filter if provided for more precise matching
+    
+    // Build the where clause with proper syntax: "column"='value'
+    let whereClause = `"spotify_song_id"='${spotify_song_id}'`;
     if (spotify_artist_id) {
-      query += ` AND spotify_artist_id = ?`;
-      params.push(spotify_artist_id);
+      whereClause += ` AND "spotify_artist_id"='${spotify_artist_id}'`;
     }
 
-    // Execute query with parameterized inputs
-    const preparedStatement = await connection.prepare(query);
-    const result = await preparedStatement.runAndReadAll(...params);
-    const rows = result.getRows();
+    // Use the /filter endpoint with correct SQL-like syntax
+    const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&limit=1`;
+    
+    const headers = {
+      'Accept': 'application/json'
+    };
+    
+    if (hfToken) {
+      headers['Authorization'] = `Bearer ${hfToken}`;
+    }
 
-    // Close resources
-    await preparedStatement.close();
-    await connection.close();
-    await instance.close();
+    const response = await fetch(filterUrl, { headers });
+
+    if (!response.ok) {
+      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
 
     // Check if we got any results
-    if (!rows || rows.length === 0) {
+    if (!data.rows || data.rows.length === 0) {
       return Response.json({ 
         found: false,
         message: 'Song not found in Chordonomicon database'
       });
     }
 
-    // Get the first (best) match
-    const rowData = rows[0];
+    // Extract row data from the response structure
+    const rowData = data.rows[0].row;
 
     // Parse the chord progression from the chords column
     const chordsString = rowData.chords;
@@ -100,10 +82,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('DuckDB query error:', error);
+    console.error('Chordonomicon query error:', error);
     return Response.json({ 
       found: false,
-      error: 'Failed to query Chordonomicon database with DuckDB',
+      error: 'Failed to query Chordonomicon database',
       details: error.message
     }, { status: 500 });
   }
