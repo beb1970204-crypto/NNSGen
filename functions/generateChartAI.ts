@@ -14,41 +14,59 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Title is required' }, { status: 400 });
   }
 
-  // Step 1: Try to fetch from Chordonomicon database first
-  let chartData = null;
-  let sectionsData = null;
-  let dataSource = 'chordonomicon';
-
+  // Step 1: Search for the song on Spotify
+  let spotifyData = null;
   try {
-    const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+    const spotifyResponse = await base44.functions.invoke('searchSpotify', {
       song_title: title,
       artist_name: artist
     });
 
-    if (chordonomiconResponse.data?.found) {
-    // We found the song in Chordonomicon!
-    const chordonomiconData = chordonomiconResponse.data.data;
-    
-    // Use Chordonomicon data but allow user overrides for key/time_signature
-    chartData = {
-      title: title,
-      artist: artist || chordonomiconData.chart_data.artist,
-      key: key || 'C', // Default to C if not provided (Chordonomicon doesn't provide key)
-      time_signature: time_signature || '4/4', // Default to 4/4
-      reference_file_url: reference_file_url,
-      spotify_song_id: chordonomiconData.chart_data.spotify_song_id,
-      spotify_artist_id: chordonomiconData.chart_data.spotify_artist_id,
-      genres: chordonomiconData.chart_data.genres,
-      release_date: chordonomiconData.chart_data.release_date
-    };
-    
-      sectionsData = chordonomiconData.sections;
+    if (spotifyResponse.data?.found) {
+      spotifyData = spotifyResponse.data;
     }
   } catch (error) {
-    console.log('Chordonomicon lookup failed, falling back to LLM:', error.message);
+    console.log('Spotify search failed:', error.message);
   }
 
-  // Step 2: Fallback to LLM generation if not found in Chordonomicon
+  // Step 2: Try to fetch from Chordonomicon database using Spotify IDs
+  let chartData = null;
+  let sectionsData = null;
+  let dataSource = 'chordonomicon';
+
+  if (spotifyData) {
+    try {
+      const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+        spotify_song_id: spotifyData.spotify_song_id,
+        spotify_artist_id: spotifyData.spotify_artist_id
+      });
+
+      if (chordonomiconResponse.data?.found) {
+        // We found the song in Chordonomicon!
+        const chordonomiconData = chordonomiconResponse.data.data;
+        
+        // Use Chordonomicon data but allow user overrides for key/time_signature
+        chartData = {
+          title: spotifyData.title,
+          artist: spotifyData.artist,
+          key: key || 'C', // Default to C if not provided (Chordonomicon doesn't provide key)
+          time_signature: time_signature || '4/4', // Default to 4/4
+          reference_file_url: reference_file_url,
+          spotify_song_id: chordonomiconData.chart_data.spotify_song_id,
+          spotify_artist_id: chordonomiconData.chart_data.spotify_artist_id,
+          genres: chordonomiconData.chart_data.genres,
+          release_date: chordonomiconData.chart_data.release_date,
+          decade: chordonomiconData.chart_data.decade
+        };
+        
+        sectionsData = chordonomiconData.sections;
+      }
+    } catch (error) {
+      console.log('Chordonomicon lookup failed, falling back to LLM:', error.message);
+    }
+  }
+
+  // Step 3: Fallback to LLM generation if not found in Chordonomicon
   if (!chartData || !sectionsData) {
     dataSource = 'llm';
     
@@ -88,11 +106,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Step 3: Create Chart entity with data_source field
+  // Step 4: Create Chart entity with data_source field
   chartData.data_source = dataSource;
   const chart = await base44.entities.Chart.create(chartData);
 
-  // Step 4: Create Section entities
+  // Step 5: Create Section entities
   const sectionPromises = sectionsData.map((section) =>
     base44.entities.Section.create({
       chart_id: chart.id,

@@ -8,43 +8,32 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { song_title, artist_name } = await req.json();
+  const { spotify_song_id, spotify_artist_id } = await req.json();
 
-  if (!song_title) {
-    return Response.json({ error: 'Song title is required' }, { status: 400 });
+  if (!spotify_song_id) {
+    return Response.json({ error: 'Spotify song ID is required' }, { status: 400 });
   }
 
-  // First, get the first row to see what columns are available
   const headers = {};
   const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
   if (hfToken) {
     headers["Authorization"] = `Bearer ${hfToken}`;
   }
 
-  // Use /rows endpoint to check actual column names
-  const rowsUrl = `https://datasets-server.huggingface.co/rows?dataset=ailsntua/Chordonomicon&config=default&split=train&offset=0&length=1`;
-  const rowsResponse = await fetch(rowsUrl, { headers });
+  // Query Chordonomicon using the spotify_song_id
+  const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(JSON.stringify({ spotify_song_id }))}`;
   
-  if (!rowsResponse.ok) {
+  const filterResponse = await fetch(filterUrl, { headers });
+  
+  if (!filterResponse.ok) {
     return Response.json({ 
       found: false,
-      error: 'Failed to access Chordonomicon dataset',
-      details: await rowsResponse.text()
+      error: 'Failed to query Chordonomicon dataset',
+      details: await filterResponse.text()
     });
   }
 
-  const rowsData = await rowsResponse.json();
-  
-  // Log the actual columns for debugging
-  console.log('Available columns:', rowsData.features?.map(f => f.name));
-  
-  // For now, return column info so we can see what's available
-  return Response.json({
-    found: false,
-    message: 'Inspecting dataset structure',
-    columns: rowsData.features?.map(f => f.name),
-    sample_row: rowsData.rows?.[0]?.row
-  });
+  const searchData = await filterResponse.json();
   
   // Check if we got any results
   if (!searchData.rows || searchData.rows.length === 0) {
@@ -59,7 +48,6 @@ Deno.serve(async (req) => {
   const rowData = firstMatch.row;
 
   // Parse the chord progression from the chords column
-  // Format: <section_label_number> chord1 chord2 ... <next_section_label_number> ...
   const chordsString = rowData.chords;
   
   if (!chordsString) {
@@ -77,10 +65,6 @@ Deno.serve(async (req) => {
     found: true,
     data: {
       chart_data: {
-        title: song_title,
-        artist: artist_name || 'Unknown',
-        // Note: Chordonomicon doesn't provide key/time signature directly
-        // These would need to be inferred or provided by user
         spotify_song_id: rowData.spotify_song_id,
         spotify_artist_id: rowData.spotify_artist_id,
         genres: rowData.genres,
@@ -161,7 +145,6 @@ function normalizeChordName(chord) {
   if (!chord || chord === '-') return '-';
   
   // Chordonomicon uses formats like 'Amin' instead of 'Am', 'Cmaj7' etc.
-  // Convert common patterns
   let normalized = chord
     .replace(/min$/, 'm')      // Amin -> Am
     .replace(/maj/, 'maj')     // Keep maj as is
