@@ -34,20 +34,20 @@ export default function ChartViewer() {
 
   const { data: chart, isLoading, error } = useQuery({
     queryKey: ['chart', chartId],
-    queryFn: () => base44.entities.Chart.get(chartId, 'dev'),
+    queryFn: () => base44.entities.Chart.get(chartId),
     enabled: !!chartId
   });
 
   const { data: sections = [] } = useQuery({
     queryKey: ['sections', chartId],
-    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, '-updated_date', 100, 'dev'),
+    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, '-updated_date', 100),
     enabled: !!chartId,
     initialData: []
   });
 
   const updateChart = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.Chart.update(chartId, data, 'dev');
+      await base44.entities.Chart.update(chartId, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
@@ -56,7 +56,7 @@ export default function ChartViewer() {
   });
 
   const toggleDisplayMode = async (mode) => {
-    await base44.entities.Chart.update(chartId, { display_mode: mode }, 'dev');
+    await base44.entities.Chart.update(chartId, { display_mode: mode });
     queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
 
@@ -78,7 +78,7 @@ export default function ChartViewer() {
   });
 
   const updateSection = useMutation({
-    mutationFn: ({ sectionId, data }) => base44.entities.Section.update(sectionId, data, 'dev'),
+    mutationFn: ({ sectionId, data }) => base44.entities.Section.update(sectionId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
     },
@@ -221,7 +221,7 @@ export default function ChartViewer() {
         measures: [{ chords: [{ chord: '-', beats: 4, symbols: [] }], cue: '' }],
         repeat_count: 1
       };
-      await base44.entities.Section.create(newSection, 'dev');
+      await base44.entities.Section.create(newSection);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
@@ -231,7 +231,7 @@ export default function ChartViewer() {
 
   const deleteSection = useMutation({
     mutationFn: async (sectionId) => {
-      await base44.entities.Section.delete(sectionId, 'dev');
+      await base44.entities.Section.delete(sectionId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
@@ -250,7 +250,7 @@ export default function ChartViewer() {
         modulation_key: section.modulation_key,
         pivot_cue: section.pivot_cue
       };
-      await base44.entities.Section.create(duplicated, 'dev');
+      await base44.entities.Section.create(duplicated);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
@@ -272,7 +272,7 @@ export default function ChartViewer() {
     try {
       await Promise.all(
         reorderedSections.map((section, index) =>
-          base44.entities.Section.update(section.id, { order: index }, 'dev')
+          base44.entities.Section.update(section.id, { order: index })
         )
       );
       toast.success('Sections reordered');
