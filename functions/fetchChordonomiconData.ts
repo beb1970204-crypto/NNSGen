@@ -31,10 +31,12 @@ Deno.serve(async (req) => {
     } 
     // Strategy 2: Search by title and artist (fallback for version mismatches)
     else if (title && artist) {
-      const sanitizedTitle = title.replace(/'/g, "''").toLowerCase();
-      const sanitizedArtist = artist.replace(/'/g, "''").toLowerCase();
+      const sanitizedTitle = title.replace(/'/g, "''");
+      const sanitizedArtist = artist.replace(/'/g, "''");
       
-      whereClause = `LOWER("title")='${sanitizedTitle}' AND LOWER("artist")='${sanitizedArtist}'`;
+      // Note: Hugging Face /filter doesn't support LOWER() function
+      // So we search with exact case matching
+      whereClause = `"title"='${sanitizedTitle}' AND "artist"='${sanitizedArtist}'`;
     } else {
       return Response.json({ error: 'Insufficient search criteria' }, { status: 400 });
     }
