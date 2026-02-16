@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
 import { transpose, distance } from 'npm:tonal@6.0.1';
 
 Deno.serve(async (req) => {
