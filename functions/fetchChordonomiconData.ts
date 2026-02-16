@@ -1,3 +1,8 @@
+// Polyfill Node.js globals for DuckDB compatibility in Deno
+import { Buffer } from "node:buffer";
+globalThis.Buffer = Buffer;
+globalThis.global = globalThis;
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { DuckDBInstance } from 'npm:@duckdb/node-api@1.1.3';
 
@@ -20,23 +25,38 @@ Deno.serve(async (req) => {
     const instance = await DuckDBInstance.create(":memory:");
     const connection = await instance.connect();
 
+    // Load httpfs extension for hf:// protocol support
+    await connection.runAndReadAll("INSTALL httpfs; LOAD httpfs;");
+
+    // Set Hugging Face authentication token
+    const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
+    if (hfToken) {
+      await connection.runAndReadAll(`CREATE SECRET hf_token (TYPE HUGGINGFACE, TOKEN '${hfToken}');`);
+    }
+
     // Construct SQL query with predicate pushdown to the @~parquet branch
+    // This scans ALL shards efficiently, fetching only relevant row groups
     let query = `
       SELECT *
       FROM read_parquet('hf://datasets/ailsntua/Chordonomicon@~parquet/**/*.parquet')
-      WHERE spotify_song_id = '${spotify_song_id}'
+      WHERE spotify_song_id = ?
     `;
+
+    const params = [spotify_song_id];
 
     // Add artist filter if provided for more precise matching
     if (spotify_artist_id) {
-      query += ` AND spotify_artist_id = '${spotify_artist_id}'`;
+      query += ` AND spotify_artist_id = ?`;
+      params.push(spotify_artist_id);
     }
 
-    // Execute query and read all results
-    const result = await connection.runAndReadAll(query);
+    // Execute query with parameterized inputs
+    const preparedStatement = await connection.prepare(query);
+    const result = await preparedStatement.runAndReadAll(...params);
     const rows = result.getRows();
 
-    // Close connection and instance
+    // Close resources
+    await preparedStatement.close();
     await connection.close();
     await instance.close();
 
