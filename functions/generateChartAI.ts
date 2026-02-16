@@ -110,8 +110,10 @@ Deno.serve(async (req) => {
       sectionsData = llmResponse.data.sections;
     } catch (llmError) {
       console.error('LLM generation failed:', llmError);
+      console.error('LLM error details:', llmError.response?.data || llmError.message);
       return Response.json({ 
-        error: 'Failed to generate chart. Please try again or check your inputs.' 
+        error: 'Failed to generate chart. Please try again or check your inputs.',
+        details: llmError.message
       }, { status: 500 });
     }
   }
