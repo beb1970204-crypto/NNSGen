@@ -41,9 +41,10 @@ Deno.serve(async (req) => {
   
   if (!searchResponse.ok) {
     return Response.json({ 
+      found: false,
       error: 'Failed to search Chordonomicon dataset',
       details: await searchResponse.text()
-    }, { status: searchResponse.status });
+    });
   }
 
   const searchData = await searchResponse.json();
