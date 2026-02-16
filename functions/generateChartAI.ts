@@ -402,11 +402,11 @@ Deno.serve(async (req) => {
 
   // Step 4: Create Chart entity with data_source field
   chartData.data_source = dataSource;
-  const chart = await base44.entities.Chart.create(chartData);
+  const chart = await base44.asServiceRole.entities.Chart.create(chartData);
 
   // Step 5: Create Section entities
   const sectionPromises = sectionsData.map((section) =>
-    base44.entities.Section.create({
+    base44.asServiceRole.entities.Section.create({
       chart_id: chart.id,
       label: section.label,
       measures: section.measures,
