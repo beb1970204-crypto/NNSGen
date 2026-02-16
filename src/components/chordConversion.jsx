@@ -1,66 +1,54 @@
-// Chord to Nashville Number System conversion utilities
+// Chord to Nashville Number System conversion utilities using TonalJS
+import { Chord, Key, Distance, Note } from "tonal";
 
-const NOTE_TO_NUMBER = {
-  'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-  'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
-  'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
-};
-
-// Parse chord into root, quality, and extensions
-function parseChord(chord) {
-  if (!chord || chord === '-') return null;
-  
-  const match = chord.match(/^([A-G][b#]?)(m|min|maj|M|dim|aug)?(.*)$/);
-  if (!match) return null;
-  
-  const [, root, quality = '', extensions = ''] = match;
-  return { root, quality, extensions };
-}
-
-// Get scale degree from root note relative to key
-function getScaleDegree(root, key) {
-  const rootNum = NOTE_TO_NUMBER[root];
-  const keyNum = NOTE_TO_NUMBER[key];
-  if (rootNum === undefined || keyNum === undefined) return null;
-  
-  const degree = (rootNum - keyNum + 12) % 12;
-  const scaleMap = [0, 2, 4, 5, 7, 9, 11]; // Major scale intervals
-  const degreeIndex = scaleMap.indexOf(degree);
-  
-  if (degreeIndex !== -1) {
-    return degreeIndex + 1;
-  }
-  
-  // Handle chromatic notes (not in major scale)
-  const chromaticMap = { 1: '♭2', 3: '♭3', 6: '♭5', 8: '♭6', 10: '♭7' };
-  return chromaticMap[degree] || '?';
-}
-
-// Convert chord to NNS notation
-export function chordToNNS(chord, key) {
+// Convert chord to NNS notation using TonalJS
+export function chordToNNS(chord, chartKey) {
   if (!chord || chord === '-') return '-';
   
-  const parsed = parseChord(chord);
-  if (!parsed) return chord;
+  // Parse the chord using TonalJS
+  const chordData = Chord.get(chord);
+  if (!chordData || chordData.empty) return chord;
   
-  const { root, quality, extensions } = parsed;
-  const degree = getScaleDegree(root, key);
+  // Get the key data using TonalJS
+  const keyData = Key.majorKey(chartKey);
+  if (!keyData || keyData.tonic === '') {
+    // Try as minor key
+    const minorKeyData = Key.minorKey(chartKey);
+    if (!minorKeyData || minorKeyData.tonic === '') return chord;
+  }
   
-  if (!degree) return chord;
+  // Calculate the interval from the key tonic to the chord root
+  const interval = Distance.interval(chartKey.replace('m', ''), chordData.tonic);
+  
+  // Map intervals to scale degrees
+  const intervalToDegree = {
+    '1P': '1', 'P1': '1',
+    '2M': '2', 'M2': '2', '2m': '♭2', 'm2': '♭2',
+    '3M': '3', 'M3': '3', '3m': '♭3', 'm3': '♭3',
+    '4P': '4', 'P4': '4', '4A': '♯4', 'A4': '♯4',
+    '5P': '5', 'P5': '5', '5d': '♭5', 'd5': '♭5',
+    '6M': '6', 'M6': '6', '6m': '♭6', 'm6': '♭6',
+    '7M': '7', 'M7': '7', '7m': '♭7', 'm7': '♭7'
+  };
+  
+  let degree = intervalToDegree[interval] || '?';
   
   // Add quality suffix
-  let nnsNotation = degree.toString();
-  if (quality.toLowerCase().includes('m')) {
+  let nnsNotation = degree;
+  const quality = chordData.quality.toLowerCase();
+  
+  if (quality.includes('minor') || quality === 'm') {
     nnsNotation += '-';
-  } else if (quality.toLowerCase().includes('maj') || quality === 'M') {
+  } else if (quality.includes('major') && chordData.quality !== 'Major') {
     nnsNotation += 'Δ';
-  } else if (quality.toLowerCase().includes('dim')) {
+  } else if (quality.includes('dim')) {
     nnsNotation += '°';
-  } else if (quality.toLowerCase().includes('aug')) {
+  } else if (quality.includes('aug')) {
     nnsNotation += '+';
   }
   
-  // Add extensions
+  // Add extensions (7, 9, sus, etc.)
+  const extensions = chordData.aliases[0]?.replace(chordData.tonic, '').replace(chordData.quality, '') || '';
   nnsNotation += extensions;
   
   return nnsNotation;
