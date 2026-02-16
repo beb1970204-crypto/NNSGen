@@ -14,40 +14,37 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Song title is required' }, { status: 400 });
   }
 
-  // Use /filter endpoint for precise column-based matching
-  // Construct SQL-like where clause (column names in double quotes, values in single quotes)
-  const whereConditions = [];
-  
-  // Escape single quotes in input for SQL syntax
-  const escapedTitle = song_title.replace(/'/g, "''");
-  whereConditions.push(`"song_title"='${escapedTitle}'`);
-  
-  if (artist_name) {
-    const escapedArtist = artist_name.replace(/'/g, "''");
-    whereConditions.push(`"artist_name"='${escapedArtist}'`);
-  }
-  
-  const whereClause = whereConditions.join(' AND ');
-  const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&offset=0&length=1`;
-
-  // Include Authorization header if token is available
+  // First, get the first row to see what columns are available
   const headers = {};
   const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
   if (hfToken) {
     headers["Authorization"] = `Bearer ${hfToken}`;
   }
 
-  const searchResponse = await fetch(filterUrl, { headers });
+  // Use /rows endpoint to check actual column names
+  const rowsUrl = `https://datasets-server.huggingface.co/rows?dataset=ailsntua/Chordonomicon&config=default&split=train&offset=0&length=1`;
+  const rowsResponse = await fetch(rowsUrl, { headers });
   
-  if (!searchResponse.ok) {
+  if (!rowsResponse.ok) {
     return Response.json({ 
       found: false,
-      error: 'Failed to search Chordonomicon dataset',
-      details: await searchResponse.text()
+      error: 'Failed to access Chordonomicon dataset',
+      details: await rowsResponse.text()
     });
   }
 
-  const searchData = await searchResponse.json();
+  const rowsData = await rowsResponse.json();
+  
+  // Log the actual columns for debugging
+  console.log('Available columns:', rowsData.features?.map(f => f.name));
+  
+  // For now, return column info so we can see what's available
+  return Response.json({
+    found: false,
+    message: 'Inspecting dataset structure',
+    columns: rowsData.features?.map(f => f.name),
+    sample_row: rowsData.rows?.[0]?.row
+  });
   
   // Check if we got any results
   if (!searchData.rows || searchData.rows.length === 0) {
