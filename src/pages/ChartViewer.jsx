@@ -10,7 +10,7 @@ import SongSettingsSidebar from "@/components/chart/SongSettingsSidebar";
 import MeasurePropertiesSidebar from "@/components/chart/MeasurePropertiesSidebar";
 import ChartToolbar from "@/components/chart/ChartToolbar";
 import { toast } from "sonner";
-import { transposeSectionMeasures } from "@/components/transposeUtils";
+
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   DropdownMenu,
@@ -62,18 +62,10 @@ export default function ChartViewer() {
 
   const transposeChart = useMutation({
     mutationFn: async (newKey) => {
-      const originalKey = chart.key;
-      
-      // Update chart key
-      await base44.entities.Chart.update(chartId, { key: newKey });
-      
-      // Transpose all sections
-      const transposePromises = sections.map(section => {
-        const transposedMeasures = transposeSectionMeasures(section.measures, originalKey, newKey);
-        return base44.entities.Section.update(section.id, { measures: transposedMeasures });
+      await base44.functions.invoke('transposeChart', {
+        chart_id: chartId,
+        target_key: newKey
       });
-      
-      await Promise.all(transposePromises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chart', chartId] });

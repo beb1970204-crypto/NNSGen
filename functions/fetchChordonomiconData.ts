@@ -17,10 +17,14 @@ Deno.serve(async (req) => {
   try {
     const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
     
+    // Sanitize inputs to prevent injection
+    const sanitizedSongId = spotify_song_id.replace(/'/g, "''");
+    const sanitizedArtistId = spotify_artist_id ? spotify_artist_id.replace(/'/g, "''") : null;
+    
     // Build the where clause with proper syntax: "column"='value'
-    let whereClause = `"spotify_song_id"='${spotify_song_id}'`;
-    if (spotify_artist_id) {
-      whereClause += ` AND "spotify_artist_id"='${spotify_artist_id}'`;
+    let whereClause = `"spotify_song_id"='${sanitizedSongId}'`;
+    if (sanitizedArtistId) {
+      whereClause += ` AND "spotify_artist_id"='${sanitizedArtistId}'`;
     }
 
     // Use the /filter endpoint with correct SQL-like syntax
@@ -95,64 +99,93 @@ Deno.serve(async (req) => {
 function parseChordProgressionToSections(chordsString) {
   const sections = [];
   
-  // Split by section markers (e.g., <intro_1>, <verse_1>, <chorus_1>)
-  const sectionPattern = /<(\w+)_(\d+)>/g;
-  const parts = chordsString.split(sectionPattern);
+  // Relaxed regex that handles <tag_1>, <tag>, and case insensitivity
+  // Matches: <(word)(optional: _number)>
+  const sectionPattern = /<([a-zA-Z]+)(?:_(\d+))?>/g;
   
-  // Process in groups of 3: [text_before, label, number, chords_text, ...]
-  for (let i = 1; i < parts.length; i += 3) {
-    const sectionType = parts[i]; // e.g., 'intro', 'verse', 'chorus'
-    const sectionNumber = parts[i + 1]; // e.g., '1', '2'
-    const chordsText = parts[i + 2]?.trim(); // The actual chords
-    
-    if (!chordsText) continue;
-
-    // Map Chordonomicon section labels to our Section entity labels
-    const labelMap = {
-      'intro': 'Intro',
-      'verse': 'Verse',
-      'pre': 'Pre',
-      'prechorus': 'Pre',
-      'chorus': 'Chorus',
-      'bridge': 'Bridge',
-      'solo': 'Instrumental Solo',
-      'instrumental': 'Instrumental Solo',
-      'interlude': 'Instrumental Solo',
-      'outro': 'Outro'
-    };
-
-    const label = labelMap[sectionType.toLowerCase()] || 'Verse';
-
-    // Split chords by whitespace
-    const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim());
-    
-    // Group chords into measures (assume 4 chords per measure for 4/4 time)
-    const measures = [];
-    const chordsPerMeasure = 4;
-    
-    for (let j = 0; j < chordArray.length; j += chordsPerMeasure) {
-      const measureChords = chordArray.slice(j, j + chordsPerMeasure);
-      const beatsPerChord = 4 / measureChords.length;
-      
-      measures.push({
-        chords: measureChords.map(chord => ({
-          chord: normalizeChordName(chord),
-          beats: beatsPerChord,
-          symbols: []
-        })),
-        cue: ''
-      });
+  // Check if the song starts with chords BEFORE the first tag (Implicit Intro)
+  const firstTagMatch = sectionPattern.exec(chordsString);
+  if (firstTagMatch && firstTagMatch.index > 0) {
+    const introChords = chordsString.substring(0, firstTagMatch.index).trim();
+    if (introChords) {
+      sections.push(createSection('Intro', introChords));
     }
+  }
+  
+  // Reset regex
+  sectionPattern.lastIndex = 0;
+  
+  // Use standard split behavior
+  const parts = chordsString.split(sectionPattern);
+  // split with capturing groups returns: [text, capture1, capture2, text, capture1, capture2...]
+  // If regex is /<([a-zA-Z]+)(?:_(\d+))?>/, we get 3 parts per split (text, label, number)
+  
+  for (let i = 1; i < parts.length; i += 3) {
+    const type = parts[i]; // e.g. "verse"
+    const number = parts[i + 1] || '1'; // e.g. "1" or undefined -> default to '1'
+    const content = parts[i + 2]; // The chords
+    
+    if (content && content.trim()) {
+      const label = mapLabel(type);
+      sections.push(createSection(label, content));
+    }
+  }
+  
+  // Fallback: If no sections found (no tags), treat whole string as a generic Verse
+  if (sections.length === 0 && chordsString.trim()) {
+    sections.push(createSection('Verse', chordsString));
+  }
+  
+  return sections;
+}
 
-    sections.push({
-      label,
-      measures,
-      repeat_count: 1,
-      arrangement_cue: ''
+// Helper to map Chordonomicon section labels to our Section entity labels
+function mapLabel(type) {
+  const labelMap = {
+    'intro': 'Intro',
+    'verse': 'Verse',
+    'pre': 'Pre',
+    'prechorus': 'Pre',
+    'chorus': 'Chorus',
+    'bridge': 'Bridge',
+    'solo': 'Instrumental Solo',
+    'instrumental': 'Instrumental Solo',
+    'interlude': 'Instrumental Solo',
+    'outro': 'Outro'
+  };
+  
+  return labelMap[type.toLowerCase()] || 'Verse';
+}
+
+// Helper to create a section from chord content
+function createSection(label, chordsText) {
+  // Split chords by whitespace
+  const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim());
+  
+  // Group chords into measures (assume 4 chords per measure for 4/4 time)
+  const measures = [];
+  const chordsPerMeasure = 4;
+  
+  for (let j = 0; j < chordArray.length; j += chordsPerMeasure) {
+    const measureChords = chordArray.slice(j, j + chordsPerMeasure);
+    const beatsPerChord = 4 / measureChords.length;
+    
+    measures.push({
+      chords: measureChords.map(chord => ({
+        chord: normalizeChordName(chord),
+        beats: beatsPerChord,
+        symbols: []
+      })),
+      cue: ''
     });
   }
-
-  return sections;
+  
+  return {
+    label,
+    measures,
+    repeat_count: 1,
+    arrangement_cue: ''
+  };
 }
 
 // Normalize chord names from Chordonomicon format to standard notation
@@ -163,7 +196,7 @@ function normalizeChordName(chord) {
   let normalized = chord
     .replace(/min$/, 'm')      // Amin -> Am
     .replace(/maj/, 'maj')     // Keep maj as is
-    .replace(/no3d/, 'sus2');  // no3d -> sus2 approximation
+    .replace(/no3(?:rd)?/i, '5');  // no3/no3rd -> 5 (power chord)
   
   return normalized;
 }
