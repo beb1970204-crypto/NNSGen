@@ -14,13 +14,30 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Song title is required' }, { status: 400 });
   }
 
-  // Construct search query - combine title and artist for better matching
-  const searchQuery = artist_name ? `${song_title} ${artist_name}` : song_title;
-
-  // Step 1: Use /search endpoint to find potential matches
-  const searchUrl = `https://datasets-server.huggingface.co/search?dataset=ailsntua/Chordonomicon&config=default&split=train&query=${encodeURIComponent(searchQuery)}`;
+  // Use /filter endpoint for precise column-based matching
+  // Construct SQL-like where clause (column names in double quotes, values in single quotes)
+  const whereConditions = [];
   
-  const searchResponse = await fetch(searchUrl);
+  // Escape single quotes in input for SQL syntax
+  const escapedTitle = song_title.replace(/'/g, "''");
+  whereConditions.push(`"song_title"='${escapedTitle}'`);
+  
+  if (artist_name) {
+    const escapedArtist = artist_name.replace(/'/g, "''");
+    whereConditions.push(`"artist_name"='${escapedArtist}'`);
+  }
+  
+  const whereClause = whereConditions.join(' AND ');
+  const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&offset=0&length=1`;
+
+  // Include Authorization header if token is available
+  const headers = {};
+  const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
+  if (hfToken) {
+    headers["Authorization"] = `Bearer ${hfToken}`;
+  }
+
+  const searchResponse = await fetch(filterUrl, { headers });
   
   if (!searchResponse.ok) {
     return Response.json({ 
