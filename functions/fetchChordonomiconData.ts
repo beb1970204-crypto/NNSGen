@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import duckdb from 'npm:duckdb@1.1.3';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -14,66 +15,81 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Spotify song ID is required' }, { status: 400 });
   }
 
-  const headers = {};
-  const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
-  if (hfToken) {
-    headers["Authorization"] = `Bearer ${hfToken}`;
-  }
+  try {
+    // Initialize DuckDB database
+    const db = new duckdb.Database(':memory:');
+    const connection = db.connect();
 
-  // Query Chordonomicon using the spotify_song_id
-  const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(JSON.stringify({ spotify_song_id }))}`;
-  
-  const filterResponse = await fetch(filterUrl, { headers });
-  
-  if (!filterResponse.ok) {
-    return Response.json({ 
-      found: false,
-      error: 'Failed to query Chordonomicon dataset',
-      details: await filterResponse.text()
-    });
-  }
+    // Construct SQL query with predicate pushdown
+    let sqlQuery = `
+      SELECT * FROM read_parquet('hf://datasets/ailsntua/Chordonomicon@~parquet/**/*.parquet') 
+      WHERE spotify_song_id = '${spotify_song_id}'
+    `;
 
-  const searchData = await filterResponse.json();
-  
-  // Check if we got any results
-  if (!searchData.rows || searchData.rows.length === 0) {
-    return Response.json({ 
-      found: false,
-      message: 'Song not found in Chordonomicon database'
-    });
-  }
-
-  // Get the first (best) match
-  const firstMatch = searchData.rows[0];
-  const rowData = firstMatch.row;
-
-  // Parse the chord progression from the chords column
-  const chordsString = rowData.chords;
-  
-  if (!chordsString) {
-    return Response.json({ 
-      found: false,
-      message: 'No chord data available for this song'
-    });
-  }
-
-  // Parse sections from the chords string
-  const sections = parseChordProgressionToSections(chordsString);
-
-  // Return structured data ready for Chart and Section entity creation
-  return Response.json({
-    found: true,
-    data: {
-      chart_data: {
-        spotify_song_id: rowData.spotify_song_id,
-        spotify_artist_id: rowData.spotify_artist_id,
-        genres: rowData.genres,
-        release_date: rowData.release_date,
-        decade: rowData.decade
-      },
-      sections: sections
+    // Add artist filter if provided for more precise matching
+    if (spotify_artist_id) {
+      sqlQuery += ` AND spotify_artist_id = '${spotify_artist_id}'`;
     }
-  });
+
+    // Execute query
+    const queryResult = await new Promise((resolve, reject) => {
+      connection.all(sqlQuery, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    // Close connection
+    connection.close();
+    db.close();
+
+    // Check if we got any results
+    if (!queryResult || queryResult.length === 0) {
+      return Response.json({ 
+        found: false,
+        message: 'Song not found in Chordonomicon database'
+      });
+    }
+
+    // Get the first (best) match
+    const rowData = queryResult[0];
+
+    // Parse the chord progression from the chords column
+    const chordsString = rowData.chords;
+    
+    if (!chordsString) {
+      return Response.json({ 
+        found: false,
+        message: 'No chord data available for this song'
+      });
+    }
+
+    // Parse sections from the chords string
+    const sections = parseChordProgressionToSections(chordsString);
+
+    // Return structured data ready for Chart and Section entity creation
+    return Response.json({
+      found: true,
+      data: {
+        chart_data: {
+          spotify_song_id: rowData.spotify_song_id,
+          spotify_artist_id: rowData.spotify_artist_id,
+          genres: rowData.genres,
+          release_date: rowData.release_date,
+          decade: rowData.decade
+        },
+        sections: sections
+      }
+    });
+
+  } catch (error) {
+    console.error('DuckDB query error:', error);
+    return Response.json({ 
+      found: false,
+      error: 'Failed to query Chordonomicon database with DuckDB',
+      details: error.message
+    }, { status: 500 });
+  }
 });
 
 // Parse Chordonomicon's chord string format into sections
@@ -109,7 +125,7 @@ function parseChordProgressionToSections(chordsString) {
     const label = labelMap[sectionType.toLowerCase()] || 'Verse';
 
     // Split chords by whitespace
-    const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim());
+    const chordArray = chordsString.split(/\s+/).filter(c => c && c.trim());
     
     // Group chords into measures (assume 4 chords per measure for 4/4 time)
     const measures = [];
