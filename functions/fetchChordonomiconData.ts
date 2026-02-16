@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import * as duckdb from 'npm:duckdb-async@1.1.3';
+import parquet from 'npm:parquetjs@0.11.2';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -16,73 +16,104 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize DuckDB database (in-memory)
-    const db = await duckdb.Database.create(':memory:');
-
-    // Construct SQL query with predicate pushdown
-    let sqlQuery = `
-      SELECT * FROM read_parquet('hf://datasets/ailsntua/Chordonomicon@~parquet/**/*.parquet') 
-      WHERE spotify_song_id = ?
-    `;
+    // Fetch the Parquet file list from Hugging Face
+    const refsUrl = 'https://huggingface.co/api/datasets/ailsntua/Chordonomicon/parquet/default/train';
+    const refsResponse = await fetch(refsUrl);
     
-    const params = [spotify_song_id];
-
-    // Add artist filter if provided for more precise matching
-    if (spotify_artist_id) {
-      sqlQuery += ` AND spotify_artist_id = ?`;
-      params.push(spotify_artist_id);
+    if (!refsResponse.ok) {
+      throw new Error('Failed to fetch Parquet file list');
     }
-
-    // Execute query
-    const queryResult = await db.all(sqlQuery, ...params);
-
-    // Close database
-    await db.close();
-
-    // Check if we got any results
-    if (!queryResult || queryResult.length === 0) {
-      return Response.json({ 
-        found: false,
-        message: 'Song not found in Chordonomicon database'
-      });
-    }
-
-    // Get the first (best) match
-    const rowData = queryResult[0];
-
-    // Parse the chord progression from the chords column
-    const chordsString = rowData.chords;
     
-    if (!chordsString) {
-      return Response.json({ 
-        found: false,
-        message: 'No chord data available for this song'
-      });
-    }
-
-    // Parse sections from the chords string
-    const sections = parseChordProgressionToSections(chordsString);
-
-    // Return structured data ready for Chart and Section entity creation
-    return Response.json({
-      found: true,
-      data: {
-        chart_data: {
-          spotify_song_id: rowData.spotify_song_id,
-          spotify_artist_id: rowData.spotify_artist_id,
-          genres: rowData.genres,
-          release_date: rowData.release_date,
-          decade: rowData.decade
-        },
-        sections: sections
+    const parquetFiles = await refsResponse.json();
+    
+    // Search through Parquet files
+    for (const fileInfo of parquetFiles) {
+      const parquetUrl = `https://huggingface.co/datasets/ailsntua/Chordonomicon/resolve/refs%2Fconvert%2Fparquet/default/train/${fileInfo.filename}`;
+      
+      try {
+        // Download Parquet file
+        const fileResponse = await fetch(parquetUrl);
+        const arrayBuffer = await fileResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        // Create a temporary file to read with parquetjs
+        const tempFilePath = `/tmp/${fileInfo.filename}`;
+        await Deno.writeFile(tempFilePath, new Uint8Array(buffer));
+        
+        // Read the Parquet file
+        const reader = await parquet.ParquetReader.openFile(tempFilePath);
+        const cursor = reader.getCursor();
+        
+        // Iterate through rows
+        let record = null;
+        while (record = await cursor.next()) {
+          if (record.spotify_song_id === spotify_song_id) {
+            // Check artist ID if provided
+            if (!spotify_artist_id || record.spotify_artist_id === spotify_artist_id) {
+              // Found the song!
+              await reader.close();
+              
+              // Clean up temp file
+              try {
+                await Deno.remove(tempFilePath);
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+              
+              const chordsString = record.chords;
+              
+              if (!chordsString) {
+                return Response.json({ 
+                  found: false,
+                  message: 'No chord data available for this song'
+                });
+              }
+              
+              const sections = parseChordProgressionToSections(chordsString);
+              
+              return Response.json({
+                found: true,
+                data: {
+                  chart_data: {
+                    spotify_song_id: record.spotify_song_id,
+                    spotify_artist_id: record.spotify_artist_id,
+                    genres: record.genres,
+                    release_date: record.release_date,
+                    decade: record.decade
+                  },
+                  sections: sections
+                }
+              });
+            }
+          }
+        }
+        
+        await reader.close();
+        
+        // Clean up temp file
+        try {
+          await Deno.remove(tempFilePath);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+        
+      } catch (fileError) {
+        console.log(`Error reading file ${fileInfo.filename}:`, fileError.message);
+        continue;
       }
+    }
+    
+    // Song not found in any file
+    return Response.json({ 
+      found: false,
+      message: 'Song not found in Chordonomicon database'
     });
 
   } catch (error) {
-    console.error('DuckDB query error:', error);
+    console.error('Chordonomicon query error:', error);
     return Response.json({ 
       found: false,
-      error: 'Failed to query Chordonomicon database with DuckDB',
+      error: 'Failed to query Chordonomicon database',
       details: error.message
     }, { status: 500 });
   }
