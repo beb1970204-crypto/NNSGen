@@ -19,12 +19,13 @@ Deno.serve(async (req) => {
   let sectionsData = null;
   let dataSource = 'chordonomicon';
 
-  const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
-    song_title: title,
-    artist_name: artist
-  });
+  try {
+    const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+      song_title: title,
+      artist_name: artist
+    });
 
-  if (chordonomiconResponse.data.found) {
+    if (chordonomiconResponse.data?.found) {
     // We found the song in Chordonomicon!
     const chordonomiconData = chordonomiconResponse.data.data;
     
@@ -41,9 +42,14 @@ Deno.serve(async (req) => {
       release_date: chordonomiconData.chart_data.release_date
     };
     
-    sectionsData = chordonomiconData.sections;
-  } else {
-    // Step 2: Fallback to LLM generation if not found in Chordonomicon
+      sectionsData = chordonomiconData.sections;
+    }
+  } catch (error) {
+    console.log('Chordonomicon lookup failed, falling back to LLM:', error.message);
+  }
+
+  // Step 2: Fallback to LLM generation if not found in Chordonomicon
+  if (!chartData || !sectionsData) {
     dataSource = 'llm';
     
     if (!key || !time_signature) {
@@ -52,27 +58,34 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    const llmResponse = await base44.functions.invoke('generateChartWithLLM', {
-      title,
-      artist,
-      key,
-      time_signature,
-      reference_file_url
-    });
+    try {
+      const llmResponse = await base44.functions.invoke('generateChartWithLLM', {
+        title,
+        artist,
+        key,
+        time_signature,
+        reference_file_url
+      });
 
-    if (!llmResponse.data.sections) {
-      return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
+      if (!llmResponse.data?.sections) {
+        return Response.json({ error: 'Failed to generate chart with LLM' }, { status: 500 });
+      }
+
+      chartData = {
+        title,
+        artist: artist || 'Unknown',
+        key,
+        time_signature,
+        reference_file_url
+      };
+      
+      sectionsData = llmResponse.data.sections;
+    } catch (llmError) {
+      console.error('LLM generation failed:', llmError);
+      return Response.json({ 
+        error: 'Failed to generate chart. Please try again or check your inputs.' 
+      }, { status: 500 });
     }
-
-    chartData = {
-      title,
-      artist: artist || 'Unknown',
-      key,
-      time_signature,
-      reference_file_url
-    };
-    
-    sectionsData = llmResponse.data.sections;
   }
 
   // Step 3: Create Chart entity with data_source field
