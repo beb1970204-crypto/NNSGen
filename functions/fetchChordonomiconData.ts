@@ -58,17 +58,18 @@ Deno.serve(async (req) => {
     const response = await fetch(filterUrl, { headers });
 
     if (!response.ok) {
-      // If 500 error, it likely means the query syntax is still invalid for the endpoint
-      if (response.status === 500) {
-        console.warn('HF Filter API failed, likely due to query syntax. Falling back.');
+      const errorText = await response.text();
+      console.error('Hugging Face API error:', response.status, errorText);
+      
+      // If 500 or 422 error, it likely means the query syntax is invalid or the data doesn't exist
+      if (response.status === 500 || response.status === 422) {
+        console.warn('HF Filter API failed, likely due to query syntax or no match. Falling back.');
         return Response.json({
           found: false,
-          message: 'Complex query failed, falling back to LLM'
+          message: 'Song not found in Chordonomicon database'
         });
       }
       
-      const errorText = await response.text();
-      console.error('Hugging Face API error:', response.status, errorText);
       throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
     }
 
