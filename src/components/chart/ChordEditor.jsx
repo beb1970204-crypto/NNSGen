@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, Music } from "lucide-react";
+import { Check, Music, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Chord } from "tonal";
 
 const NNS_SYMBOLS = [
   { value: "diamond", label: "◆ Diamond (Stop)", icon: "◆" },
@@ -20,6 +21,25 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   const [bassNote, setBassNote] = useState(chord.bass_note || '');
   const [selectedSymbols, setSelectedSymbols] = useState(chord.symbols || []);
   const [hasDotNotation, setHasDotNotation] = useState(chord.beats && chord.beats !== 4 && chord.beats !== 2);
+  const [isValidChord, setIsValidChord] = useState(true);
+
+  // Validate chord using TonalJS
+  useEffect(() => {
+    if (!chordText || chordText === '-') {
+      setIsValidChord(true);
+      return;
+    }
+    
+    // Skip validation for Nashville numbers (1-7 with optional modifiers)
+    if (/^[1-7][-+°Δ]?/.test(chordText)) {
+      setIsValidChord(true);
+      return;
+    }
+    
+    // Validate using TonalJS
+    const chordData = Chord.get(chordText);
+    setIsValidChord(!chordData.empty);
+  }, [chordText]);
 
   const handleSmartEntry = (value) => {
     let formatted = value;
@@ -82,34 +102,51 @@ export default function ChordEditor({ chord, onSave, onCancel }) {
   return (
     <div className="space-y-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
       <div>
-        <Input
-          value={chordText}
-          onChange={(e) => {
-            const value = e.target.value;
-            // Smart entry for single digit Nashville numbers
-            if (value.length === 1 && /^[1-7]$/.test(value)) {
-              handleSmartEntry(value);
-            } else {
-              setChordText(value);
-            }
-          }}
-          placeholder="Enter chord (e.g., C, 1, 4-, F/G)"
-          className="bg-[#0a0a0a] border-[#2a2a2a] text-white chart-chord"
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSave();
-            } else if (e.key === 'Escape') {
-              onCancel();
-            } else if (e.key === '.') {
-              e.preventDefault();
-              handleDotNotation();
-            }
-          }}
-        />
+        <div className="relative">
+          <Input
+            value={chordText}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Smart entry for single digit Nashville numbers
+              if (value.length === 1 && /^[1-7]$/.test(value)) {
+                handleSmartEntry(value);
+              } else {
+                setChordText(value);
+              }
+            }}
+            placeholder="Enter chord (e.g., C, 1, 4-, F/G)"
+            className={`bg-[#0a0a0a] text-white chart-chord pr-10 ${
+              isValidChord 
+                ? 'border-[#2a2a2a] focus:border-green-600' 
+                : 'border-red-600 focus:border-red-600'
+            }`}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSave();
+              } else if (e.key === 'Escape') {
+                onCancel();
+              } else if (e.key === '.') {
+                e.preventDefault();
+                handleDotNotation();
+              }
+            }}
+          />
+          {chordText && chordText !== '-' && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {isValidChord ? (
+                <CheckCircle className="w-4 h-4 text-green-600" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-600" />
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-[#6b6b6b]">
-            Tip: Type 6 for 6-, press . for dot notation
+          <p className={`text-xs ${isValidChord ? 'text-[#6b6b6b]' : 'text-red-500'}`}>
+            {isValidChord 
+              ? 'Tip: Type 6 for 6-, press . for dot notation' 
+              : 'Invalid chord name'}
           </p>
           {hasDotNotation && (
             <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-500">
