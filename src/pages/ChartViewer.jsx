@@ -34,13 +34,13 @@ export default function ChartViewer() {
 
   const { data: chart, isLoading, error } = useQuery({
     queryKey: ['chart', chartId],
-    queryFn: () => base44.entities.Chart.get(chartId, 'dev'),
+    queryFn: () => base44.entities.Chart.get(chartId),
     enabled: !!chartId
   });
 
   const { data: sections = [] } = useQuery({
     queryKey: ['sections', chartId],
-    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, null, null, 'dev'),
+    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }),
     enabled: !!chartId,
     initialData: []
   });
