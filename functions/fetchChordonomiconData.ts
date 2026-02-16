@@ -55,7 +55,9 @@ Deno.serve(async (req) => {
     const response = await fetch(filterUrl, { headers });
 
     if (!response.ok) {
-      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Hugging Face API error:', response.status, errorText);
+      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
