@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   // Step 1: Search for the song on Spotify
   let spotifyData = null;
   try {
-    const spotifyResponse = await base44.functions.invoke('searchSpotify', {
+    const spotifyResponse = await base44.asServiceRole.functions.invoke('searchSpotify', {
       song_title: title,
       artist_name: artist
     });
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   if (spotifyData) {
     try {
       // Pass 1: Try exact Spotify ID match
-      let chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+      let chordonomiconResponse = await base44.asServiceRole.functions.invoke('fetchChordonomiconData', {
         spotify_song_id: spotifyData.spotify_song_id,
         spotify_artist_id: spotifyData.spotify_artist_id
       });
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       // Pass 2: If not found, try title/artist match (catches version mismatches)
       if (!chordonomiconResponse.data?.found) {
         console.log('Spotify ID not found, trying title/artist match...');
-        chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
+        chordonomiconResponse = await base44.asServiceRole.functions.invoke('fetchChordonomiconData', {
           title: title,
           artist: artist
         });
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-      const llmResponse = await base44.functions.invoke('generateChartWithLLM', {
+      const llmResponse = await base44.asServiceRole.functions.invoke('generateChartWithLLM', {
         title,
         artist,
         key,
