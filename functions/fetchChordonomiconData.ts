@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Insufficient search criteria' }, { status: 400 });
     }
 
-    // Use the /filter endpoint
-    const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&limit=1`;
+    // Use the /filter endpoint with proper parameter encoding
+    const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&offset=0&length=1`;
     
     const headers = {
       'Accept': 'application/json'
