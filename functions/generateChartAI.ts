@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   // Step 1: Try to fetch from Chordonomicon database first
   let chartData = null;
   let sectionsData = null;
-  let sourceMethod = 'chordonomicon';
+  let dataSource = 'chordonomicon';
 
   const chordonomiconResponse = await base44.functions.invoke('fetchChordonomiconData', {
     song_title: title,
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     sectionsData = chordonomiconData.sections;
   } else {
     // Step 2: Fallback to LLM generation if not found in Chordonomicon
-    sourceMethod = 'llm';
+    dataSource = 'llm';
     
     if (!key || !time_signature) {
       return Response.json({ 
@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
     sectionsData = llmResponse.data.sections;
   }
 
-  // Step 3: Create Chart entity
+  // Step 3: Create Chart entity with data_source field
+  chartData.data_source = dataSource;
   const chart = await base44.entities.Chart.create(chartData);
 
   // Step 4: Create Section entities
@@ -94,8 +95,8 @@ Deno.serve(async (req) => {
   return Response.json({ 
     success: true,
     chart_id: chart.id,
-    source: sourceMethod,
-    message: sourceMethod === 'chordonomicon' 
+    source: dataSource,
+    message: dataSource === 'chordonomicon' 
       ? 'Chart generated from Chordonomicon database'
       : 'Chart generated using AI'
   });
