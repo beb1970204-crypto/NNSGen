@@ -47,7 +47,7 @@ export default function ChartViewer() {
 
   const updateChart = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.Chart.update(chartId, data);
+      await base44.entities.Chart.update(chartId, data, 'dev');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
@@ -56,7 +56,7 @@ export default function ChartViewer() {
   });
 
   const toggleDisplayMode = async (mode) => {
-    await base44.entities.Chart.update(chartId, { display_mode: mode });
+    await base44.entities.Chart.update(chartId, { display_mode: mode }, 'dev');
     queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
 
@@ -78,7 +78,7 @@ export default function ChartViewer() {
   });
 
   const updateSection = useMutation({
-    mutationFn: ({ sectionId, data }) => base44.entities.Section.update(sectionId, data),
+    mutationFn: ({ sectionId, data }) => base44.entities.Section.update(sectionId, data, 'dev'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
     },
@@ -221,7 +221,7 @@ export default function ChartViewer() {
         measures: [{ chords: [{ chord: '-', beats: 4, symbols: [] }], cue: '' }],
         repeat_count: 1
       };
-      await base44.entities.Section.create(newSection);
+      await base44.entities.Section.create(newSection, 'dev');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
@@ -231,7 +231,7 @@ export default function ChartViewer() {
 
   const deleteSection = useMutation({
     mutationFn: async (sectionId) => {
-      await base44.entities.Section.delete(sectionId);
+      await base44.entities.Section.delete(sectionId, 'dev');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
@@ -250,7 +250,7 @@ export default function ChartViewer() {
         modulation_key: section.modulation_key,
         pivot_cue: section.pivot_cue
       };
-      await base44.entities.Section.create(duplicated);
+      await base44.entities.Section.create(duplicated, 'dev');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
@@ -272,7 +272,7 @@ export default function ChartViewer() {
     try {
       await Promise.all(
         reorderedSections.map((section, index) =>
-          base44.entities.Section.update(section.id, { order: index })
+          base44.entities.Section.update(section.id, { order: index }, 'dev')
         )
       );
       toast.success('Sections reordered');
