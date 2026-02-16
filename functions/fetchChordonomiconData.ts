@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import duckdb from 'npm:duckdb@1.1.3';
+import * as duckdb from 'npm:duckdb-async@1.1.3';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -16,32 +16,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize DuckDB database
-    const db = new duckdb.Database(':memory:');
-    const connection = db.connect();
+    // Initialize DuckDB database (in-memory)
+    const db = await duckdb.Database.create(':memory:');
 
     // Construct SQL query with predicate pushdown
     let sqlQuery = `
       SELECT * FROM read_parquet('hf://datasets/ailsntua/Chordonomicon@~parquet/**/*.parquet') 
-      WHERE spotify_song_id = '${spotify_song_id}'
+      WHERE spotify_song_id = ?
     `;
+    
+    const params = [spotify_song_id];
 
     // Add artist filter if provided for more precise matching
     if (spotify_artist_id) {
-      sqlQuery += ` AND spotify_artist_id = '${spotify_artist_id}'`;
+      sqlQuery += ` AND spotify_artist_id = ?`;
+      params.push(spotify_artist_id);
     }
 
     // Execute query
-    const queryResult = await new Promise((resolve, reject) => {
-      connection.all(sqlQuery, (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+    const queryResult = await db.all(sqlQuery, ...params);
 
-    // Close connection
-    connection.close();
-    db.close();
+    // Close database
+    await db.close();
 
     // Check if we got any results
     if (!queryResult || queryResult.length === 0) {
@@ -125,7 +121,7 @@ function parseChordProgressionToSections(chordsString) {
     const label = labelMap[sectionType.toLowerCase()] || 'Verse';
 
     // Split chords by whitespace
-    const chordArray = chordsString.split(/\s+/).filter(c => c && c.trim());
+    const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim());
     
     // Group chords into measures (assume 4 chords per measure for 4/4 time)
     const measures = [];
