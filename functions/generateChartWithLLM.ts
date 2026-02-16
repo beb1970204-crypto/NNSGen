@@ -117,5 +117,23 @@ Use common chord progressions appropriate for the key of ${key}.
     }
   });
 
+  // Sanitize LLM response to ensure correct types
+  if (response.sections) {
+    response.sections = response.sections.map(section => ({
+      ...section,
+      repeat_count: Number(section.repeat_count) || 1,
+      arrangement_cue: section.arrangement_cue || '',
+      measures: section.measures?.map(measure => ({
+        ...measure,
+        cue: measure.cue || '',
+        chords: measure.chords?.map(chordObj => ({
+          ...chordObj,
+          beats: Number(chordObj.beats) || 4,
+          symbols: Array.isArray(chordObj.symbols) ? chordObj.symbols : []
+        }))
+      }))
+    }));
+  }
+
   return Response.json(response);
 });
