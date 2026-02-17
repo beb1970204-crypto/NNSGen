@@ -381,8 +381,13 @@ export default function ChartViewer() {
         <SongSettingsSidebar
           chart={chart}
           sections={sections}
-          onUpdateChart={(data) => updateChart.mutate(data)}
-          onTransposeChart={(newKey) => transposeChart.mutate(newKey)}
+          onSaveSettings={(data) => {
+            const updates = {};
+            if (data.time_signature !== chart.time_signature) updates.time_signature = data.time_signature;
+            if (data.tempo !== chart.tempo) updates.tempo = data.tempo;
+            if (Object.keys(updates).length > 0) updateChart.mutate(updates);
+            if (data.key !== chart.key) transposeChart.mutate(data.key);
+          }}
           onToggleNotation={toggleDisplayMode}
         />
 
