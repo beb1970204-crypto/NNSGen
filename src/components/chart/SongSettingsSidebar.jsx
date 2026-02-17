@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 
 const KEYS = [
-  "C", "C#", "Db", "D", "D#", "Eb", "E", "F", 
+  "C", "C#", "Db", "D", "D#", "Eb", "E", "F",
   "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B",
   "Cm", "C#m", "Dm", "D#m", "Ebm", "Em", "Fm",
   "F#m", "Gm", "G#m", "Am", "A#m", "Bbm", "Bm"
@@ -14,24 +14,47 @@ const KEYS = [
 
 const TIME_SIGNATURES = ["4/4", "3/4", "6/8", "2/4", "5/4", "7/8", "12/8"];
 
-export default function SongSettingsSidebar({ 
-  chart, 
+export default function SongSettingsSidebar({
+  chart,
   sections = [],
-  onUpdateChart,
-  onTransposeChart,
-  onToggleNotation 
+  onSaveSettings,
+  onToggleNotation
 }) {
+  const [localKey, setLocalKey] = useState(chart.key);
+  const [localTimeSignature, setLocalTimeSignature] = useState(chart.time_signature);
+  const [localTempo, setLocalTempo] = useState(chart.tempo || "");
+
+  // Keep local state in sync if the chart changes externally (e.g. after transpose save)
+  useEffect(() => {
+    setLocalKey(chart.key);
+    setLocalTimeSignature(chart.time_signature);
+    setLocalTempo(chart.tempo || "");
+  }, [chart.key, chart.time_signature, chart.tempo]);
+
+  const isDirty =
+    localKey !== chart.key ||
+    localTimeSignature !== chart.time_signature ||
+    (localTempo || null) !== (chart.tempo || null);
+
+  const handleSave = () => {
+    onSaveSettings({
+      key: localKey,
+      time_signature: localTimeSignature,
+      tempo: parseInt(localTempo) || null,
+    });
+  };
+
   return (
     <div className="w-72 bg-[#141414] border-r border-[#2a2a2a] h-full overflow-y-auto transition-all">
       <div className="p-6 space-y-8">
         {/* Song Settings */}
         <div>
           <h3 className="text-xs font-bold text-white mb-4 uppercase tracking-widest opacity-60">Song Settings</h3>
-          
+
           <div className="space-y-4">
             <div>
               <Label className="text-xs text-[#a0a0a0] mb-2 block">Key</Label>
-              <Select value={chart.key} onValueChange={onTransposeChart}>
+              <Select value={localKey} onValueChange={setLocalKey}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -45,10 +68,7 @@ export default function SongSettingsSidebar({
 
             <div>
               <Label className="text-xs text-[#a0a0a0] mb-2 block">Time Signature</Label>
-              <Select 
-                value={chart.time_signature} 
-                onValueChange={(value) => onUpdateChart({ time_signature: value })}
-              >
+              <Select value={localTimeSignature} onValueChange={setLocalTimeSignature}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -64,11 +84,21 @@ export default function SongSettingsSidebar({
               <Label className="text-xs text-[#a0a0a0] mb-2 block">Tempo (BPM)</Label>
               <Input
                 type="number"
-                value={chart.tempo || ""}
-                onChange={(e) => onUpdateChart({ tempo: parseInt(e.target.value) || null })}
+                value={localTempo}
+                onChange={(e) => setLocalTempo(e.target.value)}
                 placeholder="120"
               />
             </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={!isDirty}
+              className="w-full gap-2"
+              size="sm"
+            >
+              <Save className="w-4 h-4" />
+              Save Settings
+            </Button>
           </div>
         </div>
 
@@ -107,7 +137,7 @@ export default function SongSettingsSidebar({
               <Plus className="w-4 h-4" />
             </Button>
           </div>
-          
+
           <div className="space-y-1">
             {sections.map((section, idx) => {
               const barCount = section.measures?.length || 0;
