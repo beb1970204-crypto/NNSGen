@@ -92,14 +92,8 @@ export default function ChartViewer() {
   };
 
   const handleSave = () => {
-    toast.success('All changes saved');
-  };
-
-  const handleUndo = () => {
-    if (historyIndex > 0) {
-      // Implement undo logic here
-      toast.info('Undo functionality coming soon');
-    }
+    // All changes are auto-saved via mutations — this is just a user confirmation
+    toast.success('All changes are saved automatically');
   };
 
   // Keyboard shortcuts
