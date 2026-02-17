@@ -182,27 +182,28 @@ export default function ChartDisplay({
     // Wrap in context menu if in edit mode
     if (editMode) {
       return (
-        <MeasureContextMenu
-          key={measureIdx}
-          trigger={measureElement}
-          onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
-          onAddChord={() => {
-            const newChord = { chord: '-', beats: 4, symbols: [] };
-            const updatedMeasure = {
-              ...measure,
-              chords: [...measure.chords, newChord]
-            };
-            handleUpdateMeasure(section, measureIdx, updatedMeasure);
-          }}
-          onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
-          onDuplicateMeasure={() => handleDuplicateMeasure(section, measureIdx)}
-          onInsertAfter={() => handleInsertAfter(section, measureIdx)}
-          chordCount={chordCount}
-        />
+        <div key={measureIdx} className="contents">
+          <MeasureContextMenu
+            trigger={measureElement}
+            onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+            onAddChord={() => {
+              const newChord = { chord: '-', beats: 4, symbols: [] };
+              const updatedMeasure = {
+                ...measure,
+                chords: [...measure.chords, newChord]
+              };
+              handleUpdateMeasure(section, measureIdx, updatedMeasure);
+            }}
+            onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
+            onDuplicateMeasure={() => handleDuplicateMeasure(section, measureIdx)}
+            onInsertAfter={() => handleInsertAfter(section, measureIdx)}
+            chordCount={chordCount}
+          />
+        </div>
       );
     }
 
-    return measureElement;
+    return <div key={measureIdx} className="contents">{measureElement}</div>;
   };
 
   return (
