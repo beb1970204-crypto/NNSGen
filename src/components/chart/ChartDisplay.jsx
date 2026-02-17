@@ -172,30 +172,56 @@ export default function ChartDisplay({
       </div>
     );
 
-    // Wrap in context menu if in edit mode
     if (editMode) {
       return (
-        <MeasureContextMenu
-          key={measureIdx}
-          trigger={measureElement}
-          onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
-          onAddChord={() => {
-            const newChord = { chord: '-', beats: 4, symbols: [] };
-            const updatedMeasure = {
-              ...measure,
-              chords: [...measure.chords, newChord]
-            };
-            handleUpdateMeasure(section, measureIdx, updatedMeasure);
-          }}
-          onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
-          onDuplicateMeasure={() => handleDuplicateMeasure(section, measureIdx)}
-          onInsertAfter={() => handleInsertAfter(section, measureIdx)}
-          chordCount={chordCount}
-        />
+        <div key={measureIdx} className="relative group">
+          <div
+            onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+            className={`bg-[#1a1a1a] border ${isSelected ? 'border-red-600 shadow-lg shadow-red-600/20' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center cursor-pointer hover:bg-[#202020] hover:border-[#3a3a3a] transition-all duration-150`}
+          >
+            <div className={`text-white ${baseFontSize} font-bold chart-chord`}>
+              {chordCount === 1 && (
+                <div className="flex items-center justify-center">
+                  <span className={measure.chords[0].chord === '-' ? 'text-[#3a3a3a]' : ''}>{renderChord(measure.chords[0])}</span>
+                  {measure.chords[0].symbols?.length > 0 && <span className="ml-2 text-lg text-yellow-500">{renderSymbols(measure.chords[0].symbols)}</span>}
+                </div>
+              )}
+              {hasSplit && (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center justify-around w-full">
+                    {measure.chords.map((chordObj, i) => (
+                      <div key={i} className="flex-1 text-center">
+                        <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>{renderChord(chordObj)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="w-full h-0.5 bg-[#4a4a4a]" />
+                </div>
+              )}
+              {chordCount > 2 && (
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1 w-full">
+                  {measure.chords.map((chordObj, i) => (
+                    <div key={i} className={`text-center ${chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}`}>{renderChord(chordObj)}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {measure.cue && <div className="text-xs mt-2 pt-1 border-t border-[#2a2a2a] text-[#a0a0a0] italic">{measure.cue}</div>}
+          </div>
+          <MeasureContextMenu
+            trigger={<button onClick={(e) => e.stopPropagation()} className="absolute top-1 right-1 w-6 h-6 hidden group-hover:flex items-center justify-center rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] z-10"><span className="text-[#a0a0a0] text-xs leading-none">⋯</span></button>}
+            onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+            onAddChord={() => handleUpdateMeasure(section, measureIdx, { ...measure, chords: [...measure.chords, { chord: '-', beats: 4, symbols: [] }] })}
+            onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
+            onDuplicateMeasure={() => handleDuplicateMeasure(section, measureIdx)}
+            onInsertAfter={() => handleInsertAfter(section, measureIdx)}
+            chordCount={chordCount}
+          />
+        </div>
       );
     }
 
-    return <React.Fragment key={measureIdx}>{measureElement}</React.Fragment>;
+    return measureElement;
   };
 
   return (
