@@ -27,8 +27,8 @@ export default function ChartDisplay({
     const bassNote = typeof chordObj === 'object' && chordObj.bass_note ? chordObj.bass_note : null;
     
     let displayText = chordText;
-    if (displayMode === 'nashville') {
-      displayText = chordToNNS(chordText, chartKey);
+    if (displayMode === 'roman') {
+      displayText = chordToRoman(chordText, chartKey);
     }
     
     // Add bass note if present
