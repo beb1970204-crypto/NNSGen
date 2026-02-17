@@ -150,21 +150,14 @@ export default function ChartDisplay({
             </div>
           )}
 
-          {/* More than 2 chords - Stacked vertically */}
+          {/* 3-4 chords - 2x2 grid layout */}
           {chordCount > 2 && (
-            <div className="flex flex-col items-center gap-2">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 w-full">
               {measure.chords.map((chordObj, chordIdx) => (
-                <div key={chordIdx} className="flex items-center gap-2">
-                  <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                    {renderChord(chordObj)}
-                    {chordObj.beats && chordObj.beats < 4 && (
-                      <span className="text-lg ml-2 text-[#a0a0a0]">({chordObj.beats})</span>
-                    )}
-                  </span>
+                <div key={chordIdx} className={`text-center ${chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}`}>
+                  {renderChord(chordObj)}
                   {chordObj.symbols?.length > 0 && (
-                    <span className="text-lg text-yellow-500">
-                      {renderSymbols(chordObj.symbols)}
-                    </span>
+                    <span className="ml-1 text-sm text-yellow-500">{renderSymbols(chordObj.symbols)}</span>
                   )}
                 </div>
               ))}
