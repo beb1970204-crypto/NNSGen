@@ -134,7 +134,7 @@ export default function ChartViewer() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedMeasure, selectedMeasureIndex, selectedSection, historyIndex]);
+  }, [selectedMeasure, selectedMeasureIndex, selectedSection]);
 
   const handleMeasureClick = (measure, measureIdx, section) => {
     setSelectedMeasure(measure);
