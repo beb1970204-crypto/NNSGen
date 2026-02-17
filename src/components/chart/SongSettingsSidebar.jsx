@@ -133,20 +133,18 @@ export default function SongSettingsSidebar({
           </div>
         </div>
 
-        {/* Tools */}
-        <div>
-          <h3 className="text-xs font-bold text-white mb-4 uppercase tracking-widest opacity-60">Tools</h3>
-          <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full justify-start gap-2">
-              <Upload className="w-4 h-4" />
-              Import Chart
-            </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start gap-2">
-              <Clock className="w-4 h-4" />
-              Version History
-            </Button>
+        {/* Chart Info */}
+        {chart.data_source && (
+          <div>
+            <h3 className="text-xs font-bold text-white mb-3 uppercase tracking-widest opacity-60">Source</h3>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a]">
+              <div className={`w-2 h-2 rounded-full ${chart.data_source === 'chordonomicon' ? 'bg-green-500' : chart.data_source === 'llm' ? 'bg-blue-400' : 'bg-gray-500'}`} />
+              <span className="text-xs text-[#a0a0a0] capitalize">
+                {chart.data_source === 'chordonomicon' ? 'Chordonomicon DB' : chart.data_source === 'llm' ? 'AI Generated' : 'Manual'}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
