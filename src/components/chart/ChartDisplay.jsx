@@ -220,7 +220,7 @@ export default function ChartDisplay({
       );
     }
 
-    return measureElement;
+    return <div key={measureIdx}>{measureElement}</div>;
   };
 
   return (
