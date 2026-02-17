@@ -202,7 +202,7 @@ export default function ChartDisplay({
       );
     }
 
-    return measureElement;
+    return <React.Fragment key={measureIdx}>{measureElement}</React.Fragment>;
   };
 
   return (
