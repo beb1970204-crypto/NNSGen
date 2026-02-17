@@ -228,14 +228,34 @@ function createSection(label, chordsText) {
   };
 }
 
-// Normalize chord names from Chordonomicon format to standard notation
+// Robust normalizer: handles Chordonomicon colon-notation (e.g. A:min → Am, C:maj → C)
 function normalizeChordName(chord) {
-  if (!chord || chord === '-') return '-';
-  
-  let normalized = chord
-    .replace(/min$/, 'm')
-    .replace(/maj/, 'maj')
-    .replace(/no3(?:rd)?/i, '5');
-  
-  return normalized;
+  if (!chord || chord === '-' || chord === 'N' || chord === 'X') return '-';
+
+  let slashPart = '';
+  const slashIdx = chord.indexOf('/');
+  if (slashIdx !== -1) {
+    slashPart = '/' + chord.slice(slashIdx + 1).replace(/:\w+$/, '');
+    chord = chord.slice(0, slashIdx);
+  }
+
+  if (!chord.includes(':')) {
+    return chord.replace(/min(?!or)/, 'm').replace(/no3(?:rd)?/i, '5') + slashPart;
+  }
+
+  const [root, quality] = chord.split(':');
+  if (!root) return '-';
+
+  const qualityMap = {
+    'maj': '', 'min': 'm', '': '', '5': '5', '7': '7',
+    'maj7': 'maj7', 'min7': 'm7', 'minmaj7': 'mmaj7',
+    'maj6': 'maj6', 'min6': 'm6', '6': '6', '9': '9',
+    'maj9': 'maj9', 'min9': 'm9', '11': '11', 'maj11': 'maj11',
+    'min11': 'm11', '13': '13', 'maj13': 'maj13', 'min13': 'm13',
+    'dim': 'dim', 'dim7': 'dim7', 'hdim7': 'm7b5', 'aug': 'aug',
+    'sus2': 'sus2', 'sus4': 'sus4', '7sus4': '7sus4', 'add9': 'add9'
+  };
+
+  const suffix = qualityMap[quality] !== undefined ? qualityMap[quality] : (quality || '');
+  return root + suffix + slashPart;
 }
