@@ -1,7 +1,5 @@
 import React from "react";
 import { chordToRoman } from "@/components/chordConversion";
-import EditableMeasure from "./EditableMeasure";
-import MeasureContextMenu from "./MeasureContextMenu";
 import SectionContextMenu from "./SectionContextMenu";
 import { Button } from "@/components/ui/button";
 import { Plus, GripVertical } from "lucide-react";
