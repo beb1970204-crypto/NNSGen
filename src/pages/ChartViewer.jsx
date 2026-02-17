@@ -108,12 +108,6 @@ export default function ChartViewer() {
         handleSave();
       }
       
-      // Cmd/Ctrl + Z: Undo
-      if (modKey && e.key === 'z') {
-        e.preventDefault();
-        handleUndo();
-      }
-      
       // Delete: Delete selected measure
       if (e.key === 'Delete' && selectedMeasure) {
         e.preventDefault();
