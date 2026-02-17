@@ -1,5 +1,5 @@
 import React from "react";
-import { chordToNNS } from "@/components/chordConversion";
+import { chordToRoman } from "@/components/chordConversion";
 import EditableMeasure from "./EditableMeasure";
 import MeasureContextMenu from "./MeasureContextMenu";
 import SectionContextMenu from "./SectionContextMenu";

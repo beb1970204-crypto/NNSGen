@@ -77,20 +77,20 @@ export default function SongSettingsSidebar({
           <Label className="text-xs text-[#a0a0a0] mb-2 block">Notation Mode</Label>
           <div className="flex gap-2">
             <Button
-              variant={chart.display_mode === 'nashville' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onToggleNotation('nashville')}
-              className="flex-1"
-            >
-              123
-            </Button>
-            <Button
               variant={chart.display_mode === 'chords' ? 'default' : 'outline'}
               size="sm"
               onClick={() => onToggleNotation('chords')}
               className="flex-1"
             >
-              ABC
+              Chords
+            </Button>
+            <Button
+              variant={chart.display_mode === 'roman' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onToggleNotation('roman')}
+              className="flex-1"
+            >
+              Roman
             </Button>
           </div>
         </div>
