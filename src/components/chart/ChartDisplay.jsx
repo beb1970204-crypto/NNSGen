@@ -93,116 +93,114 @@ export default function ChartDisplay({
     onUpdateSection(section.id, { measures: updatedMeasures });
   };
 
+  const MeasureMenu = ({ measure, measureIdx, section }) => {
+    const [open, setOpen] = React.useState(false);
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      if (!open) return;
+      const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+    return (
+      <div ref={ref} style={{ position: 'absolute', top: 4, right: 4, zIndex: 20 }}>
+        <button
+          onMouseDown={e => { e.stopPropagation(); setOpen(o => !o); }}
+          className="w-6 h-6 flex items-center justify-center rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ opacity: open ? 1 : undefined }}
+        >
+          <span className="text-[#a0a0a0] text-xs leading-none">•••</span>
+        </button>
+        {open && (
+          <div className="absolute top-7 right-0 w-44 bg-[#1e1e1e] border border-[#3a3a3a] rounded-lg shadow-xl p-1 space-y-0.5">
+            {[
+              { label: 'Edit Chord', action: () => { onMeasureClick && onMeasureClick(measure, measureIdx, section); } },
+              { label: 'Add Chord', action: () => { handleUpdateMeasure(section, measureIdx, { ...measure, chords: [...measure.chords, { chord: '-', beats: 4, symbols: [] }] }); } },
+              { label: 'Duplicate', action: () => handleDuplicateMeasure(section, measureIdx) },
+              { label: 'Insert After', action: () => handleInsertAfter(section, measureIdx) },
+            ].map(({ label, action }) => (
+              <button key={label} onMouseDown={e => { e.stopPropagation(); action(); setOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-sm text-white hover:bg-[#2a2a2a] rounded-md">
+                {label}
+              </button>
+            ))}
+            <div className="h-px bg-[#3a3a3a] my-0.5" />
+            <button onMouseDown={e => { e.stopPropagation(); handleDeleteMeasure(section, measureIdx); setOpen(false); }}
+              className="w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-[#2a2a2a] rounded-md">
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMeasureCell = (measure, measureIdx, section) => {
     const chordCount = measure.chords?.length || 0;
     const hasSplit = chordCount === 2;
     const hasDotNotation = measure.chords?.some(c => c.beats && c.beats !== 4 && c.beats !== 2);
     const isSelected = selectedSectionId === section.id && selectedMeasureIndex === measureIdx;
 
-    const measureElement = (
+    return (
       <div
         key={measureIdx}
         onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
-        className={`group bg-[#1a1a1a] border ${isSelected ? 'border-red-600 shadow-lg shadow-red-600/20 scale-[1.02]' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#202020] hover:border-[#3a3a3a] transition-all duration-150`}
+        className={`group bg-[#1a1a1a] border ${isSelected ? 'border-red-600 shadow-lg shadow-red-600/20' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center relative cursor-pointer hover:bg-[#202020] hover:border-[#3a3a3a] transition-all duration-150`}
       >
-        <div className={`text-white ${baseFontSize} font-bold chart-chord relative`}>
-          {/* Single Chord - Centered */}
+        {editMode && <MeasureMenu measure={measure} measureIdx={measureIdx} section={section} />}
+
+        <div className={`text-white ${baseFontSize} font-bold chart-chord`}>
+          {/* Single Chord */}
           {chordCount === 1 && (
-            <div className="flex flex-col items-center justify-center">
-              <div className="relative">
-                {hasDotNotation && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg text-yellow-500">●</span>
-                )}
-                <span className={measure.chords[0].chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                  {renderChord(measure.chords[0])}
-                </span>
-                {measure.chords[0].symbols?.length > 0 && (
-                  <span className="ml-3 text-lg text-yellow-500">
-                    {renderSymbols(measure.chords[0].symbols)}
-                  </span>
-                )}
-              </div>
+            <div className="flex items-center justify-center">
+              <span className={measure.chords[0].chord === '-' ? 'text-[#3a3a3a]' : ''}>
+                {renderChord(measure.chords[0])}
+              </span>
+              {measure.chords[0].symbols?.length > 0 && (
+                <span className="ml-2 text-lg text-yellow-500">{renderSymbols(measure.chords[0].symbols)}</span>
+              )}
             </div>
           )}
 
-          {/* Split Chords - Two Chords with Underline */}
+          {/* Two Chords - side by side with divider */}
           {hasSplit && (
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center justify-around w-full relative">
-                {measure.chords.map((chordObj, chordIdx) => (
-                  <div key={chordIdx} className="relative flex-1 text-center">
-                    {hasDotNotation && chordObj.beats && chordObj.beats !== 2 && (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg text-yellow-500">●</span>
-                    )}
-                    <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                      {renderChord(chordObj)}
-                    </span>
+            <div className="flex items-center justify-around w-full gap-1">
+              {measure.chords.map((chordObj, chordIdx) => (
+                <React.Fragment key={chordIdx}>
+                  {chordIdx > 0 && <div className="w-px h-8 bg-[#4a4a4a] flex-shrink-0" />}
+                  <div className="flex-1 text-center">
+                    <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>{renderChord(chordObj)}</span>
                     {chordObj.symbols?.length > 0 && (
-                      <span className="ml-2 text-lg text-yellow-500">
-                        {renderSymbols(chordObj.symbols)}
-                      </span>
+                      <span className="ml-1 text-base text-yellow-500">{renderSymbols(chordObj.symbols)}</span>
                     )}
                   </div>
-                ))}
-              </div>
-              {/* Underline for split chords */}
-              <div className="w-full h-0.5 bg-[#4a4a4a]" />
+                </React.Fragment>
+              ))}
             </div>
           )}
 
-          {/* More than 2 chords - Stacked vertically */}
+          {/* 3-4 Chords - grid layout */}
           {chordCount > 2 && (
-            <div className="flex flex-col items-center gap-2">
+            <div className="grid grid-cols-2 gap-1 w-full">
               {measure.chords.map((chordObj, chordIdx) => (
-                <div key={chordIdx} className="flex items-center gap-2">
-                  <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>
-                    {renderChord(chordObj)}
-                    {chordObj.beats && chordObj.beats < 4 && (
-                      <span className="text-lg ml-2 text-[#a0a0a0]">({chordObj.beats})</span>
-                    )}
-                  </span>
-                  {chordObj.symbols?.length > 0 && (
-                    <span className="text-lg text-yellow-500">
-                      {renderSymbols(chordObj.symbols)}
-                    </span>
+                <div key={chordIdx} className="text-center text-xl">
+                  <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>{renderChord(chordObj)}</span>
+                  {chordObj.beats && chordObj.beats < 4 && chordCount > 2 && (
+                    <span className="text-xs ml-1 text-[#6b6b6b]">({chordObj.beats}b)</span>
                   )}
                 </div>
               ))}
             </div>
           )}
         </div>
+
         {measure.cue && (
-          <div className="text-xs mt-3 pt-2 border-t border-[#2a2a2a] text-[#a0a0a0] italic">
+          <div className="text-xs mt-2 pt-2 border-t border-[#2a2a2a] text-[#a0a0a0] italic truncate">
             {measure.cue}
           </div>
         )}
       </div>
     );
-
-    // Wrap in context menu if in edit mode
-    if (editMode) {
-      return (
-        <MeasureContextMenu
-          key={measureIdx}
-          trigger={measureElement}
-          onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
-          onAddChord={() => {
-            const newChord = { chord: '-', beats: 4, symbols: [] };
-            const updatedMeasure = {
-              ...measure,
-              chords: [...measure.chords, newChord]
-            };
-            handleUpdateMeasure(section, measureIdx, updatedMeasure);
-          }}
-          onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
-          onDuplicateMeasure={() => handleDuplicateMeasure(section, measureIdx)}
-          onInsertAfter={() => handleInsertAfter(section, measureIdx)}
-          chordCount={chordCount}
-        />
-      );
-    }
-
-    return <React.Fragment key={measureIdx}>{measureElement}</React.Fragment>;
   };
 
   return (
