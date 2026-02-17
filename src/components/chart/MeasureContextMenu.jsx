@@ -20,7 +20,7 @@ export default function MeasureContextMenu({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild style={{ display: 'contents' }}>
         {trigger}
       </PopoverTrigger>
       <PopoverContent className="w-56 p-2" align="start">
