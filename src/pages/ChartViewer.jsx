@@ -29,8 +29,7 @@ export default function ChartViewer() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [exportingPDF, setExportingPDF] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+
 
   const { data: chart, isLoading, error } = useQuery({
     queryKey: ['chart', chartId],
