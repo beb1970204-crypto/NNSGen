@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Upload, Clock, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 const KEYS = [
   "C", "C#", "Db", "D", "D#", "Eb", "E", "F", 
