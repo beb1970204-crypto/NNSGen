@@ -39,10 +39,9 @@ export default function ChartDisplay({
     return displayText;
   };
 
-  // Larger, more prominent measure cells for the new design
-  const baseFontSize = 'text-3xl';
-  const measurePadding = 'p-6';
-  const measureHeight = 'min-h-[120px]';
+  const baseFontSize = 'text-2xl';
+  const measurePadding = 'p-4';
+  const measureHeight = 'min-h-[100px]';
 
   const handleUpdateMeasure = (section, measureIdx, updatedMeasure) => {
     const updatedMeasures = [...section.measures];
@@ -66,15 +65,15 @@ export default function ChartDisplay({
 
   const getSectionColor = (label) => {
     const colors = {
-      'Chorus': { border: 'border-l-red-600', bg: 'bg-red-600', text: 'text-red-600' },
-      'Verse': { border: 'border-l-blue-600', bg: 'bg-blue-600', text: 'text-blue-600' },
-      'Bridge': { border: 'border-l-orange-600', bg: 'bg-orange-600', text: 'text-orange-600' },
-      'Intro': { border: 'border-l-purple-600', bg: 'bg-purple-600', text: 'text-purple-600' },
-      'Outro': { border: 'border-l-indigo-600', bg: 'bg-indigo-600', text: 'text-indigo-600' },
-      'Pre': { border: 'border-l-yellow-600', bg: 'bg-yellow-600', text: 'text-yellow-600' },
-      'Instrumental Solo': { border: 'border-l-green-600', bg: 'bg-green-600', text: 'text-green-600' },
+      'Chorus':            { border: 'border-l-red-500',    bg: 'bg-red-500',    text: 'text-red-500' },
+      'Verse':             { border: 'border-l-blue-500',   bg: 'bg-blue-500',   text: 'text-blue-500' },
+      'Bridge':            { border: 'border-l-yellow-500', bg: 'bg-yellow-500', text: 'text-yellow-500' },
+      'Intro':             { border: 'border-l-purple-500', bg: 'bg-purple-500', text: 'text-purple-500' },
+      'Outro':             { border: 'border-l-indigo-400', bg: 'bg-indigo-400', text: 'text-indigo-400' },
+      'Pre':               { border: 'border-l-orange-400', bg: 'bg-orange-400', text: 'text-orange-400' },
+      'Instrumental Solo': { border: 'border-l-green-500',  bg: 'bg-green-500',  text: 'text-green-500' },
     };
-    return colors[label] || { border: 'border-l-gray-600', bg: 'bg-gray-600', text: 'text-gray-600' };
+    return colors[label] || { border: 'border-l-gray-500', bg: 'bg-gray-500', text: 'text-gray-500' };
   };
 
   const handleDuplicateMeasure = (section, measureIdx) => {
@@ -212,64 +211,60 @@ export default function ChartDisplay({
       {sections.map((section, sectionIdx) => {
         const sectionColors = getSectionColor(section.label);
         
+        const barCount = section.measures?.length || 0;
+
         const sectionContent = (
-          <div key={section.id || sectionIdx} className={`bg-[#0a0a0a] rounded-xl border-2 ${sectionColors.border} overflow-hidden`}>
-            {/* Section Header with Color Bar */}
-            <div className={`${sectionColors.bg} px-6 py-4 flex items-center gap-3`}>
-              {editMode && (
-                <div className="cursor-grab active:cursor-grabbing">
-                  <GripVertical className="w-5 h-5 text-white/50" />
-                </div>
-              )}
-              <div className="flex items-center justify-between flex-1">
-                <div className="flex items-center gap-4">
-                  <h3 className="text-xl font-black text-white uppercase tracking-wide">
-                    {section.label}
-                  </h3>
-                  {section.repeat_count > 1 && (
-                    <span className="bg-white/20 text-white px-3 py-1 rounded text-sm font-semibold">
-                      x{section.repeat_count}
-                    </span>
-                  )}
-                  {section.modulation_key && (
-                    <span className="bg-yellow-500 text-black px-3 py-1 rounded text-sm font-bold">
-                      MOD to {section.modulation_key}
-                    </span>
-                  )}
-                </div>
-                {section.pivot_cue && (
-                  <div className="text-sm text-white/80 italic">
-                    Pivot: {section.pivot_cue}
+          <div key={section.id || sectionIdx} className={`bg-[#111111] rounded-xl border border-[#2a2a2a] border-l-4 ${sectionColors.border} overflow-hidden`}>
+            {/* Section Header Row */}
+            <div className="px-5 py-3 flex items-center justify-between gap-3 border-b border-[#1e1e1e]">
+              <div className="flex items-center gap-3">
+                {editMode && (
+                  <div className="cursor-grab active:cursor-grabbing">
+                    <GripVertical className="w-4 h-4 text-[#4a4a4a]" />
                   </div>
                 )}
+                <span className={`text-sm font-black uppercase tracking-wider ${sectionColors.text}`}>
+                  [{section.label}]
+                </span>
+                <span className="text-xs text-[#6b6b6b] font-medium">{barCount} bars</span>
+                {section.repeat_count > 1 && (
+                  <span className="bg-[#2a2a2a] text-[#a0a0a0] px-2 py-0.5 rounded text-xs font-semibold">
+                    x{section.repeat_count}
+                  </span>
+                )}
+                {section.modulation_key && (
+                  <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 px-2 py-0.5 rounded text-xs font-bold">
+                    MOD to {section.modulation_key}
+                  </span>
+                )}
               </div>
-              {section.arrangement_cue && (
-                <div className="text-sm text-white/70 mt-2 italic">
-                  {section.arrangement_cue}
-                </div>
-              )}
+              <div className="flex items-center gap-3">
+                {section.arrangement_cue && (
+                  <span className="text-xs text-[#6b6b6b] italic">{section.arrangement_cue}</span>
+                )}
+                {section.pivot_cue && (
+                  <span className="text-xs text-[#a0a0a0] italic">Pivot: {section.pivot_cue}</span>
+                )}
+              </div>
             </div>
 
             {/* Measures Grid */}
-            <div className="p-6">
-              <div className="grid grid-cols-4 gap-4">
-            {section.measures?.map((measure, measureIdx) => 
-              renderMeasureCell(measure, measureIdx, section)
-            )}
-
+            <div className="p-4">
+              <div className="grid grid-cols-4 gap-3">
+                {section.measures?.map((measure, measureIdx) =>
+                  renderMeasureCell(measure, measureIdx, section)
+                )}
                 {editMode && (
                   <button
                     onClick={() => onAddMeasure(section.id)}
-                    className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-lg p-6 min-h-[120px] flex items-center justify-center hover:border-red-600 hover:bg-[#252525] transition-all"
-                    style={{ minWidth: '160px' }}
+                    className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-lg p-4 min-h-[100px] flex items-center justify-center hover:border-red-600 hover:bg-[#1e1e1e] transition-all"
                   >
-                    <Plus className="w-8 h-8 text-[#6b6b6b]" />
+                    <Plus className="w-6 h-6 text-[#4a4a4a]" />
                   </button>
                 )}
               </div>
-
               {(!section.measures || section.measures.length === 0) && (
-                <div className="text-[#6b6b6b] text-center py-12 italic">
+                <div className="text-[#4a4a4a] text-center py-8 italic text-sm">
                   No measures in this section
                 </div>
               )}
