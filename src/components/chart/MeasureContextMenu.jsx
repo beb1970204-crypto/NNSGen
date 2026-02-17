@@ -1,14 +1,19 @@
 import React from "react";
-import { Edit, Plus, Trash2, Copy, MoreHorizontal } from "lucide-react";
+import { Edit, Plus, Trash2, Copy } from "lucide-react";
 
 export default function MeasureContextMenu({ 
-  trigger, 
+  children,
   onEditChord, 
   onAddChord, 
   onDeleteMeasure,
   onDuplicateMeasure,
   onInsertAfter,
-  chordCount 
+  chordCount,
+  onClick,
+  isSelected,
+  measurePadding,
+  measureHeight,
+  cue
 }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
@@ -28,17 +33,25 @@ export default function MeasureContextMenu({
     setOpen(false);
   };
 
-  // Render as a single grid-cell div so it doesn't break CSS grid layout
   return (
-    <div ref={ref} className="relative group">
-      {trigger}
+    <div
+      ref={ref}
+      onClick={onClick}
+      className={`relative group bg-[#1a1a1a] border ${isSelected ? 'border-red-600 shadow-lg shadow-red-600/20' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center cursor-pointer hover:bg-[#202020] hover:border-[#3a3a3a] transition-all duration-150`}
+    >
+      {children}
+      {cue && (
+        <div className="text-xs mt-2 pt-1 border-t border-[#2a2a2a] text-[#a0a0a0] italic">{cue}</div>
+      )}
+
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
-        className="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 bg-[#2a2a2a] hover:bg-[#3a3a3a] transition-all z-10"
-        style={{ opacity: open ? 1 : undefined }}
+        className="absolute top-1 right-1 w-6 h-6 hidden group-hover:flex items-center justify-center rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] z-10"
+        style={{ display: open ? 'flex' : undefined }}
       >
-        <MoreHorizontal className="w-3 h-3 text-[#a0a0a0]" />
+        <span className="text-[#a0a0a0] text-xs leading-none">⋯</span>
       </button>
+
       {open && (
         <div className="absolute top-8 right-1 z-50 w-48 bg-[#1e1e1e] border border-[#3a3a3a] rounded-lg shadow-xl p-1 space-y-0.5">
           <button
