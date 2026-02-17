@@ -1,6 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
 
-// Helper: Search for song on Spotify
+// Helper: Clean title for better Chordonomicon matching
+function cleanTitle(title) {
+  return title
+    .split(' - ')[0]
+    .replace(/\s*\(.*?(remaster|mix|live|version|edit|deluxe|feat|ft\.).*?\)/gi, '')
+    .replace(/\s*\[.*?\]/g, '')
+    .trim();
+}
+
+// Helper: Search Spotify, return top 5 tracks
 async function searchSpotify(title, artist) {
   const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
   const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
@@ -18,97 +27,71 @@ async function searchSpotify(title, artist) {
     body: 'grant_type=client_credentials'
   });
 
-  if (!tokenResponse.ok) {
-    throw new Error('Failed to authenticate with Spotify');
-  }
+  if (!tokenResponse.ok) throw new Error('Failed to authenticate with Spotify');
 
   const { access_token } = await tokenResponse.json();
 
-  const searchQuery = artist 
-    ? `track:${title} artist:${artist}`
-    : `track:${title}`;
-  
+  const searchQuery = artist ? `track:${title} artist:${artist}` : `track:${title}`;
   const searchUrl = `https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=track&limit=5`;
-  
+
   const searchResponse = await fetch(searchUrl, {
     headers: { 'Authorization': `Bearer ${access_token}` }
   });
 
-  if (!searchResponse.ok) {
-    throw new Error('Failed to search Spotify');
-  }
+  if (!searchResponse.ok) throw new Error('Failed to search Spotify');
 
   const searchData = await searchResponse.json();
 
-  if (!searchData.tracks?.items || searchData.tracks.items.length === 0) {
-    return null;
-  }
+  if (!searchData.tracks?.items?.length) return [];
 
-  const track = searchData.tracks.items[0];
-  return {
+  return searchData.tracks.items.map(track => ({
     spotify_song_id: track.id,
     spotify_artist_id: track.artists[0]?.id,
     title: track.name,
     artist: track.artists[0]?.name,
-    album: track.album?.name,
     release_date: track.album?.release_date
-  };
+  }));
 }
 
-// Helper: Fetch data from Chordonomicon
-async function fetchChordonomiconData(spotify_song_id, spotify_artist_id, title, artist) {
+// Helper: Query Chordonomicon with flexible criteria
+async function fetchChordonomiconData(params) {
+  const { spotify_song_id, spotify_artist_id, title, artist, titleOnly } = params;
   const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
-  
+
   let whereClause;
-  
+
   if (spotify_song_id) {
-    const sanitizedSongId = spotify_song_id.replace(/'/g, "''");
-    const sanitizedArtistId = spotify_artist_id ? spotify_artist_id.replace(/'/g, "''") : null;
-    
-    whereClause = `"spotify_song_id"='${sanitizedSongId}'`;
-    if (sanitizedArtistId) {
-      whereClause += ` AND "spotify_artist_id"='${sanitizedArtistId}'`;
+    whereClause = `"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`;
+    if (spotify_artist_id) {
+      whereClause += ` AND "spotify_artist_id"='${spotify_artist_id.replace(/'/g, "''")}'`;
     }
-  } else if (title && artist) {
-    const cleanTitle = title.split(' - ')[0].replace(/\s*\(.*(remaster|mix|live|version|edit|deluxe).*\)/i, '').trim();
-    const sanitizedTitle = cleanTitle.replace(/'/g, "''");
-    const sanitizedArtist = artist.replace(/'/g, "''");
-    
-    whereClause = `"title"='${sanitizedTitle}' AND "artist"='${sanitizedArtist}'`;
+  } else if (title && artist && !titleOnly) {
+    const cleaned = cleanTitle(title).replace(/'/g, "''");
+    whereClause = `"title"='${cleaned}' AND "artist"='${artist.replace(/'/g, "''")}'`;
+  } else if (title) {
+    const cleaned = cleanTitle(title).replace(/'/g, "''");
+    whereClause = `"title"='${cleaned}'`;
   } else {
-    throw new Error('Insufficient search criteria');
+    return null;
   }
 
   const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&offset=0&length=1`;
-  
+
   const headers = { 'Accept': 'application/json' };
-  if (hfToken) {
-    headers['Authorization'] = `Bearer ${hfToken}`;
-  }
+  if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
 
   const response = await fetch(filterUrl, { headers });
 
   if (!response.ok) {
-    if (response.status === 500 || response.status === 422) {
-      return null;
-    }
+    if (response.status === 500 || response.status === 422) return null;
     throw new Error(`Hugging Face API error: ${response.status}`);
   }
 
   const data = await response.json();
-
-  if (!data.rows || data.rows.length === 0) {
-    return null;
-  }
+  if (!data.rows?.length) return null;
 
   const rowData = data.rows[0].row;
-  const chordsString = rowData.chords;
-  
-  if (!chordsString) {
-    return null;
-  }
-
-  const sections = parseChordProgressionToSections(chordsString);
+  if (!rowData.chords) return null;
 
   return {
     chart_data: {
@@ -118,17 +101,17 @@ async function fetchChordonomiconData(spotify_song_id, spotify_artist_id, title,
       release_date: rowData.release_date,
       decade: rowData.decade
     },
-    sections: sections
+    sections: parseChordProgressionToSections(rowData.chords)
   };
 }
 
-// Helper: Generate chart with LLM
+// Helper: Generate chart with LLM — key/time_sig are optional, LLM detects them
 async function generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url) {
   let referenceText = '';
   let fileUrls = [];
+
   if (reference_file_url) {
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(reference_file_url);
-    
     if (isImage) {
       fileUrls = [reference_file_url];
     } else {
@@ -137,42 +120,27 @@ async function generateChartWithLLM(base44, title, artist, key, time_signature, 
     }
   }
 
+  const keyNote = key || 'Determine from your knowledge of this song';
+  const timeSigNote = time_signature || 'Determine from your knowledge of this song';
+
   const prompt = `You are a professional music chart transcription assistant specializing in Nashville Number System (NNS) charts.
 
-Task: Convert the following song information into a structured chord chart with sections and measures.
+Task: Create an accurate chord chart for the following song.
 
 Song Details:
 - Title: ${title}
 - Artist: ${artist || 'Unknown'}
-- Key: ${key}
-- Time Signature: ${time_signature}
+- Key: ${keyNote}
+- Time Signature: ${timeSigNote}
 
-${referenceText ? `Reference Material (chord chart or lyrics with chords):\n${referenceText}\n` : ''}
+${referenceText ? `Reference Material (use this as the primary source):\n${referenceText}\n` : `Use your knowledge of the actual song "${title}" by ${artist || 'the artist'} to produce accurate chords.`}
 
 Instructions:
-1. Analyze the song structure and identify sections (Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro)
-2. For each section, create measures with chord progressions
-3. Each measure should contain chords that fit the ${time_signature} time signature
-4. If no reference material is provided, create a basic structure with common chord progressions in the key of ${key}
-5. Use standard chord notation (e.g., C, Dm7, F/G, Gsus4)
-6. Keep it simple and playable for musicians
-
-Output Format:
-- Return an array of sections
-- Each section has: label, measures array, repeat_count (default 1), arrangement_cue (optional)
-- Each measure has: chords array with {chord, beats, symbols[]}
-- Ensure beats add up to the time signature (e.g., 4 beats for 4/4)
-
-${!referenceText ? `
-Since no reference material was provided, create a basic song structure:
-- Intro (2-4 measures)
-- Verse (4-8 measures) 
-- Chorus (4-8 measures)
-- Bridge (4 measures)
-- Outro (2-4 measures)
-
-Use common chord progressions appropriate for the key of ${key}.
-` : ''}`;
+1. Output the correct key and time signature for this song
+2. Identify all sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+3. Each measure should contain ONE chord (standard for 4/4 time), with 4 beats
+4. Use standard chord notation (e.g., C, Dm7, F/G, Gsus4)
+5. Be faithful to the actual song's chord progression`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
@@ -180,6 +148,8 @@ Use common chord progressions appropriate for the key of ${key}.
     response_json_schema: {
       type: "object",
       properties: {
+        key: { type: "string", description: "Musical key (e.g., G, Am, Bb)" },
+        time_signature: { type: "string", description: "Time signature (e.g., 4/4, 3/4)" },
         sections: {
           type: "array",
           items: {
@@ -218,7 +188,7 @@ Use common chord progressions appropriate for the key of ${key}.
           }
         }
       },
-      required: ["sections"]
+      required: ["key", "time_signature", "sections"]
     }
   });
 
@@ -242,36 +212,32 @@ Use common chord progressions appropriate for the key of ${key}.
   return response;
 }
 
-// Helper: Parse chord progression to sections
+// Helper: Parse Chordonomicon chord string into sections
 function parseChordProgressionToSections(chordsString) {
   const sections = [];
   const sectionPattern = /<([a-zA-Z]+)(?:_(\d+))?>/g;
-  
+
   const firstTagMatch = sectionPattern.exec(chordsString);
   if (firstTagMatch && firstTagMatch.index > 0) {
     const introChords = chordsString.substring(0, firstTagMatch.index).trim();
-    if (introChords) {
-      sections.push(createSection('Intro', introChords));
-    }
+    if (introChords) sections.push(createSection('Intro', introChords));
   }
-  
+
   sectionPattern.lastIndex = 0;
   const parts = chordsString.split(sectionPattern);
-  
+
   for (let i = 1; i < parts.length; i += 3) {
     const type = parts[i];
     const content = parts[i + 2];
-    
     if (content && content.trim()) {
-      const label = mapLabel(type);
-      sections.push(createSection(label, content));
+      sections.push(createSection(mapLabel(type), content));
     }
   }
-  
+
   if (sections.length === 0 && chordsString.trim()) {
     sections.push(createSection('Verse', chordsString));
   }
-  
+
   return sections;
 }
 
@@ -294,110 +260,108 @@ function createSection(label, chordsText) {
     }],
     cue: ''
   }));
-  
   return { label, measures, repeat_count: 1, arrangement_cue: '' };
 }
 
 function normalizeChordName(chord) {
   if (!chord || chord === '-') return '-';
-  return chord.replace(/min$/, 'm').replace(/maj/, 'maj').replace(/no3(?:rd)?/i, '5');
+  return chord.replace(/min$/, 'm').replace(/no3(?:rd)?/i, '5');
 }
+
+// ─── Main Handler ────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
-  
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { title, artist, key, time_signature, reference_file_url } = await req.json();
 
-  if (!title) {
-    return Response.json({ error: 'Title is required' }, { status: 400 });
-  }
+  if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
 
-  let spotifyData = null;
+  let chordonomiconData = null;
+  let spotifyMatch = null;
+
+  // Step 1: Spotify → iterate top 5 results for Chordonomicon match
   try {
-    spotifyData = await searchSpotify(title, artist);
+    const spotifyTracks = await searchSpotify(title, artist);
+    console.log(`Spotify found ${spotifyTracks.length} tracks`);
+
+    for (const track of spotifyTracks) {
+      const result = await fetchChordonomiconData({
+        spotify_song_id: track.spotify_song_id,
+        spotify_artist_id: track.spotify_artist_id
+      });
+      if (result) {
+        chordonomiconData = result;
+        spotifyMatch = track;
+        console.log(`Chordonomicon match via Spotify ID: ${track.title}`);
+        break;
+      }
+    }
   } catch (error) {
-    console.log('Spotify search failed:', error.message);
+    console.log('Spotify lookup failed:', error.message);
   }
 
-  let chartData = null;
-  let sectionsData = null;
-  let dataSource = 'chordonomicon';
-
-  if (spotifyData) {
+  // Step 2: Fallback — title + artist
+  if (!chordonomiconData) {
     try {
-      let chordonomiconData = await fetchChordonomiconData(spotifyData.spotify_song_id, spotifyData.spotify_artist_id);
-
-      if (!chordonomiconData) {
-        console.log('Spotify ID not found, trying title/artist match...');
-        chordonomiconData = await fetchChordonomiconData(null, null, title, artist);
-      }
-
-      if (chordonomiconData) {
-        chartData = {
-          title: spotifyData.title,
-          artist: spotifyData.artist,
-          key: key || 'C',
-          time_signature: time_signature || '4/4',
-          reference_file_url: reference_file_url,
-          spotify_song_id: chordonomiconData.chart_data.spotify_song_id,
-          spotify_artist_id: chordonomiconData.chart_data.spotify_artist_id,
-          genres: chordonomiconData.chart_data.genres,
-          release_date: chordonomiconData.chart_data.release_date,
-          decade: chordonomiconData.chart_data.decade
-        };
-        
-        sectionsData = chordonomiconData.sections;
-      }
-    } catch (error) {
-      console.log('Chordonomicon lookup failed, falling back to LLM:', error.message);
+      chordonomiconData = await fetchChordonomiconData({ title, artist });
+      if (chordonomiconData) console.log('Chordonomicon match via title + artist');
+    } catch (e) {
+      console.log('Title+artist lookup failed:', e.message);
     }
   }
 
-  if (!chartData || !sectionsData) {
+  // Step 3: Fallback — title only
+  if (!chordonomiconData) {
+    try {
+      chordonomiconData = await fetchChordonomiconData({ title, titleOnly: true });
+      if (chordonomiconData) console.log('Chordonomicon match via title only');
+    } catch (e) {
+      console.log('Title-only lookup failed:', e.message);
+    }
+  }
+
+  let chartData, sectionsData, dataSource;
+
+  if (chordonomiconData) {
+    dataSource = 'chordonomicon';
+    chartData = {
+      title: spotifyMatch?.title || title,
+      artist: spotifyMatch?.artist || artist || 'Unknown',
+      key: key || 'C',
+      time_signature: time_signature || '4/4',
+      reference_file_url,
+      ...chordonomiconData.chart_data
+    };
+    sectionsData = chordonomiconData.sections;
+  } else {
+    // Step 4: LLM fallback — detects key/time_sig if not provided
     dataSource = 'llm';
-    
-    if (!key || !time_signature) {
-      return Response.json({ 
-        error: 'Song not found in database. Please provide key and time signature to generate chart with AI.' 
-      }, { status: 400 });
+    console.log('Falling back to LLM generation');
+
+    const llmResponse = await generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url);
+
+    if (!llmResponse.sections) {
+      return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
     }
 
-    try {
-      const llmResponse = await generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url);
-
-      if (!llmResponse.sections) {
-        return Response.json({ error: 'Failed to generate chart with LLM' }, { status: 500 });
-      }
-
-      chartData = {
-        title,
-        artist: artist || 'Unknown',
-        key,
-        time_signature,
-        reference_file_url
-      };
-      
-      sectionsData = llmResponse.sections;
-    } catch (llmError) {
-      console.error('LLM generation failed:', llmError);
-      return Response.json({ 
-        error: 'Failed to generate chart. Please try again or check your inputs.',
-        details: llmError.message
-      }, { status: 500 });
-    }
+    chartData = {
+      title,
+      artist: artist || 'Unknown',
+      key: key || llmResponse.key || 'C',
+      time_signature: time_signature || llmResponse.time_signature || '4/4',
+      reference_file_url
+    };
+    sectionsData = llmResponse.sections;
   }
 
-  // Step 4: Create Chart entity with data_source field
   chartData.data_source = dataSource;
   const chart = await base44.entities.Chart.create(chartData);
 
-  // Step 5: Create Section entities
-  const sectionPromises = sectionsData.map((section) =>
+  await Promise.all(sectionsData.map(section =>
     base44.entities.Section.create({
       chart_id: chart.id,
       label: section.label,
@@ -405,15 +369,13 @@ Deno.serve(async (req) => {
       repeat_count: section.repeat_count || 1,
       arrangement_cue: section.arrangement_cue || ''
     })
-  );
+  ));
 
-  await Promise.all(sectionPromises);
-
-  return Response.json({ 
+  return Response.json({
     success: true,
     chart_id: chart.id,
     source: dataSource,
-    message: dataSource === 'chordonomicon' 
+    message: dataSource === 'chordonomicon'
       ? 'Chart generated from Chordonomicon database'
       : 'Chart generated using AI'
   });
