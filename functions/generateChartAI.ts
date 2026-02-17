@@ -106,6 +106,23 @@ async function fetchChordonomiconData(params) {
   };
 }
 
+// Helper: Detect key + time signature for a known song using LLM
+async function detectKeyForSong(base44, title, artist) {
+  const response = await base44.integrations.Core.InvokeLLM({
+    prompt: `What is the original musical key and time signature of the song "${title}" by ${artist || 'Unknown'}? 
+Return the standard key (e.g. G, Am, Bb, F#m) and time signature (e.g. 4/4, 3/4).`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        key: { type: "string" },
+        time_signature: { type: "string" }
+      },
+      required: ["key", "time_signature"]
+    }
+  });
+  return response;
+}
+
 // Helper: Generate chart with LLM — key/time_sig are optional, LLM detects them
 async function generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url) {
   let referenceText = '';
@@ -264,9 +281,61 @@ function createSection(label, chordsText) {
   return { label, measures, repeat_count: 1, arrangement_cue: '' };
 }
 
+// Convert Chordonomicon colon-notation to standard chord names
+// e.g. C:maj → C, A:min → Am, G:7 → G7, D:min7 → Dm7, B:hdim7 → Bm7b5
 function normalizeChordName(chord) {
-  if (!chord || chord === '-') return '-';
-  return chord.replace(/min$/, 'm').replace(/no3(?:rd)?/i, '5');
+  if (!chord || chord === '-' || chord === 'N' || chord === 'X') return '-';
+
+  // Remove octave numbers appended (e.g. "C:maj/3" keep root/bass only)
+  // Handle slash chords first
+  let slashPart = '';
+  const slashIdx = chord.indexOf('/');
+  if (slashIdx !== -1) {
+    slashPart = '/' + chord.slice(slashIdx + 1).replace(/:\w+$/, '');
+    chord = chord.slice(0, slashIdx);
+  }
+
+  if (!chord.includes(':')) {
+    // Already standard notation — just clean up
+    return chord.replace(/min(?!or)/, 'm').replace(/no3(?:rd)?/i, '5') + slashPart;
+  }
+
+  const [root, quality] = chord.split(':');
+  if (!root) return '-';
+
+  const qualityMap = {
+    'maj':    '',
+    'min':    'm',
+    '':       '',
+    '5':      '5',
+    '7':      '7',
+    'maj7':   'maj7',
+    'min7':   'm7',
+    'minmaj7':'mmaj7',
+    'maj6':   'maj6',
+    'min6':   'm6',
+    '6':      '6',
+    '9':      '9',
+    'maj9':   'maj9',
+    'min9':   'm9',
+    '11':     '11',
+    'maj11':  'maj11',
+    'min11':  'm11',
+    '13':     '13',
+    'maj13':  'maj13',
+    'min13':  'm13',
+    'dim':    'dim',
+    'dim7':   'dim7',
+    'hdim7':  'm7b5',  // half-diminished
+    'aug':    'aug',
+    'sus2':   'sus2',
+    'sus4':   'sus4',
+    '7sus4':  '7sus4',
+    'add9':   'add9',
+  };
+
+  const suffix = qualityMap[quality] !== undefined ? qualityMap[quality] : (quality || '');
+  return root + suffix + slashPart;
 }
 
 // ─── Main Handler ────────────────────────────────────────────────────────────
@@ -329,11 +398,28 @@ Deno.serve(async (req) => {
 
   if (chordonomiconData) {
     dataSource = 'chordonomicon';
+
+    // Detect actual key + time signature via LLM since Chordonomicon doesn't store them
+    let detectedKey = key;
+    let detectedTimeSig = time_signature;
+    if (!detectedKey || !detectedTimeSig) {
+      try {
+        const songMeta = await detectKeyForSong(base44, spotifyMatch?.title || title, spotifyMatch?.artist || artist);
+        detectedKey = detectedKey || songMeta.key || 'C';
+        detectedTimeSig = detectedTimeSig || songMeta.time_signature || '4/4';
+        console.log(`Detected key: ${detectedKey}, time: ${detectedTimeSig}`);
+      } catch (e) {
+        console.log('Key detection failed, defaulting to C/4/4:', e.message);
+        detectedKey = detectedKey || 'C';
+        detectedTimeSig = detectedTimeSig || '4/4';
+      }
+    }
+
     chartData = {
       title: spotifyMatch?.title || title,
       artist: spotifyMatch?.artist || artist || 'Unknown',
-      key: key || 'C',
-      time_signature: time_signature || '4/4',
+      key: detectedKey,
+      time_signature: detectedTimeSig,
       reference_file_url,
       ...chordonomiconData.chart_data
     };
