@@ -630,9 +630,30 @@ export default function Home() {
                   </div>
                 </div>
                 
-                <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4 mb-4">
-                  <div className="text-xs text-[#6b6b6b] mb-2 font-medium">[V1] 4 bars</div>
-                  <div className="font-mono text-base text-white font-semibold">| 1 | 4 | 1 | 5 |</div>
+                <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-3 mb-4 min-h-[56px] flex items-center">
+                  {chart.key && chart.time_signature ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-[#6b6b6b] uppercase tracking-wider">{chart.key}</span>
+                      <span className="text-[#3a3a3a]">·</span>
+                      <span className="text-xs text-[#6b6b6b]">{chart.time_signature}</span>
+                      {chart.tempo && (
+                        <>
+                          <span className="text-[#3a3a3a]">·</span>
+                          <span className="text-xs text-[#6b6b6b]">{chart.tempo} BPM</span>
+                        </>
+                      )}
+                      {chart.data_source && (
+                        <>
+                          <span className="text-[#3a3a3a]">·</span>
+                          <span className={`text-xs font-semibold ${chart.data_source === 'chordonomicon' ? 'text-green-500' : chart.data_source === 'llm' ? 'text-blue-400' : 'text-[#6b6b6b]'}`}>
+                            {chart.data_source === 'chordonomicon' ? 'Chordonomicon' : chart.data_source === 'llm' ? 'AI' : 'Manual'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-[#4a4a4a] italic">No key set</span>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-[#6b6b6b]">
