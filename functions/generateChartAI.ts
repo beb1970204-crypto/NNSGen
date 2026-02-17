@@ -270,21 +270,10 @@ function mapLabel(type) {
 
 function createSection(label, chordsText) {
   const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim());
-  const measures = [];
-  const chordsPerMeasure = 4;
-
-  for (let j = 0; j < chordArray.length; j += chordsPerMeasure) {
-    const measureChords = chordArray.slice(j, j + chordsPerMeasure);
-    const beatsPerChord = 4 / measureChords.length;
-    measures.push({
-      chords: measureChords.map(chord => ({
-        chord: normalizeChordName(chord),
-        beats: beatsPerChord,
-        symbols: []
-      })),
-      cue: ''
-    });
-  }
+  const measures = chordArray.map(chord => ({
+    chords: [{ chord: normalizeChordName(chord), beats: 4, symbols: [] }],
+    cue: ''
+  }));
   return { label, measures, repeat_count: 1, arrangement_cue: '' };
 }
 
