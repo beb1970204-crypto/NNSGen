@@ -74,24 +74,28 @@ export default function SongSettingsSidebar({
 
         {/* Notation Mode */}
         <div>
-          <Label className="text-xs text-[#a0a0a0] mb-2 block">Notation Mode</Label>
-          <div className="flex gap-2">
-            <Button
-              variant={chart.display_mode === 'chords' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onToggleNotation('chords')}
-              className="flex-1"
-            >
-              Chords
-            </Button>
-            <Button
-              variant={chart.display_mode === 'roman' ? 'default' : 'outline'}
-              size="sm"
+          <Label className="text-xs text-[#a0a0a0] mb-3 block">Notation Mode</Label>
+          <div className="flex rounded-lg overflow-hidden border border-[#2a2a2a]">
+            <button
               onClick={() => onToggleNotation('roman')}
-              className="flex-1"
+              className={`flex-1 py-2 text-sm font-bold tracking-widest transition-all ${
+                chart.display_mode === 'roman'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-[#1a1a1a] text-[#6b6b6b] hover:text-white hover:bg-[#252525]'
+              }`}
             >
-              Roman
-            </Button>
+              1 2 3
+            </button>
+            <button
+              onClick={() => onToggleNotation('chords')}
+              className={`flex-1 py-2 text-sm font-bold tracking-widest transition-all border-l border-[#2a2a2a] ${
+                chart.display_mode === 'chords'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-[#1a1a1a] text-[#6b6b6b] hover:text-white hover:bg-[#252525]'
+              }`}
+            >
+              A B C
+            </button>
           </div>
         </div>
 
@@ -104,25 +108,25 @@ export default function SongSettingsSidebar({
             </Button>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             {sections.map((section, idx) => {
               const barCount = section.measures?.length || 0;
+              const dotColors = {
+                'Chorus': 'bg-red-500', 'Verse': 'bg-blue-500', 'Bridge': 'bg-yellow-500',
+                'Intro': 'bg-purple-500', 'Outro': 'bg-indigo-400', 'Pre': 'bg-orange-400',
+                'Instrumental Solo': 'bg-green-500',
+              };
+              const dotColor = dotColors[section.label] || 'bg-gray-500';
               return (
                 <div
                   key={section.id || idx}
-                  className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all cursor-pointer group"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#1a1a1a] transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-white group-hover:text-red-500 transition-colors">{section.label}</div>
-                      <div className="text-xs text-[#6b6b6b]">{barCount} bars</div>
-                    </div>
-                    {section.repeat_count > 1 && (
-                      <div className="text-xs text-[#a0a0a0] bg-[#2a2a2a] px-2 py-1 rounded">
-                        x{section.repeat_count}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                    <span className="text-sm text-[#a0a0a0] group-hover:text-white transition-colors">{section.label}</span>
                   </div>
+                  <span className="text-xs text-[#6b6b6b]">{barCount} bars</span>
                 </div>
               );
             })}

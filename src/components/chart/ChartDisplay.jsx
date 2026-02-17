@@ -213,36 +213,36 @@ export default function ChartDisplay({
         const barCount = section.measures?.length || 0;
 
         const sectionContent = (
-          <div key={section.id || sectionIdx} className={`bg-[#111111] rounded-xl border border-[#2a2a2a] border-l-4 ${sectionColors.border} overflow-hidden`}>
-            {/* Section Header Row */}
-            <div className="px-5 py-3 flex items-center justify-between gap-3 border-b border-[#1e1e1e]">
+          <div key={section.id || sectionIdx} className="bg-[#111111] rounded-xl overflow-hidden border border-[#2a2a2a]">
+            {/* Section Header - Full colored bar like the design */}
+            <div className={`${sectionColors.bg} px-5 py-2.5 flex items-center justify-between`}>
               <div className="flex items-center gap-3">
                 {editMode && (
                   <div className="cursor-grab active:cursor-grabbing">
-                    <GripVertical className="w-4 h-4 text-[#4a4a4a]" />
+                    <GripVertical className="w-4 h-4 text-white/40" />
                   </div>
                 )}
-                <span className={`text-sm font-black uppercase tracking-wider ${sectionColors.text}`}>
+                <span className="text-sm font-black uppercase tracking-wider text-white">
                   [{section.label}]
                 </span>
-                <span className="text-xs text-[#6b6b6b] font-medium">{barCount} bars</span>
+                <span className="text-xs text-white/60 font-medium">{barCount} bars</span>
                 {section.repeat_count > 1 && (
-                  <span className="bg-[#2a2a2a] text-[#a0a0a0] px-2 py-0.5 rounded text-xs font-semibold">
+                  <span className="bg-black/20 text-white px-2 py-0.5 rounded text-xs font-semibold">
                     x{section.repeat_count}
                   </span>
                 )}
                 {section.modulation_key && (
-                  <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 px-2 py-0.5 rounded text-xs font-bold">
+                  <span className="bg-black/30 text-yellow-300 border border-yellow-400/50 px-2 py-0.5 rounded text-xs font-bold">
                     MOD to {section.modulation_key}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 {section.arrangement_cue && (
-                  <span className="text-xs text-[#6b6b6b] italic">{section.arrangement_cue}</span>
+                  <span className="text-xs text-white/50 italic">{section.arrangement_cue}</span>
                 )}
                 {section.pivot_cue && (
-                  <span className="text-xs text-[#a0a0a0] italic">Pivot: {section.pivot_cue}</span>
+                  <span className="text-xs text-white/50 italic">Pivot: {section.pivot_cue}</span>
                 )}
               </div>
             </div>
