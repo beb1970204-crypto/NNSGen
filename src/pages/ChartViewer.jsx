@@ -449,28 +449,31 @@ export default function ChartViewer() {
               <div className="h-full flex items-center justify-center">
                 <div className="text-center">
                   <p className="text-[#6b6b6b] mb-4">Chart is empty. Add sections to get started.</p>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button className="gap-2">
-                        <Plus className="w-4 h-4" />
-                        Add Section
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
-                      {['Intro', 'Verse', 'Pre', 'Chorus', 'Bridge', 'Instrumental Solo', 'Outro'].map(label => (
-                        <DropdownMenuItem 
-                          key={label}
-                          onClick={() => createSection.mutate(label)}
-                          className="text-white hover:bg-[#252525]"
-                        >
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {editMode && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="w-4 h-4" />
+                          Add Section
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                        {['Intro', 'Verse', 'Pre', 'Chorus', 'Bridge', 'Instrumental Solo', 'Outro'].map(label => (
+                          <DropdownMenuItem 
+                            key={label}
+                            onClick={() => createSection.mutate(label)}
+                            className="text-white hover:bg-[#252525]"
+                          >
+                            {label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
-            ) : (
+            ) : editMode ? (
+              // Edit Mode - Standard View
               <div style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="sections">
@@ -484,7 +487,7 @@ export default function ChartViewer() {
                           sections={sections}
                           chartKey={chart.key}
                           displayMode={chart.display_mode}
-                          editMode={editMode}
+                          editMode={true}
                           onUpdateSection={handleUpdateSection}
                           onAddMeasure={handleAddMeasure}
                           onMeasureClick={handleMeasureClick}
@@ -523,6 +526,33 @@ export default function ChartViewer() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+              </div>
+            ) : (
+              // Read Mode - 2-Column Grid
+              <div className="grid grid-cols-2 gap-6">
+                {sections.map((section, index) => (
+                  <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-white">{section.label}</h3>
+                      <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
+                    </div>
+                    <ChartDisplay 
+                      sections={[section]}
+                      chartKey={chart.key}
+                      displayMode={chart.display_mode}
+                      editMode={false}
+                      onUpdateSection={handleUpdateSection}
+                      onAddMeasure={handleAddMeasure}
+                      onMeasureClick={handleMeasureClick}
+                      selectedMeasureIndex={selectedMeasureIndex}
+                      selectedSectionId={selectedSection?.id}
+                      onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                      onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                      onMoveSectionUp={() => moveSectionUp(index)}
+                      onMoveSectionDown={() => moveSectionDown(index)}
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
