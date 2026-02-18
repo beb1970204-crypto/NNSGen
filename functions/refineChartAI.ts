@@ -1,22 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
 
-// ─── Output Validation (reused from generateChartAI) ───────────────────────────
+// ─── Output Validation (refinement-specific, more lenient than generation) ────────
 
 function validateChartOutput(sections) {
   if (!sections || sections.length < 1) {
     return { valid: false, reason: 'No sections generated' };
   }
-  if (sections.length > 10) {
+  if (sections.length > 12) {
     return { valid: false, reason: 'Too many sections (likely fragmented)' };
   }
 
-  // Check for completeness: must have Verse + Chorus at minimum
+  // For refinement, be more lenient: just require at least one section
+  // (user may be restructuring a song that doesn't fit traditional patterns)
   const labels = sections.map(s => s.label);
-  const hasVerse = labels.includes('Verse');
-  const hasChorus = labels.includes('Chorus');
-  
-  if (!hasVerse || !hasChorus) {
-    return { valid: false, reason: `Incomplete song structure. Found: ${labels.join(', ')}. Need at minimum: Verse + Chorus` };
+  if (labels.length === 0) {
+    return { valid: false, reason: 'No sections generated' };
   }
 
   const uniqueChords = new Set();
