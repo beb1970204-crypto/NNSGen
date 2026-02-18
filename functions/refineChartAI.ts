@@ -161,7 +161,7 @@ RESPONSE FORMAT (return this exact structure):
     try {
       response = await base44.integrations.Core.InvokeLLM({
         prompt,
-        add_context_from_internet: true,
+        add_context_from_internet: false,
         response_json_schema: schema
       });
     } catch (llmError) {
