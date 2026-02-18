@@ -442,24 +442,15 @@ Deno.serve(async (req) => {
   }
 
   chartData.data_source = dataSource;
-  const chart = await base44.entities.Chart.create(chartData);
 
-  await Promise.all(sectionsData.map(section =>
-    base44.entities.Section.create({
-      chart_id: chart.id,
-      label: section.label,
-      measures: section.measures,
-      repeat_count: section.repeat_count || 1,
-      arrangement_cue: section.arrangement_cue || ''
-    })
-  ));
-
+  // Return the generated data WITHOUT saving — the frontend will save only when user clicks Save
   return Response.json({
     success: true,
-    chart_id: chart.id,
     source: dataSource,
     message: dataSource === 'chordonomicon'
       ? 'Chart generated from Chordonomicon database'
-      : 'Chart generated using AI'
+      : 'Chart generated using AI',
+    chartData,
+    sectionsData
   });
 });
