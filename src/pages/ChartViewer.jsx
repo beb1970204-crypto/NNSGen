@@ -368,10 +368,7 @@ export default function ChartViewer() {
             <Download className="w-4 h-4" />
             Export PDF
           </Button>
-          <Button size="sm" className="gap-2 shadow-lg shadow-red-600/20">
-            <Save className="w-4 h-4" />
-            Save
-          </Button>
+          <div className="text-xs text-[#4a4a4a] italic">Auto-saved</div>
           <div className="w-8 h-8 bg-[#2a2a2a] rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-[#a0a0a0]" />
           </div>
