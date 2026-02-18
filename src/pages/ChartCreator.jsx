@@ -3,11 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Sparkles, Save, X } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, Save, X, Wand2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import ChartDisplay from "@/components/chart/ChartDisplay";
+import RefineFeedbackModal from "@/components/chart/RefineFeedbackModal";
 
 export default function ChartCreator() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function ChartCreator() {
   const [draftChart, setDraftChart] = useState(null);
   const [draftSections, setDraftSections] = useState(null);
   const [dataSource, setDataSource] = useState(null);
+  const [showRefineModal, setShowRefineModal] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -94,6 +97,32 @@ export default function ChartCreator() {
     setDataSource(null);
   };
 
+  const handleRefineChart = async (userFeedback) => {
+    if (!draftChart || !draftSections) return;
+    setIsRefining(true);
+    setShowRefineModal(false);
+
+    const response = await base44.functions.invoke('refineChartAI', {
+      title: draftChart.title,
+      artist: draftChart.artist,
+      key: draftChart.key,
+      time_signature: draftChart.time_signature,
+      userFeedback,
+      currentSections: draftSections
+    });
+
+    setIsRefining(false);
+
+    if (response.data.error) {
+      toast.error(response.data.error);
+      return;
+    }
+
+    // Update draft with refined sections
+    setDraftSections(response.data.sectionsData);
+    toast.success("Chart refined! Review the changes and save when ready.");
+  };
+
   // --- DRAFT PREVIEW MODE ---
   if (draftChart && draftSections) {
     const sourceLabel = dataSource === 'chordonomicon' ? 'Chordonomicon DB' : 'AI Generated';
@@ -125,6 +154,16 @@ export default function ChartCreator() {
             <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs px-3 py-1.5 rounded-lg font-medium">
               ⚠ Draft — not saved yet
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRefineModal(true)}
+              disabled={isRefining}
+              className="gap-2"
+            >
+              <Wand2 className="w-4 h-4" />
+              Refine with AI
+            </Button>
             <Button variant="outline" size="sm" onClick={handleDiscard} className="gap-2">
               <X className="w-4 h-4" />
               Discard
@@ -132,7 +171,7 @@ export default function ChartCreator() {
             <Button
               size="sm"
               onClick={handleSaveChart}
-              disabled={isSaving}
+              disabled={isSaving || isRefining}
               className="gap-2 shadow-lg shadow-red-600/20"
             >
               {isSaving ? (
@@ -153,6 +192,15 @@ export default function ChartCreator() {
             editMode={false}
           />
         </div>
+
+        {/* Refine Modal */}
+        {showRefineModal && (
+          <RefineFeedbackModal
+            onSubmit={handleRefineChart}
+            onCancel={() => setShowRefineModal(false)}
+            isLoading={isRefining}
+          />
+        )}
       </div>
     );
   }
