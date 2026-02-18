@@ -181,12 +181,14 @@ async function generateChartWithLLM(base44, title, artist, key, time_signature, 
     }
   }
 
+  const beatsPerBar = time_signature ? parseInt(time_signature.split('/')[0]) || 4 : 4;
+
   const keyInstruction = key
     ? `Key: ${key} (use this exact key)`
     : `Key: Determine from your knowledge of this song. Return tonic (root note only, e.g. "B" not "Bm") and mode ("major" or "minor") as separate fields.`;
 
   const timeSigInstruction = time_signature
-    ? `Time Signature: ${time_signature} (use this exact time signature)`
+    ? `Time Signature: ${time_signature} (use this exact time signature, ${beatsPerBar} beats per measure)`
     : `Time Signature: Determine from your knowledge of this song`;
 
   const prompt = `You are a professional music chart transcription assistant.
@@ -201,14 +203,20 @@ Song Details:
 
 ${referenceText ? `Reference Material (use this as the primary source):\n${referenceText}\n` : `Use your knowledge of the actual song "${title}" by ${artist || 'the artist'} to produce accurate chords.`}
 
-Instructions:
-1. Return the key_tonic (root note only, e.g. "B", "F#", "Bb") and key_mode ("major" or "minor") as separate fields
+CRITICAL RULES — follow these exactly:
+1. Return key_tonic (root note ONLY, e.g. "B", "F#", "Bb") and key_mode ("major" or "minor") as SEPARATE fields
 2. Return the time_signature
-3. Identify all sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+3. Identify sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 4. Use standard chord notation ONLY — letter names with quality suffixes (e.g., C, Dm7, F/G, Gsus4, Bbmaj7)
 5. Do NOT use Roman numerals, Nashville numbers, or any other notation system
-6. Each measure should contain the chord(s) that fall in that bar
-7. Be faithful to the actual song's chord progression`;
+6. Output the ACTUAL chords of the song exactly as they appear — do NOT transpose or convert them
+7. BEAT ASSIGNMENT — this is critical:
+   - Each measure must contain exactly ${beatsPerBar} total beats across all its chords
+   - If one chord fills the whole measure: beats = ${beatsPerBar}
+   - If two chords split equally: each gets beats = ${beatsPerBar / 2}
+   - NEVER put more than ${beatsPerBar} total beats in a single measure
+   - NEVER put chords from different measures into the same measure array
+8. Each section's measures array should contain ONE object per bar of music`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
