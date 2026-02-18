@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { 
   LayoutGrid, Star, Clock, List, Share2, FolderOpen, 
-  Settings, HelpCircle, User, Music2, HelpingHand
+  Settings, HelpCircle, User, Music2 
 } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
@@ -121,25 +121,19 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* User Profile at Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 border-t border-[#2a2a2a] bg-[#141414] space-y-2">
-          <Link to={`${createPageUrl("Settings")}`}>
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#252525] transition-all text-[#a0a0a0] hover:text-white text-sm font-medium">
-              <HelpingHand className="w-4 h-4" />
-              Help & Guide
-            </button>
-          </Link>
-          <Link to={`${createPageUrl("Settings")}`}>
-            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#1a1a1a] transition-all group cursor-pointer">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center shadow-lg shadow-red-600/20">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate text-white">{user?.full_name || user?.email || 'User'}</div>
-                <div className="text-xs text-[#6b6b6b]">Pro Plan</div>
-              </div>
-              <Settings className="w-4 h-4 text-[#6b6b6b] group-hover:text-white transition-colors" />
+        <div className="absolute bottom-0 left-0 right-0 p-5 border-t border-[#2a2a2a] bg-[#141414]">
+        <Link to={createPageUrl("Settings")}>
+          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#1a1a1a] transition-all group cursor-pointer">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center shadow-lg shadow-red-600/20">
+              <User className="w-5 h-5 text-white" />
             </div>
-          </Link>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate text-white">{user?.full_name || user?.email || 'User'}</div>
+              <div className="text-xs text-[#6b6b6b]">Pro Plan</div>
+            </div>
+            <Settings className="w-4 h-4 text-[#6b6b6b] group-hover:text-white transition-colors" />
+          </div>
+        </Link>
         </div>
       </div>
 
