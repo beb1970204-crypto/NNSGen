@@ -105,7 +105,22 @@ const INTERVAL_TO_NNS = {
 export function chordToNNS(chord, chartKey) {
   if (!chord || chord === '-') return '-';
 
-  const result = getScaleDegreeInterval(chord, chartKey);
+  // NNS always uses the relative major scale
+  // If the key is minor (e.g. "Am"), convert to its relative major (e.g. "C")
+  const isMinorKey = chartKey.endsWith('m');
+  let nnsKey = chartKey;
+  if (isMinorKey) {
+    // Get the interval from the minor root to its relative major (up 3 semitones)
+    const minorRoot = chartKey.slice(0, -1);
+    const majorIntervals = {
+      'A': 'C', 'B': 'D', 'C': 'Eb', 'D': 'F', 'E': 'G', 'F': 'Ab', 'G': 'Bb',
+      'A#': 'C#', 'Bb': 'Db', 'B#': 'D#', 'C#': 'E', 'D#': 'F#', 'E#': 'G#', 'F#': 'A',
+      'Db': 'Fb', 'Eb': 'Gb', 'Fb': 'Abb', 'Gb': 'Bbb', 'Ab': 'Cb'
+    };
+    nnsKey = majorIntervals[minorRoot] || chartKey;
+  }
+
+  const result = getScaleDegreeInterval(chord, nnsKey);
   if (!result) return chord;
 
   const { chordData, interval } = result;
