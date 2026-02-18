@@ -120,6 +120,26 @@ function normalizeKey(rawKey) {
   return k;
 }
 
+// Helper: Detect only key + time signature for a known song (fast, cheap LLM call)
+async function detectKeyAndTimeSig(base44, title, artist) {
+  const response = await base44.integrations.Core.InvokeLLM({
+    prompt: `What is the original musical key and time signature of "${title}" by ${artist || 'Unknown'}?
+Return ONLY the short key name (e.g. Bm, G, F#m, Bb — no "major"/"minor" words) and time signature (e.g. 4/4, 3/4).`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        key: { type: "string" },
+        time_signature: { type: "string" }
+      },
+      required: ["key", "time_signature"]
+    }
+  });
+  return {
+    key: normalizeKey(response.key),
+    time_signature: response.time_signature || '4/4'
+  };
+}
+
 // Helper: Generate chart with LLM — key/time_sig are optional, LLM detects them
 async function generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url) {
   let referenceText = '';
