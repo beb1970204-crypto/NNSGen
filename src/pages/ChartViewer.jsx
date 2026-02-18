@@ -227,16 +227,20 @@ export default function ChartViewer() {
   const deleteSection = useMutation({
     mutationFn: async (sectionId) => {
       await base44.entities.Section.delete(sectionId);
+      // Remove from chart's ordered sections list
+      const currentOrderedIds = (chart?.sections || []).filter(id => id !== sectionId);
+      await base44.entities.Chart.update(chartId, { sections: currentOrderedIds });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
       toast.success('Section deleted');
     }
   });
 
   const duplicateSection = useMutation({
     mutationFn: async (section) => {
-      const duplicated = {
+      const newSection = await base44.entities.Section.create({
         chart_id: chartId,
         label: section.label,
         measures: section.measures,
@@ -244,11 +248,21 @@ export default function ChartViewer() {
         arrangement_cue: section.arrangement_cue,
         modulation_key: section.modulation_key,
         pivot_cue: section.pivot_cue
-      };
-      await base44.entities.Section.create(duplicated);
+      });
+      // Insert duplicate right after the original in the order list
+      const currentOrderedIds = chart?.sections || [];
+      const originalIdx = currentOrderedIds.indexOf(section.id);
+      const updatedIds = [...currentOrderedIds];
+      if (originalIdx >= 0) {
+        updatedIds.splice(originalIdx + 1, 0, newSection.id);
+      } else {
+        updatedIds.push(newSection.id);
+      }
+      await base44.entities.Chart.update(chartId, { sections: updatedIds });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
       toast.success('Section duplicated');
     }
   });
