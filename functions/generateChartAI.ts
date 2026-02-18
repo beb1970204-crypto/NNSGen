@@ -361,10 +361,10 @@ Replace C, F, G with actual chords. Keep 3 sections minimum.`;
 // ─── Output Validation ─────────────────────────────────────────────────────────
 
 function validateChartOutput(sections) {
-  // Check section count (need at least 2)
-  if (!sections || sections.length < 2) {
-    console.log(`Validation failed: Only ${sections?.length || 0} sections (need at least 2)`);
-    return { valid: false, reason: 'Too few sections (need at least 2)' };
+  // Check section count (need at least 1)
+  if (!sections || sections.length < 1) {
+    console.log(`Validation failed: Only ${sections?.length || 0} sections (need at least 1)`);
+    return { valid: false, reason: 'No sections generated' };
   }
   if (sections.length > 10) {
     return { valid: false, reason: 'Too many sections (likely fragmented)' };
