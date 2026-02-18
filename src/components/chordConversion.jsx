@@ -89,8 +89,9 @@ export function chordToNNS(chord, chartKey) {
   const chordData = Chord.get(chord);
   if (!chordData || chordData.empty) return chord;
 
-  const tonic = chartKey.replace(/m$/, '');
-  const interval = distance(tonic, chordData.tonic);
+  const keyRoot = chartKey.replace(/m$/, '');
+  const tonic = Note.get(chordData.tonic).pc || chordData.tonic;
+  const interval = distance(keyRoot, tonic);
 
   const degree = NNS_DEGREE_MAP[interval] || '?';
 
