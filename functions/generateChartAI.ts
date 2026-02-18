@@ -295,7 +295,7 @@ function parseChordProgressionToSections(chordsString) {
     const type = parts[i];
     const content = parts[i + 2];
     if (content && content.trim()) {
-      sections.push(createSection(mapLabel(type), content));
+      sections.push(createSection(mapLabel(type), content, /* beatsPerBar resolved later */ 4));
     }
   }
 
