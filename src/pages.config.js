@@ -51,6 +51,7 @@ import ChartCreator from './pages/ChartCreator';
 import ChartViewer from './pages/ChartViewer';
 import Home from './pages/Home';
 import SetlistViewer from './pages/SetlistViewer';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -59,6 +60,7 @@ export const PAGES = {
     "ChartViewer": ChartViewer,
     "Home": Home,
     "SetlistViewer": SetlistViewer,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
