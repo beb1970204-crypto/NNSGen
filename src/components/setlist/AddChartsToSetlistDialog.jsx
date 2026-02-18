@@ -15,11 +15,9 @@ export default function AddChartsToSetlistDialog({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const handleCreateAndAdd = (data) => {
-    onCreateSetlist(data, (newSetlistId) => {
-      onAddToSetlist(newSetlistId);
-      setShowCreateDialog(false);
-      onOpenChange(false);
-    });
+    onCreateSetlist(data);
+    setShowCreateDialog(false);
+    onOpenChange(false);
   };
 
   return (

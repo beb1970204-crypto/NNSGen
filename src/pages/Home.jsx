@@ -924,13 +924,7 @@ export default function Home() {
         setlists={setlists}
         isLoading={bulkAddToSetlist.isPending || createAndAddToSetlist.isPending}
         onAddToSetlist={(setlistId) => bulkAddToSetlist.mutate(setlistId)}
-        onCreateSetlist={(data, callback) => {
-          createAndAddToSetlist.mutate(data, {
-            onSuccess: (newSetlist) => {
-              callback(newSetlist.id);
-            }
-          });
-        }}
+        onCreateSetlist={(data) => createAndAddToSetlist.mutate(data)}
       />
 
       {/* Keyboard Shortcuts Modal */}
