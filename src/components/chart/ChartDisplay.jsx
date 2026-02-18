@@ -23,19 +23,10 @@ export default function ChartDisplay({
 }) {
   const renderChord = (chordObj) => {
     const chordText = typeof chordObj === 'string' ? chordObj : chordObj.chord;
-    const bassNote = typeof chordObj === 'object' && chordObj.bass_note ? chordObj.bass_note : null;
-    
-    let displayText = chordText;
-    if (displayMode === 'roman') {
-      displayText = chordToRoman(chordText, chartKey);
-    }
-    
-    // Add bass note if present
-    if (bassNote) {
-      displayText += `/${bassNote}`;
-    }
-    
-    return displayText;
+
+    if (displayMode === 'roman') return chordToRoman(chordText, chartKey);
+    if (displayMode === 'nns')   return chordToNNS(chordText, chartKey);
+    return chordText;
   };
 
   const baseFontSize = 'text-2xl';
