@@ -304,6 +304,52 @@ Example:
   return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
 }
 
+// ─── Output Validation ─────────────────────────────────────────────────────────
+
+function validateChartOutput(sections) {
+  // Check section count (should be 3-6 for most songs)
+  if (sections.length < 2) {
+    return { valid: false, reason: 'Too few sections (need at least 2)' };
+  }
+  if (sections.length > 8) {
+    return { valid: false, reason: 'Too many sections (likely over-fragmented)' };
+  }
+
+  // Check chord complexity across all sections
+  const uniqueChords = new Set();
+  let totalMeasures = 0;
+  
+  for (const section of sections) {
+    const measures = section.measures || [];
+    totalMeasures += measures.length;
+    
+    for (const measure of measures) {
+      const chords = measure.chords || [];
+      for (const chordObj of chords) {
+        if (chordObj.chord && chordObj.chord !== '-') {
+          uniqueChords.add(chordObj.chord);
+        }
+      }
+    }
+  }
+
+  // Flag hallucination: too many unique chords for a typical song (16+ is suspicious)
+  if (uniqueChords.size > 15) {
+    return { valid: false, reason: `Too many unique chords (${uniqueChords.size}), likely hallucination` };
+  }
+
+  // Check measure consistency: most sections should have similar bar counts
+  const sectionLengths = sections.map(s => s.measures?.length || 0);
+  const avgLength = sectionLengths.reduce((a, b) => a + b, 0) / sectionLengths.length;
+  const outliers = sectionLengths.filter(len => len < avgLength * 0.3 || len > avgLength * 3);
+  
+  if (outliers.length > sections.length * 0.4) {
+    return { valid: false, reason: 'Measure counts too inconsistent across sections' };
+  }
+
+  return { valid: true, uniqueChords: uniqueChords.size, totalMeasures };
+}
+
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
