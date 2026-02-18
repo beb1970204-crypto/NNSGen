@@ -442,6 +442,8 @@ export default function ChartViewer() {
             onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
             editMode={editMode}
             onToggleEditMode={() => setEditMode(!editMode)}
+            displayMode={chart.display_mode}
+            onToggleDisplayMode={toggleDisplayMode}
           />
           
           <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
