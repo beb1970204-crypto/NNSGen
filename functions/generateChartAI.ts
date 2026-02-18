@@ -454,8 +454,8 @@ Deno.serve(async (req) => {
       try {
         const songTitle = spotifyMatch?.title || title;
         const songArtist = spotifyMatch?.artist || artist;
-        // Pass a sample of the actual chords to help ground the key detection
-        const rawChords = chordonomiconData.sections.flatMap(s => s.measures.map(m => m.chords[0]?.chord)).filter(Boolean).slice(0, 12).join(' ');
+        // Pass a sample of the raw Chordonomicon chords to ground the key detection
+        const rawChords = (chordonomiconData.rawChords || '').split(/[\s<>a-z_0-9]+/).filter(Boolean).slice(0, 12).join(' ');
         const meta = await detectKeyAndTimeSig(base44, songTitle, songArtist, rawChords);
         detectedKey = detectedKey || meta.key;
         detectedTimeSig = detectedTimeSig || meta.time_signature;
