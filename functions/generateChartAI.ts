@@ -177,25 +177,35 @@ async function generateChartWithLLM(base44, title, artist, key, time_signature, 
 
   const beatsPerBar = time_signature ? parseInt(time_signature.split('/')[0]) || 4 : 4;
 
-  const prompt = `You are a professional musician and chart transcriptionist. Create an accurate chord chart for:
+  // A concrete example showing exactly what one section's measures array looks like.
+  // This is far more reliable than describing the structure in prose.
+  const exampleSection = JSON.stringify({
+    label: "Verse",
+    measures: [
+      { chords: [{ chord: "Bm", beats: beatsPerBar, symbols: [] }], cue: "" },
+      { chords: [{ chord: "Bm7", beats: beatsPerBar, symbols: [] }], cue: "" },
+      { chords: [{ chord: "Em", beats: beatsPerBar / 2, symbols: [] }, { chord: "F#7", beats: beatsPerBar / 2, symbols: [] }], cue: "" }
+    ],
+    repeat_count: 1,
+    arrangement_cue: ""
+  }, null, 2);
 
-Title: "${title}"
-Artist: ${artist || 'Unknown'}
-${key ? `Key: ${key}` : 'Key: determine from your knowledge of the recording'}
-${time_signature ? `Time Signature: ${time_signature}` : 'Time Signature: determine from the recording'}
+  const prompt = `You are a professional musician. Produce a chord chart for the song below.
 
-${referenceText ? `Use this reference material as your primary source:\n${referenceText}\n` : `Transcribe the actual chords from the original recording of this song.`}
+Song: "${title}" by ${artist || 'Unknown'}
+${key ? `Key: ${key}` : ''}
+${time_signature ? `Time signature: ${time_signature} (${beatsPerBar} beats per bar)` : ''}
 
-Output format rules:
-- key_tonic: the root note only (e.g. "B", "F#", "Bb") — never include "m" or "minor" here
-- key_mode: "major" or "minor"
-- time_signature: e.g. "4/4"
-- sections: array of song sections (Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro)
-- Each section has a measures array — one object per bar
-- Each measure has a chords array — the chord(s) that fall in that bar
-- chord: standard letter notation only (e.g. Bm, Em7, Gmaj7, F#7) — never Roman numerals or numbers
-- beats: how many beats that chord lasts. All chords in a measure must sum to exactly ${beatsPerBar}
-- symbols: empty array []`;
+${referenceText ? `Reference material (use as primary source):\n${referenceText}\n` : ''}
+
+IMPORTANT RULES:
+1. Each bar of music = one object in the measures array. A 12-bar verse = 12 measure objects.
+2. Each chord within a measure gets a "beats" value. All beats in one measure must add up to exactly ${beatsPerBar}.
+3. Use standard chord names only: Bm, Em7, Gmaj7, F#7, etc.
+4. key_tonic is the root note only — e.g. "B" not "Bm". key_mode is "major" or "minor".
+
+Here is an example of what one section should look like:
+${exampleSection}`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
