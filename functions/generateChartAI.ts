@@ -445,6 +445,26 @@ Deno.serve(async (req) => {
 
   chartData.data_source = dataSource;
 
+  // Sanitize all section data regardless of source — strip any invalid symbol values
+  // (Chordonomicon data can contain chord names or other strings in the symbols array)
+  const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
+  sectionsData = sectionsData.map(section => ({
+    ...section,
+    repeat_count: Number(section.repeat_count) || 1,
+    arrangement_cue: section.arrangement_cue || '',
+    measures: (section.measures || []).map(measure => ({
+      ...measure,
+      cue: measure.cue || '',
+      chords: (measure.chords || []).map(chordObj => ({
+        chord: chordObj.chord || '-',
+        beats: Number(chordObj.beats) || 4,
+        symbols: Array.isArray(chordObj.symbols)
+          ? chordObj.symbols.filter(s => VALID_SYMBOLS.includes(s))
+          : []
+      }))
+    }))
+  }));
+
   // Return the generated data WITHOUT saving — the frontend will save only when user clicks Save
   return Response.json({
     success: true,
