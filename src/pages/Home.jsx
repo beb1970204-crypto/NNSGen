@@ -862,7 +862,7 @@ export default function Home() {
                         toggleStarred.mutate({ chartId: chart.id, starred: !chart.starred });
                       }}
                       className="text-[#6b6b6b] transition-all hover:scale-110 p-1"
-                      style={{ color: chart.starred ? '#D0021B' : inherit }}
+                      style={{ color: chart.starred ? '#D0021B' : 'inherit' }}
                       onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'}
                       onMouseLeave={(e) => e.currentTarget.style.color = chart.starred ? '#D0021B' : '#6b6b6b'}
                     >
