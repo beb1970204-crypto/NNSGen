@@ -445,12 +445,12 @@ export default function Home() {
             </Button>
             <Button 
               onClick={() => {
-              style={{ backgroundColor: '#D0021B' }}
                 if (window.confirm(`Delete ${selectedChartIds.size} chart${selectedChartIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) {
                   bulkDeleteCharts.mutate(Array.from(selectedChartIds));
                 }
               }}
               className="gap-2"
+              style={{ backgroundColor: '#D0021B' }}
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -622,7 +622,7 @@ export default function Home() {
                 <Link
                   key={setlist.id}
                   to={createPageUrl("SetlistViewer") + `?id=${setlist.id}`}
-                  className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:border-red-600 hover:bg-[#1e1e1e] transition-all group"
+                  className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#1e1e1e] transition-all group" onMouseEnter={(e) => e.currentTarget.style.borderColor = '#D0021B'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#2a2a2a'}>
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -670,7 +670,7 @@ export default function Home() {
                               deleteSetlist.mutate(setlist.id);
                             }
                           }}
-                          className="text-red-500 hover:bg-red-600/20"
+                          className="" style={{ color: '#D0021B' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(208, 2, 27, 0.2)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}>
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete Setlist
@@ -734,9 +734,9 @@ export default function Home() {
 
       {/* Error State */}
       {chartsError ? (
-        <div className="bg-[#1a1a1a] border border-red-600/20 rounded-xl p-12 text-center">
-          <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <X className="w-8 h-8 text-red-500" />
+        <div className="bg-[#1a1a1a] border rounded-xl p-12 text-center" style={{ borderColor: 'rgba(208, 2, 27, 0.2)' }}>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
+            <X className="w-8 h-8" style={{ color: '#D0021B' }} />
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Failed to load charts</h2>
           <p className="text-[#a0a0a0] mb-6">There was an error loading your charts. Please try again.</p>
@@ -771,7 +771,7 @@ export default function Home() {
             </Button>
           ) : (
             <Link to={createPageUrl("ChartCreator")}>
-              <Button className="shadow-lg shadow-red-600/20">
+              <Button style={{ backgroundColor: '#D0021B', boxShadow: '0 10px 15px -3px rgba(208, 2, 27, 0.2)' }}>
                 <Plus className="w-5 h-5 mr-2" />
                 Create Your First Chart
               </Button>
@@ -805,7 +805,7 @@ export default function Home() {
                   <div className="flex-1 min-w-0 flex items-start gap-3">
                     {multiSelectMode && (
                       <button 
-                        className="mt-1 text-[#6b6b6b] hover:text-red-500 transition-colors flex-shrink-0"
+                        className="mt-1 text-[#6b6b6b] transition-colors flex-shrink-0" style={{ color: '#6b6b6b' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'} onMouseLeave={(e) => e.currentTarget.style.color = '#6b6b6b'}
                         onClick={(e) => {
                           e.preventDefault();
                           const newSelected = new Set(selectedChartIds);
@@ -818,7 +818,7 @@ export default function Home() {
                         }}
                       >
                         {isSelected ? (
-                          <CheckCircle2 className="w-5 h-5 text-red-600" />
+                          <CheckCircle2 className="w-5 h-5" style={{ color: '#D0021B' }} />
                         ) : (
                           <Circle className="w-5 h-5" />
                         )}
