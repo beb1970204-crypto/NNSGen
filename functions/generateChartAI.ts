@@ -415,7 +415,7 @@ Deno.serve(async (req) => {
     chartData = {
       title: spotifyMatch?.title || title,
       artist: spotifyMatch?.artist || artist || 'Unknown',
-      key: detectedKey,
+      key: normalizeKey(detectedKey),
       time_signature: detectedTimeSig,
       reference_file_url,
       ...chordonomiconData.chart_data
