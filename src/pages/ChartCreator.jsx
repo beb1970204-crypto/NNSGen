@@ -85,6 +85,70 @@ export default function ChartCreator() {
     setDataSource(null);
   };
 
+  // --- DRAFT PREVIEW MODE ---
+  if (draftChart && draftSections) {
+    const sourceLabel = dataSource === 'chordonomicon' ? 'Chordonomicon DB' : 'AI Generated';
+    const sourceBadgeColor = dataSource === 'chordonomicon' ? 'text-green-400' : 'text-blue-400';
+
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
+        {/* Top bar */}
+        <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={handleDiscard}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold text-white">{draftChart.title}</h1>
+              <div className="flex items-center gap-2 text-xs text-[#6b6b6b]">
+                {draftChart.artist && <span>{draftChart.artist}</span>}
+                <span>·</span>
+                <span>Key: {draftChart.key}</span>
+                <span>·</span>
+                <span>{draftChart.time_signature}</span>
+                <span>·</span>
+                <span className={`font-semibold ${sourceBadgeColor}`}>{sourceLabel}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs px-3 py-1.5 rounded-lg font-medium">
+              ⚠ Draft — not saved yet
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDiscard} className="gap-2">
+              <X className="w-4 h-4" />
+              Discard
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveChart}
+              disabled={isSaving}
+              className="gap-2 shadow-lg shadow-red-600/20"
+            >
+              {isSaving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+              ) : (
+                <><Save className="w-4 h-4" />Save Chart</>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Draft Preview */}
+        <div className="flex-1 overflow-auto p-8">
+          <ChartDisplay
+            sections={draftSections.map((s, idx) => ({ ...s, id: `draft-${idx}` }))}
+            chartKey={draftChart.key}
+            displayMode={draftChart.display_mode || 'chords'}
+            editMode={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- CREATION FORM ---
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       {/* Top bar */}
