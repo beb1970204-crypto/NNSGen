@@ -401,7 +401,7 @@ export default function Home() {
           )}
           {multiSelectMode && (
             <Button 
-              variant="ghost" 
+              variant="outline"
               onClick={() => {
                 setMultiSelectMode(false);
                 setSelectedChartIds(new Set());
@@ -413,7 +413,7 @@ export default function Home() {
             </Button>
           )}
           <Link to={createPageUrl("ChartCreator")}>
-            <Button className="gap-2 shadow-lg shadow-red-600/20">
+            <Button className="gap-2 shadow-lg" style={{ boxShadow: '0 10px 15px -3px rgba(208, 2, 27, 0.2)' }}>
               <Plus className="w-4 h-4" />
               New Chart
               <span className="ml-1 text-xs opacity-60">⌘N</span>
@@ -424,7 +424,7 @@ export default function Home() {
 
       {/* Bulk Actions Bar */}
       {multiSelectMode && selectedChartIds.size > 0 && (
-        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 mb-6 flex items-center justify-between">
+        <div className="border rounded-xl p-4 mb-6 flex items-center justify-between" style={{ backgroundColor: 'rgba(208, 2, 27, 0.1)', borderColor: 'rgba(208, 2, 27, 0.3)' }}>
           <span className="font-semibold text-white">{selectedChartIds.size} chart{selectedChartIds.size !== 1 ? 's' : ''} selected</span>
           <div className="flex items-center gap-3">
             <Button 
@@ -444,8 +444,8 @@ export default function Home() {
               Add to Setlist
             </Button>
             <Button 
-              variant="destructive"
               onClick={() => {
+              style={{ backgroundColor: '#D0021B' }}
                 if (window.confirm(`Delete ${selectedChartIds.size} chart${selectedChartIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) {
                   bulkDeleteCharts.mutate(Array.from(selectedChartIds));
                 }
@@ -584,7 +584,7 @@ export default function Home() {
             <Button 
               variant="ghost" 
               onClick={clearFilters}
-              className="gap-2 text-red-500 hover:text-red-400 hover:bg-red-600/10"
+              className="gap-2" style={{ color: '#D0021B' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(208, 2, 27, 0.1)'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}
             >
               <X className="w-4 h-4" />
               Clear
@@ -693,8 +693,8 @@ export default function Home() {
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Total Charts</span>
-            <div className="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center">
-              <Music className="w-5 h-5 text-blue-500" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
+              <Music className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.total}</div>
@@ -703,8 +703,8 @@ export default function Home() {
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Favorites</span>
-            <div className="w-10 h-10 rounded-lg bg-yellow-600/10 flex items-center justify-center">
-              <Star className="w-5 h-5 text-yellow-500" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
+              <Star className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.favorites}</div>
@@ -713,8 +713,8 @@ export default function Home() {
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Setlists</span>
-            <div className="w-10 h-10 rounded-lg bg-orange-600/10 flex items-center justify-center">
-              <List className="w-5 h-5 text-orange-500" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
+              <List className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.setlists}</div>
@@ -723,8 +723,8 @@ export default function Home() {
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Shared</span>
-            <div className="w-10 h-10 rounded-lg bg-red-600/10 flex items-center justify-center">
-              <Share2 className="w-5 h-5 text-red-500" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
+              <Share2 className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.recent}</div>
@@ -785,8 +785,9 @@ export default function Home() {
             const cardContent = (
               <div key={chart.id} className={`bg-[#1a1a1a] border rounded-xl p-6 hover:bg-[#252525] hover:scale-[1.02] transition-all group shadow-lg hover:shadow-xl ${
                 isSelected 
-                  ? 'border-red-600 bg-red-600/5' 
-                  : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+                  ? 'bg-[#2a2a2a]' 
+                    : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+                  style={isSelected ? { borderColor: '#D0021B' } : {}}
               } ${multiSelectMode ? 'cursor-pointer' : ''}`}
                 onClick={() => {
                   if (multiSelectMode) {
@@ -825,11 +826,11 @@ export default function Home() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-bold text-white truncate group-hover:text-red-500 transition-colors" title={chart.title}>
+                        <h3 className="text-xl font-bold text-white truncate transition-colors" title={chart.title} style={{ color: 'inherit' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'} onMouseLeave={(e) => e.currentTarget.style.color = 'white'}>
                           {chart.title}
                         </h3>
                       {currentView === 'shared' && (
-                        <span className="flex-shrink-0 px-2 py-1 rounded-full bg-red-600/20 text-red-400 text-xs font-semibold whitespace-nowrap">
+                        <span className="flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(208, 2, 27, 0.2)', color: '#D0021B' }}>
                           Shared with you
                         </span>
                       )}
@@ -859,9 +860,12 @@ export default function Home() {
                         e.preventDefault();
                         toggleStarred.mutate({ chartId: chart.id, starred: !chart.starred });
                       }}
-                      className="text-[#6b6b6b] hover:text-yellow-500 transition-all hover:scale-110 p-1"
+                      className="text-[#6b6b6b] transition-all hover:scale-110 p-1"
+                      style={{ color: chart.starred ? '#D0021B' : inherit }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = chart.starred ? '#D0021B' : '#6b6b6b'}
                     >
-                      <Star className={`w-5 h-5 ${chart.starred ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                      <Star className={`w-5 h-5 ${chart.starred ? 'fill-current' : ''}`} />
                     </button>
                     {!multiSelectMode && (
                       <ChartCardMenu
