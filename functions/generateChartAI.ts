@@ -211,40 +211,31 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
   }
 
   // SINGLE OPTIMIZED PROMPT for consistency — no retry variations
-  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'}.
+  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
 
 CRITICAL REQUIREMENTS:
-1. Return sections in this order: Intro (4-8 bars) → Verse (8-12 bars) → Chorus (8-12 bars) → Bridge [optional] → Chorus → Outro (4-8 bars)
-2. MUST include: Verse AND Chorus (minimum 16 bars total minimum)
-3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-4. Each measure must have exactly 1 chord object with beats matching the time signature
-5. All chords must be standard (no hallucinations)
+1. Return a COMPLETE chart: Verse + Chorus are MANDATORY. Include Intro/Outro/Bridge as appropriate for the song.
+2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+3. Chart the ENTIRE song structure naturally — do not truncate or summarize
+4. Measures may contain 1 or more chords; beats must sum to the time signature
+5. All chords must be musically coherent and diatonic where possible
 6. Return ONLY valid JSON, no explanation
 
 ${referenceText ? `REFERENCE MATERIAL PROVIDED:\n${referenceText}\n` : ''}
 
-RETURN VALID JSON ONLY:
+JSON STRUCTURE:
 {
   "key_tonic": "A",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
     {
-      "label": "Intro",
+      "label": "Verse",
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
         {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Verse",
-      "repeat_count": 2,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""}
       ]
     },
     {
@@ -252,16 +243,7 @@ RETURN VALID JSON ONLY:
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Outro",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
       ]
     }
   ]
