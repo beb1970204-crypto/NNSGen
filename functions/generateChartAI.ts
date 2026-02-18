@@ -160,7 +160,7 @@ Return the tonic note (e.g. B, F#, Bb) and whether it is major or minor as separ
   };
 }
 
-// Helper: Generate chart with LLM — single call returns key (tonic+mode) + chart
+// Helper: Generate chart with LLM
 async function generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url) {
   let referenceText = '';
   let fileUrls = [];
@@ -177,40 +177,25 @@ async function generateChartWithLLM(base44, title, artist, key, time_signature, 
 
   const beatsPerBar = time_signature ? parseInt(time_signature.split('/')[0]) || 4 : 4;
 
-  const keyInstruction = key
-    ? `Key: ${key} (use this exact key)`
-    : `Key: Determine from your knowledge of this song. Return tonic (root note only, e.g. "B" not "Bm") and mode ("major" or "minor") as separate fields.`;
+  const prompt = `You are a professional musician and chart transcriptionist. Create an accurate chord chart for:
 
-  const timeSigInstruction = time_signature
-    ? `Time Signature: ${time_signature} (use this exact time signature, ${beatsPerBar} beats per measure)`
-    : `Time Signature: Determine from your knowledge of this song`;
+Title: "${title}"
+Artist: ${artist || 'Unknown'}
+${key ? `Key: ${key}` : 'Key: determine from your knowledge of the recording'}
+${time_signature ? `Time Signature: ${time_signature}` : 'Time Signature: determine from the recording'}
 
-  const prompt = `You are a professional music chart transcription assistant.
+${referenceText ? `Use this reference material as your primary source:\n${referenceText}\n` : `Transcribe the actual chords from the original recording of this song.`}
 
-Task: Create an accurate standard chord chart for the following song.
-
-Song Details:
-- Title: ${title}
-- Artist: ${artist || 'Unknown'}
-- ${keyInstruction}
-- ${timeSigInstruction}
-
-${referenceText ? `Reference Material (use this as the primary source):\n${referenceText}\n` : `Use your knowledge of the actual song "${title}" by ${artist || 'the artist'} to produce accurate chords.`}
-
-CRITICAL RULES — follow these exactly:
-1. Return key_tonic (root note ONLY, e.g. "B", "F#", "Bb") and key_mode ("major" or "minor") as SEPARATE fields
-2. Return the time_signature
-3. Identify sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-4. Use standard chord notation ONLY — letter names with quality suffixes (e.g., C, Dm7, F/G, Gsus4, Bbmaj7)
-5. Do NOT use Roman numerals, Nashville numbers, or any other notation system
-6. OUTPUT THE ACTUAL CHORDS — transcribe the exact chords from the real recording. Do NOT "correct" them to fit a theoretical key — the real chords are the ground truth.${key ? `\n7. The song is in ${key}. Use this to inform your chord choices — e.g. if the key is minor, the i chord is a minor chord. Do not generate chords from the parallel major key.` : ''}
-8. BEAT ASSIGNMENT — this is critical:
-   - Each measure must contain exactly ${beatsPerBar} total beats across all its chords
-   - If one chord fills the whole measure: beats = ${beatsPerBar}
-   - If two chords split equally: each gets beats = ${beatsPerBar / 2}
-   - NEVER put more than ${beatsPerBar} total beats in a single measure
-   - NEVER put chords from different measures into the same measure array
-9. Each section's measures array should contain ONE object per bar of music`;
+Output format rules:
+- key_tonic: the root note only (e.g. "B", "F#", "Bb") — never include "m" or "minor" here
+- key_mode: "major" or "minor"
+- time_signature: e.g. "4/4"
+- sections: array of song sections (Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro)
+- Each section has a measures array — one object per bar
+- Each measure has a chords array — the chord(s) that fall in that bar
+- chord: standard letter notation only (e.g. Bm, Em7, Gmaj7, F#7) — never Roman numerals or numbers
+- beats: how many beats that chord lasts. All chords in a measure must sum to exactly ${beatsPerBar}
+- symbols: empty array []`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
