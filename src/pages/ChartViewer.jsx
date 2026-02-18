@@ -389,6 +389,15 @@ export default function ChartViewer() {
           <Button 
             size="sm" 
             variant="outline"
+            onClick={() => setShareDialogOpen(true)}
+            className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all"
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
             onClick={handleExportPDF}
             disabled={exportingPDF}
             className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all"
