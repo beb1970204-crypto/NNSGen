@@ -186,13 +186,13 @@ Deno.serve(async (req) => {
 
     const referenceChartJSON = referenceChart ? JSON.stringify(referenceChart.sections, null, 2) : 'No reference available';
 
-    const refinementPrompt = `You are a professional chord chart editor. Refine the user's existing chart based on their feedback and a fresh AI-generated reference.
+    const refinementPrompt = `You are a professional chord chart editor. Refine the user's existing chart based on their feedback.
 
-FRESH AI REFERENCE (from internet research):
+USER'S CURRENT CHART (preserve ALL sections and measures):
+${originalJSON}
+
+STRUCTURAL REFERENCE (optional guidance only, do NOT truncate original):
 ${referenceChartJSON}
-
-USER'S CURRENT CHART (to refine):
-${currentChartJSON}
 
 METADATA:
 Song Key: ${key}
@@ -200,11 +200,16 @@ Time Signature: ${time_signature}
 
 USER FEEDBACK: "${userFeedback}"
 
-TASK: Apply the user's requested changes to align with the reference structure where appropriate. Return the COMPLETE refined chart.
+CRITICAL TASK:
+1. PRESERVE the complete structure of the user's current chart — all sections and measures MUST be retained
+2. Apply user feedback changes while maintaining completeness
+3. Enhance arrangement_cue and structure labels based on feedback
+4. DO NOT truncate or remove sections — this is the most important rule
+5. Return the COMPLETE refined chart with all original sections intact
 
 RULES:
 - Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-- Compare reference structure with user's chart and user feedback to guide refinement
+- ALL measures from the original chart MUST appear in the output
 - Return ONLY the JSON object below — no explanation, no markdown
 
 RESPONSE FORMAT:
