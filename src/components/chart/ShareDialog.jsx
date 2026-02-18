@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Share2, User, X, Copy, Check } from "lucide-react";
+import { Share2, User, X, Copy, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 
 export default function ShareDialog({ open, onOpenChange, currentSharedUsers = [], onShare, isLoading = false, chartId = null }) {
   const [email, setEmail] = useState("");
@@ -12,6 +13,26 @@ export default function ShareDialog({ open, onOpenChange, currentSharedUsers = [
   const [sharedUsers, setSharedUsers] = useState([]);
   const [shareToken, setShareToken] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
+
+  // Generate share token when dialog opens
+  useEffect(() => {
+    if (open && chartId && !shareToken) {
+      generateShareToken();
+    }
+  }, [open, chartId]);
+
+  const generateShareToken = async () => {
+    try {
+      setGeneratingToken(true);
+      const response = await base44.functions.invoke('generateShareToken', { chartId });
+      setShareToken(response.token);
+    } catch (error) {
+      console.error('Failed to generate token:', error);
+    } finally {
+      setGeneratingToken(false);
+    }
+  };
 
   // Convert old format to new format on mount
   useEffect(() => {
