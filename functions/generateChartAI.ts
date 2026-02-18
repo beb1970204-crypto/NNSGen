@@ -209,14 +209,14 @@ CRITICAL RULES — follow these exactly:
 3. Identify sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 4. Use standard chord notation ONLY — letter names with quality suffixes (e.g., C, Dm7, F/G, Gsus4, Bbmaj7)
 5. Do NOT use Roman numerals, Nashville numbers, or any other notation system
-6. Output the ACTUAL chords of the song exactly as they appear — do NOT transpose or convert them
-7. BEAT ASSIGNMENT — this is critical:
+6. OUTPUT THE ACTUAL CHORDS — transcribe the exact chords from the real recording. Do NOT "correct" them to fit a theoretical key — the real chords are the ground truth.${key ? `\n7. The song is in ${key}. Use this to inform your chord choices — e.g. if the key is minor, the i chord is a minor chord. Do not generate chords from the parallel major key.` : ''}
+8. BEAT ASSIGNMENT — this is critical:
    - Each measure must contain exactly ${beatsPerBar} total beats across all its chords
    - If one chord fills the whole measure: beats = ${beatsPerBar}
    - If two chords split equally: each gets beats = ${beatsPerBar / 2}
    - NEVER put more than ${beatsPerBar} total beats in a single measure
    - NEVER put chords from different measures into the same measure array
-8. Each section's measures array should contain ONE object per bar of music`;
+9. Each section's measures array should contain ONE object per bar of music`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
