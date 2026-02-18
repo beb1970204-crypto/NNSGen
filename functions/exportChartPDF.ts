@@ -18,11 +18,16 @@ Deno.serve(async (req) => {
 
     // Fetch chart and sections
     const chart = await base44.entities.Chart.get(chart_id);
-    const sections = await base44.entities.Section.filter({ chart_id });
+    const allSections = await base44.entities.Section.filter({ chart_id });
 
     if (!chart) {
       return Response.json({ error: 'Chart not found' }, { status: 404 });
     }
+
+    // Order sections by chart.sections array to maintain correct order
+    const sections = chart.sections && chart.sections.length > 0
+      ? chart.sections.map(sectionId => allSections.find(s => s.id === sectionId)).filter(Boolean)
+      : allSections;
 
     // Create PDF
     const doc = new jsPDF({
