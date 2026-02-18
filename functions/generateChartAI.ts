@@ -363,6 +363,7 @@ Replace C, F, G with actual chords. Keep 3 sections minimum.`;
 function validateChartOutput(sections) {
   // Check section count (need at least 2)
   if (!sections || sections.length < 2) {
+    console.log(`Validation failed: Only ${sections?.length || 0} sections (need at least 2)`);
     return { valid: false, reason: 'Too few sections (need at least 2)' };
   }
   if (sections.length > 10) {
@@ -388,6 +389,8 @@ function validateChartOutput(sections) {
       }
     }
   }
+
+  console.log(`Validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
 
   // Warn but don't reject if unusual: too few chords (possibly valid, like "All Blues")
   if (totalChords < 4) {
