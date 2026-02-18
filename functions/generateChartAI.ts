@@ -488,21 +488,33 @@ Deno.serve(async (req) => {
 
     chartData.data_source = dataSource;
 
-    // ── Step 3: Light sanitization — symbols only, no beat manipulation ───────
+    // ── Step 3: Expand multi-chord measures into separate measures ──────────────
     const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
+    const beatsPerMeasure = parseInt((chartData.time_signature || '4/4').split('/')[0]) || 4;
+
     sectionsData = sectionsData.map(section => ({
       ...section,
       repeat_count: Number(section.repeat_count) || 1,
       arrangement_cue: section.arrangement_cue || '',
-      measures: (section.measures || []).map(measure => ({
-        ...measure,
-        cue: measure.cue || '',
-        chords: (measure.chords || []).map(c => ({
+      measures: (section.measures || []).flatMap(measure => {
+        const chords = (measure.chords || []).map(c => ({
           chord: c.chord || '-',
           beats: Number(c.beats) || 4,
           symbols: Array.isArray(c.symbols) ? c.symbols.filter(s => VALID_SYMBOLS.includes(s)) : []
-        }))
-      }))
+        }));
+
+        // If measure has multiple chords OR chord beats don't match measure size, expand
+        if (chords.length === 1 && chords[0].beats === beatsPerMeasure) {
+          // Single chord that fills the measure — keep as is
+          return [{ chords, cue: measure.cue || '' }];
+        } else {
+          // Multiple chords or partial measure — split into separate measures (1 chord per measure)
+          return chords.map((c, idx) => ({
+            chords: [{ ...c, beats: beatsPerMeasure }],
+            cue: idx === 0 ? (measure.cue || '') : ''
+          }));
+        }
+      })
     }));
 
     return Response.json({
