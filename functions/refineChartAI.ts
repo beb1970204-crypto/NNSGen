@@ -171,20 +171,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // Step 1: Generate a fresh reference chart using the same AI pathway as generateChartAI
-    console.log('Generating fresh reference chart from AI');
+    // Preserve the original chart structure — refinement should enhance, not truncate
+    const originalJSON = JSON.stringify(currentSections, null, 2);
+    
+    // Generate a reference ONLY for guidance on structure/arrangement cues, but prioritize original completeness
+    console.log('Generating reference chart for structural guidance');
     let referenceChart;
     try {
       referenceChart = await generateRefreshChart(base44, title, artist);
     } catch (e) {
       console.warn('Reference chart generation failed:', e.message);
-      // Continue with refinement using current chart only
       referenceChart = null;
     }
 
-    // Step 2: Refine the chart with reference knowledge + user feedback
-    const currentChartJSON = JSON.stringify(currentSections, null, 2);
-    const referenceChartJSON = referenceChart ? JSON.stringify(referenceChart.sections, null, 2) : 'Unable to generate reference';
+    const referenceChartJSON = referenceChart ? JSON.stringify(referenceChart.sections, null, 2) : 'No reference available';
 
     const refinementPrompt = `You are a professional chord chart editor. Refine the user's existing chart based on their feedback and a fresh AI-generated reference.
 
