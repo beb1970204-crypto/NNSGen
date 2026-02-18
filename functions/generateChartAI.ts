@@ -286,30 +286,35 @@ Example:
   };
 
   // Always use internet context for factual transcription grounding
-  const response = await base44.integrations.Core.InvokeLLM({
-    prompt,
-    add_context_from_internet: true,
-    file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-    response_json_schema: schema
-  });
+  try {
+    const response = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+      response_json_schema: schema
+    });
 
-  if (!response?.sections?.length) {
-    throw new Error('LLM returned no sections');
+    if (!response?.sections?.length) {
+      throw new Error('LLM returned no sections');
+    }
+
+    // Resolve key with TonalJS
+    const tonic = response.key_tonic || 'C';
+    const isMinor = response.key_mode === 'minor';
+    let key;
+    if (isMinor) {
+      const mk = Key.minorKey(tonic);
+      key = (mk.tonic || tonic) + 'm';
+    } else {
+      const mk = Key.majorKey(tonic);
+      key = mk.tonic || tonic;
+    }
+
+    return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
+  } catch (error) {
+    console.error('LLM generation error:', error.message);
+    throw new Error(`LLM generation failed: ${error.message}`);
   }
-
-  // Resolve key with TonalJS
-  const tonic = response.key_tonic || 'C';
-  const isMinor = response.key_mode === 'minor';
-  let key;
-  if (isMinor) {
-    const mk = Key.minorKey(tonic);
-    key = (mk.tonic || tonic) + 'm';
-  } else {
-    const mk = Key.majorKey(tonic);
-    key = mk.tonic || tonic;
-  }
-
-  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
 }
 
 // ─── Output Validation ─────────────────────────────────────────────────────────
