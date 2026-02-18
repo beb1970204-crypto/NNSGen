@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-
+import ChartDisplay from "@/components/chart/ChartDisplay";
 
 export default function ChartCreator() {
   const navigate = useNavigate();
@@ -18,159 +16,187 @@ export default function ChartCreator() {
   const [referenceFile, setReferenceFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Preview state — holds generated data before saving
+  const [preview, setPreview] = useState(null); // { chartData, sectionsData, source }
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploadingFile(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setReferenceFile(file_url);
-      toast.success("File uploaded successfully");
-    } catch (error) {
-      toast.error("Failed to upload file");
-      console.error(error);
-    } finally {
-      setUploadingFile(false);
-    }
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setReferenceFile(file_url);
+    toast.success("File uploaded successfully");
+    setUploadingFile(false);
   };
 
   const handleGenerateChart = async () => {
-    if (!title) {
-      toast.error("Please enter a song title");
-      return;
-    }
-
-    if (title.length > 100) {
-      toast.error("Song title is too long (max 100 characters)");
-      return;
-    }
-
-    if (artist && artist.length > 100) {
-      toast.error("Artist name is too long (max 100 characters)");
-      return;
-    }
-
+    if (!title) { toast.error("Please enter a song title"); return; }
     setIsGenerating(true);
+    setPreview(null);
 
-    try {
-      // Call the orchestrator function which handles Chordonomicon lookup and LLM fallback
-      const response = await base44.functions.invoke('generateChartAI', {
-        title,
-        artist: artist || null,
-        key: "C",  // Default, will be overridden if found in Chordonomicon
-        time_signature: "4/4",  // Default, will be overridden if found in Chordonomicon
-        reference_file_url: referenceFile || null
-      });
+    const response = await base44.functions.invoke('generateChartAI', {
+      title,
+      artist: artist || null,
+      reference_file_url: referenceFile || null
+    });
 
-      if (response.data.error) {
-        throw new Error(response.data.error);
-      }
-
-      const { chart_id, source, message } = response.data;
-
-      // Show success message based on source
-      toast.success(message || "Chart created successfully!");
-      
-      // Navigate to the newly created chart
-      navigate(createPageUrl("ChartViewer") + `?id=${chart_id}`);
-    } catch (error) {
-      toast.error(error.message || "Failed to generate chart");
-      console.error(error);
-    } finally {
+    if (response.data.error) {
+      toast.error(response.data.error);
       setIsGenerating(false);
+      return;
     }
+
+    setPreview(response.data);
+    toast.success(response.data.message || "Chart generated! Review and save.");
+    setIsGenerating(false);
   };
 
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-black text-white mb-3 tracking-tight">Create New Chart</h1>
-          <p className="text-[#a0a0a0] text-lg">AI-powered chart generation from your song details</p>
-        </div>
+  const handleSave = async () => {
+    if (!preview) return;
+    setIsSaving(true);
 
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8 shadow-2xl">
-          <div className="space-y-6">
+    const chart = await base44.entities.Chart.create(preview.chartData);
+    await Promise.all(preview.sectionsData.map(section =>
+      base44.entities.Section.create({
+        chart_id: chart.id,
+        label: section.label,
+        measures: section.measures,
+        repeat_count: section.repeat_count || 1,
+        arrangement_cue: section.arrangement_cue || ''
+      })
+    ));
+
+    toast.success("Chart saved!");
+    navigate(createPageUrl("ChartViewer") + `?id=${chart.id}`);
+    setIsSaving(false);
+  };
+
+  // Build fake section objects with IDs for preview rendering
+  const previewSections = preview?.sectionsData?.map((s, i) => ({ ...s, id: `preview-${i}` })) || [];
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Top bar */}
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link to={createPageUrl("Home")}>
+            <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-2" />Back</Button>
+          </Link>
+          <h1 className="text-lg font-bold text-white">Create New Chart</h1>
+        </div>
+        {preview && (
+          <Button onClick={handleSave} disabled={isSaving} className="gap-2 shadow-lg shadow-red-600/20">
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Chart
+          </Button>
+        )}
+      </div>
+
+      <div className="flex gap-0 h-[calc(100vh-65px)]">
+        {/* Left panel - form */}
+        <div className="w-80 flex-shrink-0 bg-[#141414] border-r border-[#2a2a2a] p-6 overflow-y-auto">
+          <div className="space-y-5">
             <div>
-              <Label htmlFor="title" className="text-sm text-[#a0a0a0] mb-2 block font-medium">Song Title *</Label>
+              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium">Song Title *</Label>
               <Input
-                id="title"
-                placeholder="e.g., Amazing Grace"
+                placeholder="e.g., Franklin's Tower"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGenerateChart()}
                 className="h-11"
               />
             </div>
-
             <div>
-              <Label htmlFor="artist" className="text-sm text-[#a0a0a0] mb-2 block font-medium">Artist (Optional)</Label>
+              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium">Artist</Label>
               <Input
-                id="artist"
-                placeholder="e.g., Traditional"
+                placeholder="e.g., Grateful Dead"
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGenerateChart()}
                 className="h-11"
               />
             </div>
-
             <div>
-              <Label htmlFor="referenceFile" className="text-sm text-[#a0a0a0] mb-2 block font-medium">
-                Upload Reference Chart (Optional)
-              </Label>
-              <div className="border-2 border-dashed border-[#2a2a2a] rounded-lg p-10 text-center hover:border-red-600/50 hover:bg-[#252525] transition-all">
+              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium">Reference Chart (Optional)</Label>
+              <div className="border-2 border-dashed border-[#2a2a2a] rounded-lg p-6 text-center hover:border-red-600/50 transition-all">
                 {uploadingFile ? (
-                  <div>
-                    <Loader2 className="w-12 h-12 animate-spin text-red-500 mx-auto mb-4" />
-                    <p className="text-sm text-[#a0a0a0]">Uploading...</p>
-                  </div>
+                  <><Loader2 className="w-8 h-8 animate-spin text-red-500 mx-auto mb-2" /><p className="text-sm text-[#a0a0a0]">Uploading...</p></>
                 ) : referenceFile ? (
                   <div>
-                    <div className="text-green-500 mb-3 text-lg font-semibold">✓ File uploaded successfully</div>
-                    <button
-                      onClick={() => setReferenceFile(null)}
-                      className="text-sm text-red-500 hover:text-red-400 font-medium transition-colors"
-                    >
-                      Remove file
-                    </button>
+                    <div className="text-green-500 mb-2 text-sm font-semibold">✓ File uploaded</div>
+                    <button onClick={() => setReferenceFile(null)} className="text-xs text-red-500 hover:text-red-400">Remove</button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      onChange={handleFileUpload}
-                    />
+                    <input type="file" className="hidden" accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={handleFileUpload} />
                     <div className="text-[#6b6b6b]">
-                      <div className="text-5xl mb-3">📄</div>
-                      <p className="text-base font-medium text-white mb-1">Click to upload or drag and drop</p>
-                      <p className="text-sm">PDF, DOC, TXT, JPG, PNG</p>
+                      <div className="text-3xl mb-2">📄</div>
+                      <p className="text-sm text-white">Click to upload</p>
+                      <p className="text-xs mt-1">PDF, DOC, TXT, JPG, PNG</p>
                     </div>
                   </label>
                 )}
               </div>
             </div>
-
             <Button
               onClick={handleGenerateChart}
               disabled={isGenerating || !title}
-              className="w-full h-14 text-lg font-semibold shadow-xl shadow-red-600/30 hover:shadow-2xl hover:shadow-red-600/40 transition-all"
+              className="w-full h-12 font-semibold shadow-xl shadow-red-600/30"
             >
               {isGenerating ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                  Generating Chart...
-                </>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
               ) : (
-                <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Chart with AI
-                </>
+                <><Sparkles className="w-4 h-4 mr-2" />Generate Chart</>
               )}
             </Button>
           </div>
+        </div>
+
+        {/* Right panel - preview */}
+        <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
+          {!preview && !isGenerating && (
+            <div className="h-full flex items-center justify-center text-center">
+              <div>
+                <div className="text-6xl mb-4">🎵</div>
+                <p className="text-[#6b6b6b] text-lg">Enter a song title and click Generate</p>
+                <p className="text-[#4a4a4a] text-sm mt-2">Review the chart before saving it to your library</p>
+              </div>
+            </div>
+          )}
+          {isGenerating && (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin text-red-500 mx-auto mb-4" />
+                <p className="text-white text-xl font-semibold">Generating chart...</p>
+                <p className="text-[#6b6b6b] mt-2">Looking up chords and building your chart</p>
+              </div>
+            </div>
+          )}
+          {preview && !isGenerating && (
+            <div>
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{preview.chartData.title}</h2>
+                  <p className="text-[#a0a0a0]">{preview.chartData.artist} · Key of {preview.chartData.key} · {preview.chartData.time_signature}</p>
+                  <span className="text-xs text-[#6b6b6b] mt-1 inline-block">
+                    Source: {preview.source === 'chordonomicon' ? '📖 Chordonomicon database' : '🤖 AI generated'}
+                  </span>
+                </div>
+                <Button onClick={handleSave} disabled={isSaving} className="gap-2 shadow-lg shadow-red-600/20">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save to Library
+                </Button>
+              </div>
+              <ChartDisplay
+                sections={previewSections}
+                chartKey={preview.chartData.key}
+                displayMode="chords"
+                editMode={false}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
