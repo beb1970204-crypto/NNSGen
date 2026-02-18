@@ -64,30 +64,31 @@ Deno.serve(async (req) => {
     const columnWidth = (pageWidth - 2 * margin - columnGap) / 2;
     const measuresPerRow = 4;
     const cellWidth = columnWidth / measuresPerRow;
-    const cellHeight = 12;
+    const cellHeight = 11;
+    const sectionSpacing = 10;
 
     // Render sections in 2-column layout
     let leftX = margin;
     let rightX = margin + columnWidth + columnGap;
-    let currentY = yPosition;
+    let leftY = yPosition;
     let rightY = yPosition;
 
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       const isLeftColumn = i % 2 === 0;
       const x = isLeftColumn ? leftX : rightX;
-      let y = isLeftColumn ? currentY : rightY;
+      let y = isLeftColumn ? leftY : rightY;
 
       // Calculate space needed for this section
       const numRows = Math.ceil(section.measures.length / measuresPerRow);
-      const sectionHeight = 6 + (section.arrangement_cue ? 4 : 0) + (numRows * cellHeight) + 8;
+      const sectionHeight = 5 + (section.arrangement_cue ? 3.5 : 0) + (numRows * cellHeight);
 
       // Check if we need a new page
       if (y + sectionHeight > pageHeight - margin) {
         doc.addPage();
-        currentY = margin;
+        leftY = margin;
         rightY = margin;
-        y = isLeftColumn ? currentY : rightY;
+        y = isLeftColumn ? leftY : rightY;
       }
 
       // Section Header
@@ -97,23 +98,23 @@ Deno.serve(async (req) => {
         ? `${section.label.toUpperCase()} x${section.repeat_count}`
         : section.label.toUpperCase();
       doc.text(sectionLabel, x, y);
-      y += 6;
+      y += 5;
 
       if (section.arrangement_cue) {
         doc.setFontSize(8);
         doc.setFont(undefined, 'italic');
         doc.text(section.arrangement_cue, x, y);
-        y += 4;
+        y += 3.5;
       }
 
       // Measures Grid
       doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
 
-      for (let i = 0; i < section.measures.length; i++) {
-        const measure = section.measures[i];
-        const col = i % measuresPerRow;
-        const row = Math.floor(i / measuresPerRow);
+      for (let j = 0; j < section.measures.length; j++) {
+        const measure = section.measures[j];
+        const col = j % measuresPerRow;
+        const row = Math.floor(j / measuresPerRow);
         
         const mx = x + col * cellWidth;
         const my = y + row * cellHeight;
@@ -121,30 +122,34 @@ Deno.serve(async (req) => {
         // Draw cell border
         doc.rect(mx, my, cellWidth, cellHeight);
 
-        // Draw chords
+        // Draw centered chords
         if (measure.chords && measure.chords.length > 0) {
           const chordText = measure.chords.map(c => c.chord).join(' ');
-          doc.text(chordText, mx + 1.5, my + cellHeight / 2 + 1.5, { maxWidth: cellWidth - 3, fontSize: 10 });
+          doc.text(chordText, mx + cellWidth / 2, my + cellHeight / 2 + 0.5, { 
+            align: 'center',
+            maxWidth: cellWidth - 2
+          });
         }
 
         // Draw cue if present
         if (measure.cue) {
           doc.setFontSize(7);
-          doc.text(measure.cue, mx + 1.5, my + cellHeight - 1, { maxWidth: cellWidth - 3 });
-          doc.setFontSize(10);
+          doc.text(measure.cue, mx + 1, my + cellHeight - 1.5, { maxWidth: cellWidth - 2 });
+          doc.setFontSize(9);
         }
       }
 
-      y += numRows * cellHeight + 8;
+      y += numRows * cellHeight + sectionSpacing;
 
       if (isLeftColumn) {
-        currentY = y;
+        leftY = y;
       } else {
         rightY = y;
-        // Move to next row of sections when right column is done
+        // Synchronize columns for next pair
         if (i < sections.length - 1) {
-          currentY = Math.max(currentY, rightY);
-          rightY = currentY;
+          const maxY = Math.max(leftY, rightY);
+          leftY = maxY;
+          rightY = maxY;
         }
       }
     }
