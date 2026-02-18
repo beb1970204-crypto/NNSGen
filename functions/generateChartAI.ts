@@ -509,17 +509,26 @@ Deno.serve(async (req) => {
 
   sectionsData = sectionsData.map(section => {
     const sanitizedMeasures = (section.measures || []).map(measure => {
-      let chords = (measure.chords || []).map(chordObj => ({
-        chord: chordObj.chord || '-',
-        beats: Number(chordObj.beats) || 4,
-        symbols: Array.isArray(chordObj.symbols)
-          ? chordObj.symbols.filter(s => VALID_SYMBOLS.includes(s))
-          : []
-      }));
+      const rawChords = measure.chords || [];
+      const chordCount = rawChords.length || 1;
 
-      // Fix beat totals: if total beats exceed a bar, redistribute evenly
+      let chords = rawChords.map(chordObj => {
+        const rawBeats = Number(chordObj.beats);
+        // Only use the provided beats if they are a positive, plausible value (≤ beatsInBar).
+        // Otherwise fall back to an even split so we don't corrupt valid LLM output.
+        const beats = (rawBeats > 0 && rawBeats <= beatsInBar) ? rawBeats : (beatsInBar / chordCount);
+        return {
+          chord: chordObj.chord || '-',
+          beats,
+          symbols: Array.isArray(chordObj.symbols)
+            ? chordObj.symbols.filter(s => VALID_SYMBOLS.includes(s))
+            : []
+        };
+      });
+
+      // Only redistribute if the total is clearly wrong (not within 0.01 of beatsInBar)
       const totalBeats = chords.reduce((sum, c) => sum + c.beats, 0);
-      if (totalBeats !== beatsInBar && chords.length > 0) {
+      if (Math.abs(totalBeats - beatsInBar) > 0.01 && chords.length > 0) {
         const evenBeats = beatsInBar / chords.length;
         chords = chords.map(c => ({ ...c, beats: evenBeats }));
       }
