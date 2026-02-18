@@ -114,12 +114,13 @@ export default function ChartCreator() {
       currentSections: cleanSections
     });
 
-    setIsRefining(false);
-
     if (response.data.error) {
       toast.error(response.data.error);
+      setIsRefining(false);
       return;
     }
+
+    setIsRefining(false);
 
     // Update draft with refined sections
     setDraftSections(response.data.sectionsData);
