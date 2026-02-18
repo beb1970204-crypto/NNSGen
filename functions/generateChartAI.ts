@@ -397,26 +397,27 @@ Deno.serve(async (req) => {
   if (chordonomiconData) {
     dataSource = 'chordonomicon';
 
-    // Detect actual key + time signature via LLM since Chordonomicon doesn't store them
-    let detectedKey = key;
-    let detectedTimeSig = time_signature;
-    if (!detectedKey || !detectedTimeSig) {
+    // Use LLM chart generation to also get key + time signature (single LLM call instead of two)
+    const songTitle = spotifyMatch?.title || title;
+    const songArtist = spotifyMatch?.artist || artist;
+    let detectedKey = key || 'C';
+    let detectedTimeSig = time_signature || '4/4';
+
+    if (!key || !time_signature) {
       try {
-        const songMeta = await detectKeyForSong(base44, spotifyMatch?.title || title, spotifyMatch?.artist || artist);
-        detectedKey = detectedKey || songMeta.key || 'C';
-        detectedTimeSig = detectedTimeSig || songMeta.time_signature || '4/4';
-        console.log(`Detected key: ${detectedKey}, time: ${detectedTimeSig}`);
+        const llmMeta = await generateChartWithLLM(base44, songTitle, songArtist, key, time_signature, null);
+        detectedKey = normalizeKey(key || llmMeta.key || 'C');
+        detectedTimeSig = time_signature || llmMeta.time_signature || '4/4';
+        console.log(`Key/time from LLM: ${detectedKey} / ${detectedTimeSig}`);
       } catch (e) {
-        console.log('Key detection failed, defaulting to C/4/4:', e.message);
-        detectedKey = detectedKey || 'C';
-        detectedTimeSig = detectedTimeSig || '4/4';
+        console.log('Key detection via LLM failed, using defaults:', e.message);
       }
     }
 
     chartData = {
-      title: spotifyMatch?.title || title,
-      artist: spotifyMatch?.artist || artist || 'Unknown',
-      key: normalizeKey(detectedKey),
+      title: songTitle,
+      artist: songArtist || 'Unknown',
+      key: detectedKey,
       time_signature: detectedTimeSig,
       reference_file_url,
       ...chordonomiconData.chart_data
