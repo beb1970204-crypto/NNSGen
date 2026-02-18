@@ -106,14 +106,14 @@ export default function Layout({ children, currentPageName }) {
                 to={`${createPageUrl(item.path)}?view=${item.view}`}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                   item.active 
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' 
+                    ? 'bg-[#D0021B] text-white shadow-lg shadow-[#D0021B]/20' 
                     : 'text-[#a0a0a0] hover:bg-[#252525] hover:text-white'
                 }`}
               >
                 <item.icon className="w-4 h-4" />
                 <span className="flex-1">{item.label}</span>
                 {item.badge > 0 && (
-                  <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold">
+                  <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#D0021B] text-white text-xs font-bold">
                     {item.badge}
                   </span>
                 )}
@@ -126,7 +126,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center justify-between mb-4 px-2">
               <span className="text-xs font-bold text-[#6b6b6b] uppercase tracking-widest">Setlists</span>
               <Link to={`${createPageUrl("Home")}?view=setlists`}>
-                <button className="text-[#6b6b6b] hover:text-red-500 hover:scale-110 transition-all">
+                <button className="text-[#6b6b6b] hover:text-[#D0021B] hover:scale-110 transition-all">
                   <span className="text-lg">+</span>
                 </button>
               </Link>
@@ -161,7 +161,7 @@ export default function Layout({ children, currentPageName }) {
           </Link>
           <Link to={`${createPageUrl("Settings")}`}>
             <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#1a1a1a] transition-all group cursor-pointer">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center shadow-lg shadow-red-600/20">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#D0021B] to-[#A0011B] rounded-full flex items-center justify-center shadow-lg shadow-[#D0021B]/20">
                 <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
