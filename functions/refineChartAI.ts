@@ -157,16 +157,78 @@ RESPONSE FORMAT (return this exact structure):
       required: ["key_tonic", "key_mode", "time_signature", "sections"]
     };
 
+    // Step 1: Look up actual song structure online
+    const songLookupPrompt = `What is the typical song structure for "${title}" by ${artist}? List the sections in order (e.g., Intro, Verse, Chorus, Bridge, Outro). Be concise.`;
+    
+    let actualSongStructure = '';
+    try {
+      const songLookup = await base44.integrations.Core.InvokeLLM({
+        prompt: songLookupPrompt,
+        add_context_from_internet: true
+      });
+      actualSongStructure = songLookup;
+    } catch (e) {
+      console.warn('Song lookup failed, proceeding without internet reference:', e.message);
+      actualSongStructure = 'Unable to lookup song structure';
+    }
+
+    // Step 2: Refine the chart with actual structure knowledge
+    const refinementPrompt = `You are a professional chord chart editor. Refine this existing chart based on user feedback and the actual song structure.
+
+ACTUAL SONG STRUCTURE (from research):
+${actualSongStructure}
+
+CURRENT CHART TO REFINE:
+${currentChartJSON}
+
+METADATA:
+Song Key: ${key}
+Time Signature: ${time_signature}
+
+USER FEEDBACK: "${userFeedback}"
+
+TASK: Apply the user's requested changes to align the chart with the actual song structure. Return the COMPLETE refined chart.
+
+RULES:
+- Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+- Preserve chords and measures unless feedback or song structure comparison requires changes
+- Return ONLY the JSON object below — no explanation, no markdown
+
+RESPONSE FORMAT (return this exact structure):
+{
+  "key_tonic": "C",
+  "key_mode": "major",
+  "time_signature": "4/4",
+  "sections": [
+    {
+      "label": "Verse",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "F", "beats": 4}], "cue": ""}
+      ]
+    },
+    {
+      "label": "Chorus",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+      ]
+    }
+  ]
+}`;
+
     let response;
     try {
       response = await base44.integrations.Core.InvokeLLM({
-        prompt,
+        prompt: refinementPrompt,
         add_context_from_internet: false,
         response_json_schema: schema
       });
     } catch (llmError) {
-      console.error('LLM call failed:', llmError.message);
-      // If JSON parsing fails, try extracting JSON from the response text
+      console.error('LLM refinement call failed:', llmError.message);
       if (llmError.message && llmError.message.includes('LLM returned invalid JSON')) {
         return Response.json({ 
           error: 'LLM response parsing failed. Please try refining with different feedback or shorter requests.'
