@@ -202,30 +202,33 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are a professional musician. Generate an accurate chord chart for:
+  const prompt = `You are a professional musician transcribing chord charts. Your job is to find and accurately transcribe the REAL chord progression from online sources—do NOT invent chords.
 
 Song: "${title}" by ${artist || 'Unknown'}
 ${referenceText ? `\nReference material:\n${referenceText}\n` : ''}
 
-Rules:
-- Each measure = one object in the measures array
-- All chord beats within one measure must sum to the time signature's top number
-- Use standard chord names: Bm, Em7, F#7, Gmaj7, etc.
-- key_tonic = root note only (e.g. "G", not "Gm")
-- Section labels must be exactly one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+CRITICAL RULES:
+- Transcribe what you find online; do not create variations
+- Each measure = one object with chord(s)
+- Beats in a measure MUST sum to the time signature's top number (usually 4)
+- Use only the chord names that actually appear in the song
+- key_tonic = root only (C not Cm)
+- Section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro only
+- For simple songs with repeating progressions, keep the measures concise and accurate
 
-Example output:
+Example:
 {
-  "key_tonic": "G",
+  "key_tonic": "A",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
     {
       "label": "Verse",
-      "repeat_count": 1,
+      "repeat_count": 2,
       "measures": [
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
         {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "C", "beats": 2}, {"chord": "D", "beats": 2}], "cue": ""}
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
       ]
     }
   ]
