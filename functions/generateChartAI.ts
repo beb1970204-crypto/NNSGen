@@ -1,212 +1,205 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
-import { Key, Chord, Note } from 'npm:tonal@6.0.1';
+import { Key } from 'npm:tonal@6.0.1';
 
-// Helper: Clean title for better Chordonomicon matching
-function cleanTitle(title) {
-  return title
-    .split(' - ')[0]
-    .replace(/\s*\(.*?(remaster|mix|live|version|edit|deluxe|feat|ft\.).*?\)/gi, '')
-    .replace(/\s*\[.*?\]/g, '')
-    .trim();
-}
+// ─── Spotify ──────────────────────────────────────────────────────────────────
 
-// Helper: Search Spotify, return top 5 tracks
 async function searchSpotify(title, artist) {
   const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
   const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
+  if (!clientId || !clientSecret) throw new Error('Spotify credentials not configured');
 
-  if (!clientId || !clientSecret) {
-    throw new Error('Spotify API credentials not configured');
-  }
-
-  const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+  const { access_token } = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Authorization': 'Basic ' + btoa(`${clientId}:${clientSecret}`)
     },
     body: 'grant_type=client_credentials'
-  });
+  }).then(r => r.json());
 
-  if (!tokenResponse.ok) throw new Error('Failed to authenticate with Spotify');
-
-  const { access_token } = await tokenResponse.json();
-
-  const searchQuery = artist ? `track:${title} artist:${artist}` : `track:${title}`;
-  const searchUrl = `https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=track&limit=5`;
-
-  const searchResponse = await fetch(searchUrl, {
+  const q = artist ? `track:${title} artist:${artist}` : `track:${title}`;
+  const data = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=5`, {
     headers: { 'Authorization': `Bearer ${access_token}` }
-  });
+  }).then(r => r.json());
 
-  if (!searchResponse.ok) throw new Error('Failed to search Spotify');
-
-  const searchData = await searchResponse.json();
-
-  if (!searchData.tracks?.items?.length) return [];
-
-  return searchData.tracks.items.map(track => ({
-    spotify_song_id: track.id,
-    spotify_artist_id: track.artists[0]?.id,
-    title: track.name,
-    artist: track.artists[0]?.name,
-    release_date: track.album?.release_date
+  return (data.tracks?.items || []).map(t => ({
+    spotify_song_id: t.id,
+    spotify_artist_id: t.artists[0]?.id,
+    title: t.name,
+    artist: t.artists[0]?.name,
+    release_date: t.album?.release_date
   }));
 }
 
-// Helper: Query Chordonomicon with flexible criteria
-async function fetchChordonomiconData(params) {
-  const { spotify_song_id, spotify_artist_id, title, artist, titleOnly } = params;
+// ─── Chordonomicon ────────────────────────────────────────────────────────────
+
+async function fetchChordonomicon(params) {
+  const { spotify_song_id, spotify_artist_id, title, artist } = params;
   const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
 
-  let whereClause;
-
+  let where;
   if (spotify_song_id) {
-    whereClause = `"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`;
-    if (spotify_artist_id) {
-      whereClause += ` AND "spotify_artist_id"='${spotify_artist_id.replace(/'/g, "''")}'`;
-    }
-  } else if (title && artist && !titleOnly) {
-    const cleaned = cleanTitle(title).replace(/'/g, "''");
-    whereClause = `"title"='${cleaned}' AND "artist"='${artist.replace(/'/g, "''")}'`;
-  } else if (title) {
-    const cleaned = cleanTitle(title).replace(/'/g, "''");
-    whereClause = `"title"='${cleaned}'`;
+    where = `"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`;
+    if (spotify_artist_id) where += ` AND "spotify_artist_id"='${spotify_artist_id.replace(/'/g, "''")}'`;
+  } else if (title && artist) {
+    const t = title.split(' - ')[0].replace(/\s*\(.*?\)/g, '').trim().replace(/'/g, "''");
+    where = `"title"='${t}' AND "artist"='${artist.replace(/'/g, "''")}'`;
   } else {
     return null;
   }
 
-  const filterUrl = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(whereClause)}&offset=0&length=1`;
-
+  const url = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(where)}&offset=0&length=1`;
   const headers = { 'Accept': 'application/json' };
   if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
 
-  const response = await fetch(filterUrl, { headers });
+  const res = await fetch(url, { headers });
+  if (!res.ok) return null;
 
-  if (!response.ok) {
-    if (response.status === 500 || response.status === 422) return null;
-    throw new Error(`Hugging Face API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  if (!data.rows?.length) return null;
-
-  const rowData = data.rows[0].row;
-  if (!rowData.chords) return null;
+  const data = await res.json();
+  const row = data.rows?.[0]?.row;
+  if (!row?.chords) return null;
 
   return {
-    chart_data: {
-      spotify_song_id: rowData.spotify_song_id,
-      spotify_artist_id: rowData.spotify_artist_id,
-      genres: rowData.genres,
-      release_date: rowData.release_date,
-      decade: rowData.decade
-    },
-    // Store raw chords string — parse after time sig is resolved
-    rawChords: rowData.chords
-  };
-}
-
-// Normalize LLM key output to a clean enum value
-// e.g. "A major" → "A", "F# minor" → "F#m", "Bb" → "Bb"
-function normalizeKey(rawKey) {
-  if (!rawKey) return 'C';
-  let k = rawKey.trim();
-  // Replace written-out "minor" / "major"
-  k = k.replace(/\s+major$/i, '').replace(/\s+minor$/i, 'm');
-  // Collapse spaces (e.g. "F# m" → "F#m")
-  k = k.replace(/\s+/g, '');
-  // Capitalize root note
-  k = k.charAt(0).toUpperCase() + k.slice(1);
-  return k;
-}
-
-// Helper: Detect key + time signature for a known song via LLM
-// Optionally pass a sample of chords from Chordonomicon for grounding
-async function detectKeyAndTimeSig(base44, title, artist, chordSample) {
-  const chordContext = chordSample
-    ? `\n\nHere is a sample of the actual chords from this recording: ${chordSample}\nUse these chords to confirm the key.`
-    : '';
-
-  const response = await base44.integrations.Core.InvokeLLM({
-    prompt: `What is the musical key and time signature of "${title}" by ${artist || 'Unknown'}?${chordContext}
-
-Return the tonic note (e.g. B, F#, Bb) and whether it is major or minor as separate fields.`,
-    response_json_schema: {
-      type: "object",
-      properties: {
-        tonic: { type: "string", description: "Root note only, e.g. B, F#, Bb" },
-        mode: { type: "string", enum: ["major", "minor"] },
-        time_signature: { type: "string" }
-      },
-      required: ["tonic", "mode", "time_signature"]
+    rawChords: row.chords,
+    metadata: {
+      spotify_song_id: row.spotify_song_id,
+      spotify_artist_id: row.spotify_artist_id,
+      genres: row.genres,
+      release_date: row.release_date,
+      decade: row.decade
     }
-  });
-
-  const tonic = response.tonic || 'C';
-  const mode = (response.mode || 'major').toLowerCase();
-
-  let validatedKey;
-  if (mode === 'minor') {
-    const mk = Key.minorKey(tonic);
-    validatedKey = mk.tonic ? (mk.tonic + 'm') : (tonic + 'm');
-  } else {
-    const mk = Key.majorKey(tonic);
-    validatedKey = mk.tonic || tonic;
-  }
-
-  return {
-    key: normalizeKey(validatedKey),
-    time_signature: response.time_signature || '4/4'
   };
 }
 
-// Helper: Generate chart with LLM
-async function generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url) {
+// ─── Chordonomicon chord parsing ──────────────────────────────────────────────
+
+// Convert colon-notation to standard chord names: B:min → Bm, F#:7 → F#7
+function normalizeChordName(chord) {
+  if (!chord || chord === 'N' || chord === 'X') return '-';
+
+  let slash = '';
+  const slashIdx = chord.indexOf('/');
+  if (slashIdx !== -1) {
+    slash = '/' + chord.slice(slashIdx + 1).replace(/:\w+$/, '');
+    chord = chord.slice(0, slashIdx);
+  }
+
+  if (!chord.includes(':')) return chord + slash;
+
+  const [root, quality] = chord.split(':');
+  const qualityMap = {
+    'maj': '', 'min': 'm', '': '', '7': '7', 'maj7': 'maj7', 'min7': 'm7',
+    'maj6': 'maj6', 'min6': 'm6', '6': '6', '9': '9', 'maj9': 'maj9', 'min9': 'm9',
+    'dim': 'dim', 'dim7': 'dim7', 'hdim7': 'm7b5', 'aug': 'aug',
+    'sus2': 'sus2', 'sus4': 'sus4', '7sus4': '7sus4', 'add9': 'add9',
+    'minmaj7': 'mmaj7', '5': '5', '11': '11', '13': '13',
+  };
+  const suffix = qualityMap[quality] !== undefined ? qualityMap[quality] : (quality || '');
+  return (root + suffix + slash) || '-';
+}
+
+// Infer key from a sample of chord tokens using TonalJS — no LLM needed
+function inferKeyFromChords(rawChords) {
+  const tokens = rawChords.split(/\s+/).filter(Boolean).slice(0, 40);
+  const roots = tokens
+    .filter(t => t !== 'N' && t !== 'X' && t !== '-')
+    .map(t => {
+      const [root, quality] = t.split(':');
+      return { root, isMinor: quality && (quality.startsWith('min') || quality === 'hdim7') };
+    });
+
+  if (!roots.length) return 'C';
+
+  // Tally root note occurrences
+  const counts = {};
+  for (const { root } of roots) {
+    counts[root] = (counts[root] || 0) + 1;
+  }
+
+  // First root is typically the tonic in Chordonomicon ordering
+  const firstRoot = roots[0].root;
+  const firstIsMinor = roots[0].isMinor;
+
+  // Validate with TonalJS
+  if (firstIsMinor) {
+    const mk = Key.minorKey(firstRoot);
+    return mk.tonic ? mk.tonic + 'm' : firstRoot + 'm';
+  } else {
+    const mk = Key.majorKey(firstRoot);
+    return mk.tonic || firstRoot;
+  }
+}
+
+const SECTION_LABEL_MAP = {
+  'intro': 'Intro', 'verse': 'Verse', 'pre': 'Pre', 'prechorus': 'Pre',
+  'chorus': 'Chorus', 'bridge': 'Bridge', 'solo': 'Instrumental Solo',
+  'instrumental': 'Instrumental Solo', 'interlude': 'Instrumental Solo', 'outro': 'Outro'
+};
+
+function parseChordonomiconSections(rawChords, beatsPerBar) {
+  const sections = [];
+  const parts = rawChords.split(/(<[^>]+>)/);
+
+  let currentLabel = null;
+  let currentChords = [];
+
+  const flush = () => {
+    if (currentChords.length > 0) {
+      sections.push({
+        label: currentLabel || 'Verse',
+        measures: currentChords.map(chord => ({
+          chords: [{ chord, beats: beatsPerBar, symbols: [] }],
+          cue: ''
+        })),
+        repeat_count: 1,
+        arrangement_cue: ''
+      });
+    }
+    currentChords = [];
+  };
+
+  for (const part of parts) {
+    if (part.startsWith('<')) {
+      flush();
+      const tag = part.replace(/[<>]/g, '').split('_')[0].toLowerCase();
+      currentLabel = SECTION_LABEL_MAP[tag] || 'Verse';
+    } else {
+      const chords = part.trim().split(/\s+/).filter(Boolean).map(normalizeChordName);
+      currentChords.push(...chords);
+    }
+  }
+  flush();
+
+  return sections;
+}
+
+// ─── LLM chart generation ─────────────────────────────────────────────────────
+
+async function generateWithLLM(base44, title, artist, reference_file_url) {
   let referenceText = '';
   let fileUrls = [];
 
   if (reference_file_url) {
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(reference_file_url);
-    if (isImage) {
+    if (/\.(jpg|jpeg|png|gif|webp)$/i.test(reference_file_url)) {
       fileUrls = [reference_file_url];
     } else {
-      const fileResponse = await fetch(reference_file_url);
-      referenceText = await fileResponse.text();
+      referenceText = await fetch(reference_file_url).then(r => r.text());
     }
   }
 
-  const beatsPerBar = time_signature ? parseInt(time_signature.split('/')[0]) || 4 : 4;
-
-  // A concrete example showing exactly what one section's measures array looks like.
-  // This is far more reliable than describing the structure in prose.
-  const exampleSection = JSON.stringify({
-    label: "Verse",
-    measures: [
-      { chords: [{ chord: "Bm", beats: beatsPerBar, symbols: [] }], cue: "" },
-      { chords: [{ chord: "Bm7", beats: beatsPerBar, symbols: [] }], cue: "" },
-      { chords: [{ chord: "Em", beats: beatsPerBar / 2, symbols: [] }, { chord: "F#7", beats: beatsPerBar / 2, symbols: [] }], cue: "" }
-    ],
-    repeat_count: 1,
-    arrangement_cue: ""
-  }, null, 2);
-
-  const prompt = `You are a professional musician. Produce a chord chart for the song below.
+  const prompt = `You are a professional musician. Generate an accurate chord chart for:
 
 Song: "${title}" by ${artist || 'Unknown'}
-${key ? `Key: ${key}` : ''}
-${time_signature ? `Time signature: ${time_signature} (${beatsPerBar} beats per bar)` : ''}
+${referenceText ? `\nReference material:\n${referenceText}\n` : ''}
 
-${referenceText ? `Reference material (use as primary source):\n${referenceText}\n` : ''}
+Rules:
+- Each measure = one object in the measures array
+- All chord beats within one measure must sum to the time signature's top number
+- Use standard chord names: Bm, Em7, F#7, Gmaj7, etc.
+- key_tonic = root note only (e.g. "B", not "Bm")
 
-IMPORTANT RULES:
-1. Each bar of music = one object in the measures array. A 12-bar verse = 12 measure objects.
-2. Each chord within a measure gets a "beats" value. All beats in one measure must add up to exactly ${beatsPerBar}.
-3. Use standard chord names only: Bm, Em7, Gmaj7, F#7, etc.
-4. key_tonic is the root note only — e.g. "B" not "Bm". key_mode is "major" or "minor".
-
-Here is an example of what one section should look like:
-${exampleSection}`;
+Example measure with one chord: {"chords": [{"chord": "Bm", "beats": 4, "symbols": []}], "cue": ""}
+Example measure with two chords: {"chords": [{"chord": "Em", "beats": 2, "symbols": []}, {"chord": "F#7", "beats": 2, "symbols": []}], "cue": ""}`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
@@ -215,18 +208,15 @@ ${exampleSection}`;
     response_json_schema: {
       type: "object",
       properties: {
-        key_tonic: { type: "string", description: "Root note only, e.g. B, F#, Bb, G" },
-        key_mode: { type: "string", enum: ["major", "minor"], description: "major or minor" },
-        time_signature: { type: "string", description: "Time signature (e.g., 4/4, 3/4)" },
+        key_tonic: { type: "string" },
+        key_mode: { type: "string", enum: ["major", "minor"] },
+        time_signature: { type: "string" },
         sections: {
           type: "array",
           items: {
             type: "object",
             properties: {
-              label: {
-                type: "string",
-                enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"]
-              },
+              label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
               measures: {
                 type: "array",
                 items: {
@@ -260,301 +250,121 @@ ${exampleSection}`;
     }
   });
 
-  // Resolve key using TonalJS Key validation
-  const tonic = response.key_tonic || key || 'C';
-  const mode = (response.key_mode || 'major').toLowerCase();
-  let resolvedKey;
-  if (mode === 'minor') {
+  // Resolve key with TonalJS
+  const tonic = response.key_tonic || 'C';
+  const isMinor = response.key_mode === 'minor';
+  let key;
+  if (isMinor) {
     const mk = Key.minorKey(tonic);
-    resolvedKey = mk.tonic ? (mk.tonic + 'm') : (tonic + 'm');
+    key = (mk.tonic || tonic) + 'm';
   } else {
     const mk = Key.majorKey(tonic);
-    resolvedKey = mk.tonic || tonic;
+    key = mk.tonic || tonic;
   }
 
-  return {
-    key: normalizeKey(resolvedKey),
-    time_signature: response.time_signature,
-    sections: response.sections
-  };
+  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
 }
 
-// Helper: Parse Chordonomicon chord string into sections
-// beatsPerBar must be passed in so each chord token gets the correct beat count
-function parseChordProgressionToSections(chordsString, beatsPerBar = 4) {
-  const sections = [];
-  const sectionPattern = /<([a-zA-Z]+)(?:_(\d+))?>/g;
-
-  const firstTagMatch = sectionPattern.exec(chordsString);
-  if (firstTagMatch && firstTagMatch.index > 0) {
-    const introChords = chordsString.substring(0, firstTagMatch.index).trim();
-    if (introChords) sections.push(createSection('Intro', introChords, beatsPerBar));
-  }
-
-  sectionPattern.lastIndex = 0;
-  const parts = chordsString.split(sectionPattern);
-
-  for (let i = 1; i < parts.length; i += 3) {
-    const type = parts[i];
-    const content = parts[i + 2];
-    if (content && content.trim()) {
-      sections.push(createSection(mapLabel(type), content, beatsPerBar));
-    }
-  }
-
-  if (sections.length === 0 && chordsString.trim()) {
-    sections.push(createSection('Verse', chordsString, beatsPerBar));
-  }
-
-  return sections;
-}
-
-function mapLabel(type) {
-  const labelMap = {
-    'intro': 'Intro', 'verse': 'Verse', 'pre': 'Pre', 'prechorus': 'Pre',
-    'chorus': 'Chorus', 'bridge': 'Bridge', 'solo': 'Instrumental Solo',
-    'instrumental': 'Instrumental Solo', 'interlude': 'Instrumental Solo', 'outro': 'Outro'
-  };
-  return labelMap[type.toLowerCase()] || 'Verse';
-}
-
-// beatsPerBar is passed so Chordonomicon sections use the correct time signature
-function createSection(label, chordsText, beatsPerBar = 4) {
-  const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim()).map(normalizeChordName);
-  // Each chord token from Chordonomicon = one bar (one chord held for the full bar)
-  const measures = chordArray.map(chord => ({
-    chords: [{ chord, beats: beatsPerBar, symbols: [] }],
-    cue: ''
-  }));
-  return { label, measures, repeat_count: 1, arrangement_cue: '' };
-}
-
-// Convert Chordonomicon colon-notation to standard chord names
-// e.g. C:maj → C, A:min → Am, G:7 → G7, D:min7 → Dm7, B:hdim7 → Bm7b5
-function normalizeChordName(chord) {
-  if (!chord || chord === '-' || chord === 'N' || chord === 'X') return '-';
-
-  // Remove octave numbers appended (e.g. "C:maj/3" keep root/bass only)
-  // Handle slash chords first
-  let slashPart = '';
-  const slashIdx = chord.indexOf('/');
-  if (slashIdx !== -1) {
-    slashPart = '/' + chord.slice(slashIdx + 1).replace(/:\w+$/, '');
-    chord = chord.slice(0, slashIdx);
-  }
-
-  if (!chord.includes(':')) {
-    // Already standard notation — just clean up
-    return chord.replace(/min(?!or)/, 'm').replace(/no3(?:rd)?/i, '5') + slashPart;
-  }
-
-  const [root, quality] = chord.split(':');
-  if (!root) return '-';
-
-  const qualityMap = {
-    'maj':    '',
-    'min':    'm',
-    '':       '',
-    '5':      '5',
-    '7':      '7',
-    'maj7':   'maj7',
-    'min7':   'm7',
-    'minmaj7':'mmaj7',
-    'maj6':   'maj6',
-    'min6':   'm6',
-    '6':      '6',
-    '9':      '9',
-    'maj9':   'maj9',
-    'min9':   'm9',
-    '11':     '11',
-    'maj11':  'maj11',
-    'min11':  'm11',
-    '13':     '13',
-    'maj13':  'maj13',
-    'min13':  'm13',
-    'dim':    'dim',
-    'dim7':   'dim7',
-    'hdim7':  'm7b5',  // half-diminished
-    'aug':    'aug',
-    'sus2':   'sus2',
-    'sus4':   'sus4',
-    '7sus4':  '7sus4',
-    'add9':   'add9',
-  };
-
-  const suffix = qualityMap[quality] !== undefined ? qualityMap[quality] : (quality || '');
-  return root + suffix + slashPart;
-}
-
-// ─── Main Handler ────────────────────────────────────────────────────────────
+// ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   try {
-  const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { title, artist, key, time_signature, reference_file_url } = await req.json();
+    if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
 
-  const { title, artist, key, time_signature, reference_file_url } = await req.json();
+    // ── Step 1: Try Chordonomicon (via Spotify ID, then title+artist) ──────────
+    let chordonomiconData = null;
+    let spotifyMatch = null;
 
-  if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
-
-  let chordonomiconData = null;
-  let spotifyMatch = null;
-
-  // Step 1: Spotify → iterate top 5 results for Chordonomicon match
-  try {
-    const spotifyTracks = await searchSpotify(title, artist);
-    console.log(`Spotify found ${spotifyTracks.length} tracks`);
-
-    for (const track of spotifyTracks) {
-      const result = await fetchChordonomiconData({
-        spotify_song_id: track.spotify_song_id,
-        spotify_artist_id: track.spotify_artist_id
-      });
-      if (result) {
-        chordonomiconData = result;
-        spotifyMatch = track;
-        console.log(`Chordonomicon match via Spotify ID: ${track.title}`);
-        break;
+    try {
+      const tracks = await searchSpotify(title, artist);
+      console.log(`Spotify found ${tracks.length} tracks`);
+      for (const track of tracks) {
+        const result = await fetchChordonomicon({ spotify_song_id: track.spotify_song_id, spotify_artist_id: track.spotify_artist_id });
+        if (result) { chordonomiconData = result; spotifyMatch = track; break; }
       }
-    }
-  } catch (error) {
-    console.log('Spotify lookup failed:', error.message);
-  }
-
-  // Step 2: Fallback — title + artist
-  if (!chordonomiconData) {
-    try {
-      chordonomiconData = await fetchChordonomiconData({ title, artist });
-      if (chordonomiconData) console.log('Chordonomicon match via title + artist');
     } catch (e) {
-      console.log('Title+artist lookup failed:', e.message);
+      console.log('Spotify/Chordonomicon lookup failed:', e.message);
     }
-  }
 
-  // Step 3: Fallback — title only
-  if (!chordonomiconData) {
-    try {
-      chordonomiconData = await fetchChordonomiconData({ title, titleOnly: true });
-      if (chordonomiconData) console.log('Chordonomicon match via title only');
-    } catch (e) {
-      console.log('Title-only lookup failed:', e.message);
-    }
-  }
-
-  let chartData, sectionsData, dataSource;
-
-  if (chordonomiconData) {
-    dataSource = 'chordonomicon';
-
-    // Detect key + time sig with a focused, fast LLM call (much cheaper than full chart gen)
-    let detectedKey = key;
-    let detectedTimeSig = time_signature;
-    if (!detectedKey || !detectedTimeSig) {
+    if (!chordonomiconData) {
       try {
-        const songTitle = spotifyMatch?.title || title;
-        const songArtist = spotifyMatch?.artist || artist;
-        // Pass a sample of the raw Chordonomicon chords to ground the key detection
-        const rawChords = (chordonomiconData.rawChords || '').split(/[\s<>a-z_0-9]+/).filter(Boolean).slice(0, 12).join(' ');
-        const meta = await detectKeyAndTimeSig(base44, songTitle, songArtist, rawChords);
-        detectedKey = detectedKey || meta.key;
-        detectedTimeSig = detectedTimeSig || meta.time_signature;
-        console.log(`Key detected: ${detectedKey} / ${detectedTimeSig}`);
+        chordonomiconData = await fetchChordonomicon({ title, artist });
       } catch (e) {
-        console.log('Key detection failed, using defaults:', e.message);
-        detectedKey = detectedKey || 'C';
-        detectedTimeSig = detectedTimeSig || '4/4';
+        console.log('Title+artist lookup failed:', e.message);
       }
     }
 
-    const resolvedBeatsPerBar = parseInt((detectedTimeSig || '4/4').split('/')[0]) || 4;
+    // ── Step 2a: Chordonomicon hit — parse chords, infer key, no LLM needed ───
+    let chartData, sectionsData, dataSource;
 
-    chartData = {
-      title: spotifyMatch?.title || title,
-      artist: spotifyMatch?.artist || artist || 'Unknown',
-      key: normalizeKey(detectedKey),
-      time_signature: detectedTimeSig,
-      reference_file_url,
-      ...chordonomiconData.chart_data
-    };
-    // Parse Chordonomicon sections NOW that we know the time signature
-    sectionsData = parseChordProgressionToSections(chordonomiconData.rawChords, resolvedBeatsPerBar);
-  } else {
-    // Step 4: LLM fallback — detects key/time_sig if not provided
-    dataSource = 'llm';
-    console.log('Falling back to LLM generation');
+    if (chordonomiconData) {
+      dataSource = 'chordonomicon';
+      console.log('Using Chordonomicon data');
 
-    const llmResponse = await generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url);
+      const resolvedKey = key || inferKeyFromChords(chordonomiconData.rawChords);
+      const resolvedTimeSig = time_signature || '4/4';
+      const beatsPerBar = parseInt(resolvedTimeSig.split('/')[0]) || 4;
 
-    if (!llmResponse.sections) {
-      return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
+      chartData = {
+        title: spotifyMatch?.title || title,
+        artist: spotifyMatch?.artist || artist || 'Unknown',
+        key: resolvedKey,
+        time_signature: resolvedTimeSig,
+        reference_file_url,
+        ...chordonomiconData.metadata
+      };
+      sectionsData = parseChordonomiconSections(chordonomiconData.rawChords, beatsPerBar);
+
+    } else {
+      // ── Step 2b: LLM fallback ─────────────────────────────────────────────
+      dataSource = 'llm';
+      console.log('Falling back to LLM generation');
+
+      const llm = await generateWithLLM(base44, title, artist, reference_file_url);
+      if (!llm.sections?.length) return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
+
+      chartData = {
+        title,
+        artist: artist || 'Unknown',
+        key: key || llm.key,
+        time_signature: time_signature || llm.time_signature,
+        reference_file_url
+      };
+      sectionsData = llm.sections;
     }
 
-    chartData = {
-      title,
-      artist: artist || 'Unknown',
-      key: normalizeKey(key || llmResponse.key || 'C'),
-      time_signature: time_signature || llmResponse.time_signature || '4/4',
-      reference_file_url
-    };
-    console.log(`LLM key resolved: ${chartData.key}`);
-    sectionsData = llmResponse.sections;
-  }
+    chartData.data_source = dataSource;
 
-  chartData.data_source = dataSource;
-
-  // Sanitize all section data
-  const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
-  const beatsInBar = parseInt((chartData.time_signature || '4/4').split('/')[0]) || 4;
-
-  sectionsData = sectionsData.map(section => {
-    const sanitizedMeasures = (section.measures || []).map(measure => {
-      const rawChords = measure.chords || [];
-      const chordCount = rawChords.length || 1;
-
-      let chords = rawChords.map(chordObj => {
-        const rawBeats = Number(chordObj.beats);
-        // Only use the provided beats if they are a positive, plausible value (≤ beatsInBar).
-        // Otherwise fall back to an even split so we don't corrupt valid LLM output.
-        const beats = (rawBeats > 0 && rawBeats <= beatsInBar) ? rawBeats : (beatsInBar / chordCount);
-        return {
-          chord: chordObj.chord || '-',
-          beats,
-          symbols: Array.isArray(chordObj.symbols)
-            ? chordObj.symbols.filter(s => VALID_SYMBOLS.includes(s))
-            : []
-        };
-      });
-
-      // Only redistribute if the total is clearly wrong (not within 0.01 of beatsInBar)
-      const totalBeats = chords.reduce((sum, c) => sum + c.beats, 0);
-      if (Math.abs(totalBeats - beatsInBar) > 0.01 && chords.length > 0) {
-        const evenBeats = beatsInBar / chords.length;
-        chords = chords.map(c => ({ ...c, beats: evenBeats }));
-      }
-
-      return { ...measure, cue: measure.cue || '', chords };
-    });
-
-    return {
+    // ── Step 3: Light sanitization — symbols only, no beat manipulation ───────
+    const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
+    sectionsData = sectionsData.map(section => ({
       ...section,
       repeat_count: Number(section.repeat_count) || 1,
       arrangement_cue: section.arrangement_cue || '',
-      measures: sanitizedMeasures
-    };
-  });
+      measures: (section.measures || []).map(measure => ({
+        ...measure,
+        cue: measure.cue || '',
+        chords: (measure.chords || []).map(c => ({
+          chord: c.chord || '-',
+          beats: Number(c.beats) || 4,
+          symbols: Array.isArray(c.symbols) ? c.symbols.filter(s => VALID_SYMBOLS.includes(s)) : []
+        }))
+      }))
+    }));
 
-  // Return the generated data WITHOUT saving — the frontend will save only when user clicks Save
-  return Response.json({
-    success: true,
-    source: dataSource,
-    message: dataSource === 'chordonomicon'
-      ? 'Chart generated from Chordonomicon database'
-      : 'Chart generated using AI',
-    chartData,
-    sectionsData
-  });
+    return Response.json({
+      success: true,
+      source: dataSource,
+      message: dataSource === 'chordonomicon' ? 'Chart sourced from Chordonomicon' : 'Chart generated using AI',
+      chartData,
+      sectionsData
+    });
+
   } catch (error) {
     console.error('generateChartAI error:', error);
     return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
