@@ -250,6 +250,7 @@ export default function ChartViewer() {
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
 
     const reorderedSections = Array.from(sections);
     const [removed] = reorderedSections.splice(result.source.index, 1);
@@ -258,18 +259,10 @@ export default function ChartViewer() {
     // Optimistically update UI
     queryClient.setQueryData(['sections', chartId], reorderedSections);
 
-    // Update each section's position in the background
-    try {
-      await Promise.all(
-        reorderedSections.map((section, index) =>
-          base44.entities.Section.update(section.id, { order: index })
-        )
-      );
-      toast.success('Sections reordered');
-    } catch (error) {
-      queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
-      toast.error('Failed to reorder sections');
-    }
+    // Persist the new order as an array of IDs on the chart record
+    const orderedIds = reorderedSections.map(s => s.id);
+    await base44.entities.Chart.update(chartId, { sections: orderedIds });
+    queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
 
   const moveSectionUp = (sectionIndex) => {
