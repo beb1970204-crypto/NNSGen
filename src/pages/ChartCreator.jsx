@@ -42,25 +42,31 @@ export default function ChartCreator() {
     setDraftChart(null);
     setDraftSections(null);
 
-    const response = await base44.functions.invoke('generateChartAI', {
-      title,
-      artist: artist || null,
-      reference_file_url: referenceFile || null
-    });
+    try {
+      const response = await base44.functions.invoke('generateChartAI', {
+        title,
+        artist: artist || null,
+        reference_file_url: referenceFile || null
+      });
 
-    setIsGenerating(false);
+      setIsGenerating(false);
 
-    if (response.data.error) {
-      toast.error(response.data.error);
-      return;
+      if (response.data.error) {
+        toast.error(response.data.error);
+        return;
+      }
+
+      // Store as draft — DO NOT save yet
+      const { chartData, sectionsData, source } = response.data;
+      setDraftChart(chartData);
+      setDraftSections(sectionsData);
+      setDataSource(source);
+      toast.success(response.data.message || "Chart generated — review and save when ready.");
+    } catch (error) {
+      setIsGenerating(false);
+      console.error('Chart generation error:', error);
+      toast.error(`Error: ${error.message}`);
     }
-
-    // Store as draft — DO NOT save yet
-    const { chartData, sectionsData, source } = response.data;
-    setDraftChart(chartData);
-    setDraftSections(sectionsData);
-    setDataSource(source);
-    toast.success(response.data.message || "Chart generated — review and save when ready.");
   };
 
   const handleSaveChart = async () => {
