@@ -198,7 +198,7 @@ function parseChordonomiconSections(rawChords, beatsPerBar) {
 
 // ─── LLM chart generation ─────────────────────────────────────────────────────
 
-async function generateWithLLM(base44, title, artist, reference_file_url, retryCount = 0) {
+async function generateWithLLM(base44, title, artist, reference_file_url) {
   let referenceText = '';
   let fileUrls = [];
 
@@ -210,69 +210,55 @@ async function generateWithLLM(base44, title, artist, reference_file_url, retryC
     }
   }
 
-  // First attempt: strict transcription-focused prompt
-  // Second attempt: looser prompt emphasizing song structure
-  // Third attempt: ultra-simplified fallback for stubborn songs
-  let prompt;
-  if (retryCount === 0) {
-    prompt = `You are a professional musician transcribing "${title}" by ${artist || 'Unknown'}.
+  // SINGLE OPTIMIZED PROMPT for consistency — no retry variations
+  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
 
-GOAL: Transcribe the ACTUAL chord progression and real song structure as accurately as possible.
+CRITICAL REQUIREMENTS:
+1. Return a COMPLETE song representation with all sections: typically Intro → Verse → Chorus → [Bridge] → Chorus → Outro
+2. Do NOT omit sections—the chart must represent a full song playthrough
+3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+4. Each section must have realistic measure counts (Intro: 4-8 bars, Verse: 8-16 bars, Chorus: 8-16 bars, etc.)
+5. Chords must be diatonic to the key and musically coherent
+6. Return ONLY valid JSON with no explanation
 
-INSTRUCTIONS:
-- Return the sections that ACTUALLY exist in the song (e.g., Intro, Verse, Chorus, Bridge, Outro)
-- Do NOT force sections that don't exist. If the song is only verse-chorus, return just those.
-- Some songs have only 1-2 unique sections; that is valid and correct.
-- Each measure contains 1-4 chords based on actual song structure
-- Return ONLY JSON with no explanation
+${referenceText ? `REFERENCE MATERIAL PROVIDED:\n${referenceText}\n` : ''}
 
-${referenceText ? `Reference material:\n${referenceText}\n` : 'Use web context to find the real chord progression.'}
-
-EXAMPLE (2-section song):
+JSON STRUCTURE (strict format):
 {
   "key_tonic": "A",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
-    {"label": "Verse", "repeat_count": 2, "arrangement_cue": "", "measures": [
-      {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""}
-    ]},
-    {"label": "Chorus", "repeat_count": 1, "arrangement_cue": "", "measures": [
-      {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
-    ]}
-  ]
-}`;
-  } else if (retryCount === 1) {
-    prompt = `Transcribe "${title}" by ${artist || 'Unknown'}. Return the real sections that exist.
-
-Valid sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. Only include sections in the actual song.
-
-{
-  "key_tonic": "E",
-  "key_mode": "major",
-  "time_signature": "4/4",
-  "sections": [
-    {"label": "Verse", "repeat_count": 1, "arrangement_cue": "", "measures": [{"chords": [{"chord": "E", "beats": 2}, {"chord": "A", "beats": 2}], "cue": ""}]},
-    {"label": "Chorus", "repeat_count": 1, "arrangement_cue": "", "measures": [{"chord": [{"chord": "B", "beats": 4}], "cue": ""}]}
+    {
+      "label": "Intro",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+      ]
+    },
+    {
+      "label": "Verse",
+      "repeat_count": 2,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+      ]
+    },
+    {
+      "label": "Chorus",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+      ]
+    }
   ]
 }
 
-Keep it accurate and simple. Only add sections that truly exist in the song.`;
-  } else {
-    // Ultra-fallback: minimal viable structure
-    prompt = `${title} by ${artist || 'Unknown'}. Generate minimal but real chord structure.
-
-Return JSON with 1-3 sections: just what the song needs. No fake sections.
-
-{
-  "key_tonic": "C",
-  "key_mode": "major",
-  "time_signature": "4/4",
-  "sections": [
-    {"label": "Verse", "repeat_count": 1, "arrangement_cue": "", "measures": [{"chords": [{"chord": "C", "beats": 4}], "cue": ""}]}
-  ]
-}`;
-  }
+COMPLETENESS CHECK: Do these sections form a complete song cycle? If not, add missing sections.`;
 
   const schema = {
     type: "object",
@@ -317,7 +303,7 @@ Return JSON with 1-3 sections: just what the song needs. No fake sections.
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  // Always use internet context for factual transcription grounding
+  // Use internet context for factual transcription grounding
   try {
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -328,6 +314,12 @@ Return JSON with 1-3 sections: just what the song needs. No fake sections.
 
     if (!response?.sections?.length) {
       throw new Error('LLM returned no sections');
+    }
+
+    // Validate for completeness BEFORE resolving key
+    const completenessCheck = validateChartOutput(response.sections);
+    if (!completenessCheck.valid) {
+      throw new Error(`Completeness check failed: ${completenessCheck.reason}`);
     }
 
     // Resolve key with TonalJS
@@ -345,11 +337,7 @@ Return JSON with 1-3 sections: just what the song needs. No fake sections.
     return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
   } catch (error) {
     console.error('LLM generation error:', error.message);
-    if (retryCount < 2) {
-      console.log(`Retry attempt ${retryCount + 1}...`);
-      return generateWithLLM(base44, title, artist, reference_file_url, retryCount + 1);
-    }
-    throw new Error(`LLM generation failed after 3 attempts: ${error.message}`);
+    throw new Error(`Chart generation failed: ${error.message}`);
   }
 }
 
