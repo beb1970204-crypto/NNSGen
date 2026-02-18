@@ -57,18 +57,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // Build current chart structure summary for context
-    const currentStructure = currentSections.map(s => ({
-      label: s.label,
-      bars: (s.measures || []).length,
-      sampleChords: (s.measures?.[0]?.chords || []).slice(0, 2).map(c => c.chord).join(' - ')
-    }));
+    // Build full current chart structure for LLM context
+    const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Refinement prompt — context-aware, preserves working elements
+    // Refinement prompt — context-aware with full chart data, preserves working elements
     const prompt = `You are refining a chord chart for "${title}" by ${artist || 'Unknown'}.
 
-CURRENT CHART STRUCTURE:
-${currentStructure.map(s => `- ${s.label}: ${s.bars} bars (e.g., ${s.sampleChords})`).join('\n')}
+CURRENT CHART DATA (JSON):
+${currentChartJSON}
 
 Key: ${key}
 Time Signature: ${time_signature}
@@ -77,12 +73,12 @@ USER FEEDBACK / REFINEMENT REQUEST:
 "${userFeedback}"
 
 INSTRUCTIONS:
-- Apply the user's requested changes/refinements
-- Preserve sections and chord progressions that the user did NOT mention
-- If user asks to "add" or "expand" a section, intelligently add more measures
-- If user asks to "fix" or "change" a section, regenerate just that section while keeping others intact
+- Carefully read the USER FEEDBACK and apply those specific requested changes
+- Preserve ALL sections and chord progressions that the user did NOT explicitly ask to change
+- If user asks to "add" or "expand" a section, intelligently add more measures to that section
+- If user asks to "fix" or "change" a section, regenerate just that section while keeping all other sections exactly as they are
 - Maintain the same key and time signature unless explicitly requested otherwise
-- Return ONLY valid JSON with no explanation
+- Return ONLY valid JSON with no explanation or additional context
 
 RETURN FORMAT:
 {
