@@ -154,7 +154,7 @@ export default function Home() {
   const filteredAndSortedCharts = useMemo(() => {
     let result = [...charts];
 
-    // View filter
+    // View filter (note: 'shared' filtering is already done in useQuery)
     if (currentView === 'favorites') {
       result = result.filter(chart => chart.starred);
     } else if (currentView === 'recent') {
