@@ -44,8 +44,6 @@ export default function Home() {
   const [shareDialogChart, setShareDialogChart] = useState(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showAddToSetlistDialog, setShowAddToSetlistDialog] = useState(false);
-  const [shareDialogChart, setShareDialogChart] = useState(null);
-  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
