@@ -198,7 +198,7 @@ function parseChordonomiconSections(rawChords, beatsPerBar) {
 
 // ─── LLM chart generation ─────────────────────────────────────────────────────
 
-async function generateWithLLM(base44, title, artist, reference_file_url) {
+async function generateWithLLM(base44, title, artist, reference_file_url, retryCount = 0) {
   let referenceText = '';
   let fileUrls = [];
 
@@ -210,37 +210,48 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are a professional musician transcribing chord charts. Your job is to find and accurately transcribe the REAL chord progression from online sources—do NOT invent chords.
+  // Adjust prompt based on retry (first time: transcription-focused, retry: more permissive)
+  let prompt;
+  if (retryCount === 0) {
+    prompt = `You are a professional musician transcribing chord charts. Your job is to find and accurately transcribe the REAL chord progression from online sources.
 
 Song: "${title}" by ${artist || 'Unknown'}
 ${referenceText ? `\nReference material:\n${referenceText}\n` : ''}
 
 CRITICAL RULES:
-- Transcribe what you find online; do not create variations
+- Transcribe what you find online; do NOT invent chords
 - Each measure = one object with chord(s)
 - Beats in a measure MUST sum to the time signature's top number (usually 4)
-- Use only the chord names that actually appear in the song
-- key_tonic = root only (C not Cm)
-- Section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro only
-- For simple songs with repeating progressions, keep the measures concise and accurate
+- Return at least 3 different sections (Intro, Verse, Chorus, Bridge, Outro, etc.)
+- Use section labels from: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 
-Example:
+Example structure:
 {
   "key_tonic": "A",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
-    {
-      "label": "Verse",
-      "repeat_count": 2,
-      "measures": [
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
-      ]
-    }
+    {"label": "Intro", "repeat_count": 1, "measures": [{"chords": [{"chord": "A", "beats": 4}], "cue": ""}]},
+    {"label": "Verse", "repeat_count": 2, "measures": [{"chords": [{"chord": "A", "beats": 2}, {"chord": "G", "beats": 2}], "cue": ""}]},
+    {"label": "Chorus", "repeat_count": 2, "measures": [{"chords": [{"chord": "D", "beats": 4}], "cue": ""}]}
   ]
 }`;
+  } else {
+    // Retry prompt: more relaxed, ask for clear distinction between sections
+    prompt = `You are creating a chord chart for "${title}" by ${artist || 'Unknown'}.
+
+Generate the song structure with DISTINCT sections that are clearly different (e.g., Intro, Verse, Chorus, Bridge, Outro). Each section should be recognizable and separate.
+
+Return JSON with:
+- key_tonic: root note (A, Bb, C, etc.)
+- key_mode: "major" or "minor"
+- time_signature: "4/4" or similar
+- sections: array with AT LEAST 3-4 different sections (Intro, Verse, Chorus, Bridge, Outro, etc.)
+  - label: must be one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+  - measures: array of measure objects with chords (each chord has "chord" name and "beats" duration)
+
+Make sections distinct from each other. For example: Intro (short), Verse (melodic), Chorus (hook), Bridge (different feel), Outro (resolution).`;
+  }
 
   const schema = {
     type: "object",
@@ -313,6 +324,10 @@ Example:
     return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
   } catch (error) {
     console.error('LLM generation error:', error.message);
+    if (retryCount === 0) {
+      console.log('Retrying with more relaxed prompt...');
+      return generateWithLLM(base44, title, artist, reference_file_url, 1);
+    }
     throw new Error(`LLM generation failed: ${error.message}`);
   }
 }
