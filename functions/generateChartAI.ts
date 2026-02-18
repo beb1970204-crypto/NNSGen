@@ -287,6 +287,7 @@ Replace C, F, G with actual chords. Keep 3 sections minimum.`;
       time_signature: { type: "string" },
       sections: {
         type: "array",
+        minItems: 3,
         items: {
           type: "object",
           properties: {
@@ -295,11 +296,13 @@ Replace C, F, G with actual chords. Keep 3 sections minimum.`;
             arrangement_cue: { type: "string" },
             measures: {
               type: "array",
+              minItems: 1,
               items: {
                 type: "object",
                 properties: {
                   chords: {
                     type: "array",
+                    minItems: 1,
                     items: {
                       type: "object",
                       properties: {
