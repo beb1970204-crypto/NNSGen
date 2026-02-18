@@ -210,6 +210,8 @@ Instructions:
     }
   });
 
+  const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
+
   if (response.sections) {
     response.sections = response.sections.map(section => ({
       ...section,
@@ -219,9 +221,12 @@ Instructions:
         ...measure,
         cue: measure.cue || '',
         chords: measure.chords?.map(chordObj => ({
-          ...chordObj,
+          chord: chordObj.chord || '-',
           beats: Number(chordObj.beats) || 4,
-          symbols: Array.isArray(chordObj.symbols) ? chordObj.symbols : []
+          // Only allow valid NNS symbol values — never chord names or other strings
+          symbols: Array.isArray(chordObj.symbols)
+            ? chordObj.symbols.filter(s => VALID_SYMBOLS.includes(s))
+            : []
         }))
       }))
     }));
