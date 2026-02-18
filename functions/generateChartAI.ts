@@ -210,25 +210,6 @@ Instructions:
     }
   });
 
-  const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
-
-  response.sections = (response.sections || []).map(section => ({
-    ...section,
-    repeat_count: Number(section.repeat_count) || 1,
-    arrangement_cue: section.arrangement_cue || '',
-    measures: (section.measures || []).map(measure => ({
-      ...measure,
-      cue: measure.cue || '',
-      chords: (measure.chords || []).map(chordObj => ({
-        chord: chordObj.chord || '-',
-        beats: Number(chordObj.beats) || 4,
-        symbols: Array.isArray(chordObj.symbols)
-          ? chordObj.symbols.filter(s => VALID_SYMBOLS.includes(s))
-          : []
-      }))
-    }))
-  }));
-
   return response;
 }
 
