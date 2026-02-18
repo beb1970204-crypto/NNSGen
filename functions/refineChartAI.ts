@@ -172,61 +172,52 @@ RESPONSE FORMAT:
       required: ["key_tonic", "key_mode", "time_signature", "sections"]
     };
 
-    let response;
+    let freshChart;
     try {
-      response = await base44.integrations.Core.InvokeLLM({
-        prompt: refinementPrompt,
-        add_context_from_internet: false,
+      freshChart = await base44.integrations.Core.InvokeLLM({
+        prompt: generationPrompt,
+        add_context_from_internet: true,
         response_json_schema: schema
       });
     } catch (llmError) {
-      console.error('LLM refinement call failed:', llmError.message);
+      console.error('Fresh chart generation failed:', llmError.message);
       return Response.json({ 
-        error: 'LLM response parsing failed. Please try refining with different feedback.'
+        error: 'Failed to generate reference chart. Please try again.'
       }, { status: 400 });
     }
 
-    if (!response?.sections?.length) {
-      return Response.json({ error: 'LLM refinement returned no sections' }, { status: 500 });
+    if (!freshChart?.sections?.length) {
+      return Response.json({ error: 'Fresh chart generation returned no sections' }, { status: 500 });
     }
 
-    // Step 1: Validate that refined chart preserves all original sections
-    const originalSectionCount = currentSections.length;
-    const refinedSectionCount = response.sections.length;
-    
-    if (refinedSectionCount < originalSectionCount) {
-      console.log(`Refinement lost sections: ${originalSectionCount} → ${refinedSectionCount}`);
-      return Response.json({ 
-        error: `Refinement removed sections. Please provide different feedback or refine again.` 
-      }, { status: 400 });
+    // ── Step 2: Validate fresh chart ──
+    const freshValidation = validateChartOutput(freshChart.sections);
+    if (!freshValidation.valid) {
+      console.log('Fresh chart validation failed:', freshValidation.reason);
+      return Response.json({ error: `Fresh chart invalid: ${freshValidation.reason}. Try refining again.` }, { status: 400 });
     }
 
-    // Step 2: Validate refined output quality
-    const validation = validateChartOutput(response.sections);
-    if (!validation.valid) {
-      console.log('Refinement validation failed:', validation.reason);
-      return Response.json({ error: `Refinement validation failed: ${validation.reason}. Please try different feedback.` }, { status: 400 });
-    }
+    // ── Step 3: Compare fresh chart to current and determine if it addresses the user's issue ──
+    const currentChartJSON = JSON.stringify(currentSections, null, 2);
+    const freshChartJSON = JSON.stringify(freshChart.sections, null, 2);
 
-    // Step 3: Review if the refinement actually solves the user's stated issue
-    const refinedChartJSON = JSON.stringify(response.sections, null, 2);
-    const reviewPrompt = `You are reviewing a refined chord chart. Determine if the refinement addresses the user's stated problem.
+    const comparisonPrompt = `You are evaluating if a freshly generated chart solves the user's stated problem with their current chart.
 
-ORIGINAL CHART:
+CURRENT CHART (user's existing chart):
 ${currentChartJSON}
 
-REFINED CHART:
-${refinedChartJSON}
+FRESH CHART (newly generated from scratch):
+${freshChartJSON}
 
 USER'S FEEDBACK/ISSUE: "${userFeedback}"
 
-TASK: Does the refined chart address what the user complained about? Answer with a JSON object:
+TASK: Determine if the fresh chart addresses what the user complained about. Answer with JSON:
 {
   "solves_issue": true or false,
-  "reasoning": "brief explanation"
+  "reasoning": "brief explanation of why it does or doesn't solve the issue"
 }`;
 
-    const reviewSchema = {
+    const comparisonSchema = {
       type: "object",
       properties: {
         solves_issue: { type: "boolean" },
@@ -235,24 +226,24 @@ TASK: Does the refined chart address what the user complained about? Answer with
       required: ["solves_issue", "reasoning"]
     };
 
-    let reviewResponse;
+    let comparisonResponse;
     try {
-      reviewResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: reviewPrompt,
+      comparisonResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: comparisonPrompt,
         add_context_from_internet: false,
-        response_json_schema: reviewSchema
+        response_json_schema: comparisonSchema
       });
-    } catch (reviewError) {
-      console.error('Review validation failed:', reviewError.message);
+    } catch (comparisonError) {
+      console.error('Comparison validation failed:', comparisonError.message);
       return Response.json({ 
-        error: 'Failed to validate refinement. Try refining again.'
+        error: 'Failed to validate if fresh chart solves the issue. Try again.'
       }, { status: 400 });
     }
 
-    if (!reviewResponse?.solves_issue) {
-      console.log('Review determined refinement does not solve issue:', reviewResponse?.reasoning);
+    if (!comparisonResponse?.solves_issue) {
+      console.log('Comparison determined fresh chart does not solve issue:', comparisonResponse?.reasoning);
       return Response.json({ 
-        error: `Refinement did not address your concern (${reviewResponse?.reasoning || 'unknown reason'}). Try refining again with clearer feedback.`
+        error: `The fresh chart does not solve your issue (${comparisonResponse?.reasoning || 'unknown reason'}). Try providing different feedback.`
       }, { status: 400 });
     }
 
