@@ -11,6 +11,8 @@ import ChartCardMenu from "@/components/chart/ChartCardMenu";
 import SetlistDialog from "@/components/setlist/SetlistDialog";
 import ChartCardSkeleton from "@/components/ChartCardSkeleton";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
+import BeginnerGuide from "@/components/BeginnerGuide";
+import BulkShareDialog from "@/components/chart/BulkShareDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +35,9 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("recent");
   const [showSetlistDialog, setShowSetlistDialog] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
+  const [selectedCharts, setSelectedCharts] = useState([]);
+  const [showBulkShareDialog, setShowBulkShareDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
@@ -131,6 +136,25 @@ export default function Home() {
     },
     onError: () => {
       toast.error('Failed to delete chart');
+    }
+  });
+
+  const bulkShare = useMutation({
+    mutationFn: async ({ chartIds, sharedWith }) => {
+      await Promise.all(
+        chartIds.map(chartId =>
+          base44.entities.Chart.update(chartId, { shared_with: sharedWith })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success('Charts shared successfully');
+      setShowBulkShareDialog(false);
+      setSelectedCharts([]);
+    },
+    onError: () => {
+      toast.error('Failed to share charts');
     }
   });
 
