@@ -157,11 +157,23 @@ JSON STRUCTURE:
       required: ["key_tonic", "key_mode", "time_signature", "sections"]
     };
 
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      add_context_from_internet: true,
-      response_json_schema: schema
-    });
+    let response;
+    try {
+      response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        add_context_from_internet: true,
+        response_json_schema: schema
+      });
+    } catch (llmError) {
+      console.error('LLM call failed:', llmError.message);
+      // If JSON parsing fails, try extracting JSON from the response text
+      if (llmError.message && llmError.message.includes('LLM returned invalid JSON')) {
+        return Response.json({ 
+          error: 'LLM response parsing failed. Please try refining with different feedback or shorter requests.'
+        }, { status: 400 });
+      }
+      throw llmError;
+    }
 
     if (!response?.sections?.length) {
       return Response.json({ error: 'LLM refinement returned no sections' }, { status: 500 });
