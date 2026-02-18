@@ -106,7 +106,6 @@ export default function ChartCreator() {
   const handleRefineChart = async (userFeedback) => {
     if (!draftChart || !draftSections) return;
     setIsRefining(true);
-    setShowRefineModal(false);
 
     // Remove temporary draft IDs before sending to API
     const cleanSections = draftSections.map(({ id, ...section }) => section);
