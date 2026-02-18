@@ -38,7 +38,8 @@ Deno.serve(async (req) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
+    const margin = 12;
+    const columnGap = 8;
     let yPosition = margin;
 
     // Header
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
       doc.setFontSize(14);
       doc.setFont(undefined, 'normal');
       doc.text(chart.artist, margin, yPosition);
-      yPosition += 8;
+      yPosition += 7;
     }
 
     // Chart Info
@@ -59,64 +60,93 @@ Deno.serve(async (req) => {
     doc.text(`Key: ${chart.key}    Time: ${chart.time_signature}`, margin, yPosition);
     yPosition += 10;
 
-    // Sections
-    for (const section of sections) {
+    // Column dimensions
+    const columnWidth = (pageWidth - 2 * margin - columnGap) / 2;
+    const measuresPerRow = 4;
+    const cellWidth = columnWidth / measuresPerRow;
+    const cellHeight = 12;
+
+    // Render sections in 2-column layout
+    let leftX = margin;
+    let rightX = margin + columnWidth + columnGap;
+    let currentY = yPosition;
+    let rightY = yPosition;
+
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      const isLeftColumn = i % 2 === 0;
+      const x = isLeftColumn ? leftX : rightX;
+      let y = isLeftColumn ? currentY : rightY;
+
+      // Calculate space needed for this section
+      const numRows = Math.ceil(section.measures.length / measuresPerRow);
+      const sectionHeight = 6 + (section.arrangement_cue ? 4 : 0) + (numRows * cellHeight) + 8;
+
       // Check if we need a new page
-      if (yPosition > pageHeight - 40) {
+      if (y + sectionHeight > pageHeight - margin) {
         doc.addPage();
-        yPosition = margin;
+        currentY = margin;
+        rightY = margin;
+        y = isLeftColumn ? currentY : rightY;
       }
 
       // Section Header
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont(undefined, 'bold');
       const sectionLabel = section.repeat_count > 1 
         ? `${section.label.toUpperCase()} x${section.repeat_count}`
         : section.label.toUpperCase();
-      doc.text(sectionLabel, margin, yPosition);
-      yPosition += 6;
+      doc.text(sectionLabel, x, y);
+      y += 6;
 
       if (section.arrangement_cue) {
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont(undefined, 'italic');
-        doc.text(section.arrangement_cue, margin, yPosition);
-        yPosition += 5;
+        doc.text(section.arrangement_cue, x, y);
+        y += 4;
       }
 
-      // Measures Grid - 4 measures per row
-      const measuresPerRow = 4;
-      const cellWidth = (pageWidth - 2 * margin) / measuresPerRow;
-      const cellHeight = 15;
-
+      // Measures Grid
       doc.setFont(undefined, 'normal');
-      doc.setFontSize(11);
+      doc.setFontSize(10);
 
       for (let i = 0; i < section.measures.length; i++) {
         const measure = section.measures[i];
         const col = i % measuresPerRow;
         const row = Math.floor(i / measuresPerRow);
         
-        const x = margin + col * cellWidth;
-        const y = yPosition + row * cellHeight;
+        const mx = x + col * cellWidth;
+        const my = y + row * cellHeight;
 
         // Draw cell border
-        doc.rect(x, y, cellWidth, cellHeight);
+        doc.rect(mx, my, cellWidth, cellHeight);
 
         // Draw chords
         if (measure.chords && measure.chords.length > 0) {
           const chordText = measure.chords.map(c => c.chord).join(' ');
-          doc.text(chordText, x + 2, y + cellHeight / 2 + 2, { maxWidth: cellWidth - 4 });
+          doc.text(chordText, mx + 1.5, my + cellHeight / 2 + 1.5, { maxWidth: cellWidth - 3, fontSize: 10 });
         }
 
         // Draw cue if present
         if (measure.cue) {
-          doc.setFontSize(8);
-          doc.text(measure.cue, x + 2, y + cellHeight - 2, { maxWidth: cellWidth - 4 });
-          doc.setFontSize(11);
+          doc.setFontSize(7);
+          doc.text(measure.cue, mx + 1.5, my + cellHeight - 1, { maxWidth: cellWidth - 3 });
+          doc.setFontSize(10);
         }
       }
 
-      yPosition += Math.ceil(section.measures.length / measuresPerRow) * cellHeight + 10;
+      y += numRows * cellHeight + 8;
+
+      if (isLeftColumn) {
+        currentY = y;
+      } else {
+        rightY = y;
+        // Move to next row of sections when right column is done
+        if (i < sections.length - 1) {
+          currentY = Math.max(currentY, rightY);
+          rightY = currentY;
+        }
+      }
     }
 
     // Generate PDF as buffer
