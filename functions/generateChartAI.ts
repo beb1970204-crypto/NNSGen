@@ -197,6 +197,7 @@ Rules:
 - All chord beats within one measure must sum to the time signature's top number
 - Use standard chord names: Bm, Em7, F#7, Gmaj7, etc.
 - key_tonic = root note only (e.g. "B", not "Bm")
+- Section labels must be exactly one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro — no numbering or suffixes
 
 Example measure with one chord: {"chords": [{"chord": "Bm", "beats": 4, "symbols": []}], "cue": ""}
 Example measure with two chords: {"chords": [{"chord": "Em", "beats": 2, "symbols": []}, {"chord": "F#7", "beats": 2, "symbols": []}], "cue": ""}`;
