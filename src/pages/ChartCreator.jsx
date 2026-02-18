@@ -65,15 +65,24 @@ export default function ChartCreator() {
     setIsSaving(true);
 
     const chart = await base44.entities.Chart.create(draftChart);
-    await Promise.all(draftSections.map(section =>
-      base44.entities.Section.create({
+
+    // Create sections sequentially to preserve order
+    const createdSections = [];
+    for (const section of draftSections) {
+      const created = await base44.entities.Section.create({
         chart_id: chart.id,
         label: section.label,
         measures: section.measures,
         repeat_count: section.repeat_count || 1,
         arrangement_cue: section.arrangement_cue || ''
-      })
-    ));
+      });
+      createdSections.push(created);
+    }
+
+    // Persist section order on the chart record
+    await base44.entities.Chart.update(chart.id, {
+      sections: createdSections.map(s => s.id)
+    });
 
     toast.success("Chart saved!");
     navigate(createPageUrl("ChartViewer") + `?id=${chart.id}`);
