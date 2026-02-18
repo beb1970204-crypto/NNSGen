@@ -169,20 +169,7 @@ export default function ChartDisplay({
     );
   };
 
-  // Normalize sections: if a measure has >1 chord (packed together), explode into individual measures
-  const normalizeSections = (rawSections) => {
-    return rawSections.map(section => ({
-      ...section,
-      measures: (section.measures || []).flatMap(measure => {
-        const chords = measure.chords || [];
-        if (chords.length <= 1) return [measure]; // 1 chord — keep as-is
-        // Multiple chords crammed into one measure: explode into individual measures
-        return chords.map(chord => ({ chords: [chord], cue: '' }));
-      })
-    }));
-  };
-
-  const normalizedSections = normalizeSections(sections);
+  const normalizedSections = sections;
 
   return (
     <div className="space-y-4 chart-grid">
