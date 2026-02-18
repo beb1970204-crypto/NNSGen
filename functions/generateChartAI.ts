@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
-import { Key, Chord } from 'npm:tonal@6.0.1';
+import { Key, Chord, Note } from 'npm:tonal@6.0.1';
 
 // Helper: Clean title for better Chordonomicon matching
 function cleanTitle(title) {
