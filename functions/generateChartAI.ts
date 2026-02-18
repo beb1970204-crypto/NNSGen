@@ -392,9 +392,10 @@ function validateChartOutput(sections) {
     console.log(`Warning: Very few chords (${totalChords}), may be valid but check manually`);
   }
 
-  // Flag hallucination: too many unique chords for a typical song (18+ is suspicious)
-  if (uniqueChords.size > 18) {
-    return { valid: false, reason: `Too many unique chords (${uniqueChords.size}), likely hallucination` };
+  // Flag hallucination: proportional to song length. Jazz/prog songs legitimately have 15-20+ chords.
+  const expectedMaxChords = Math.ceil(totalMeasures / 2) + 10;
+  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 25) {
+    return { valid: false, reason: `Unusually high chord density (${uniqueChords.size} unique chords), likely hallucination` };
   }
 
   return { valid: true, uniqueChords: uniqueChords.size, totalMeasures, totalChords };
