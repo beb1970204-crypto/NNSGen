@@ -37,12 +37,24 @@ export default function ChartViewer() {
     enabled: !!chartId
   });
 
-  const { data: sections = [] } = useQuery({
+  const { data: rawSections = [] } = useQuery({
     queryKey: ['sections', chartId],
-    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, '-updated_date', 100),
+    queryFn: () => base44.entities.Section.filter({ chart_id: chartId }, 'created_date', 100),
     enabled: !!chartId,
     initialData: []
   });
+
+  // Order sections by the chart's sections array (which stores ordered IDs)
+  // Fall back to created_date order if chart.sections is empty/missing
+  const sections = React.useMemo(() => {
+    if (!chart?.sections?.length) return rawSections;
+    const orderedIds = chart.sections;
+    const sectionMap = Object.fromEntries(rawSections.map(s => [s.id, s]));
+    const ordered = orderedIds.map(id => sectionMap[id]).filter(Boolean);
+    // Append any sections not in the ordered list (shouldn't happen, but safe)
+    const unordered = rawSections.filter(s => !orderedIds.includes(s.id));
+    return [...ordered, ...unordered];
+  }, [rawSections, chart?.sections]);
 
   const updateChart = useMutation({
     mutationFn: async (data) => {
