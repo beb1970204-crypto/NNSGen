@@ -35,6 +35,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("recent");
   const [showSetlistDialog, setShowSetlistDialog] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showBulkShare, setShowBulkShare] = useState(false);
+  const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
