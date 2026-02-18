@@ -529,15 +529,11 @@ export default function ChartViewer() {
               </div>
             ) : (
               // Read Mode - 2-Column Grid (fill left column first, then right)
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 {/* Left Column */}
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {sections.slice(0, Math.ceil(sections.length / 2)).map((section, index) => (
-                    <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-white">{section.label}</h3>
-                        <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
-                      </div>
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
                       <ChartDisplay 
                         sections={[section]}
                         chartKey={chart.key}
@@ -557,13 +553,9 @@ export default function ChartViewer() {
                   ))}
                 </div>
                 {/* Right Column */}
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
-                    <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-white">{section.label}</h3>
-                        <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
-                      </div>
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
                       <ChartDisplay 
                         sections={[section]}
                         chartKey={chart.key}
