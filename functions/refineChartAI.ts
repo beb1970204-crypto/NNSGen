@@ -66,26 +66,29 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // Build full current chart structure for LLM context
+    // Build refinement task description (no JSON to avoid confusing LLM with context)
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Refinement prompt — explicit JSON-only instruction to prevent internet context from breaking output
-    const prompt = `You are refining a chord chart. Here is the current chart:
+    // Refinement prompt — structured like generateChartAI for consistency with internet context
+    const prompt = `You are a professional chord chart editor refining an existing chart based on user feedback.
 
+CURRENT CHART STRUCTURE (for reference):
 ${currentChartJSON}
 
-Key: ${key}
-Time Signature: ${time_signature}
+METADATA:
+- Key: ${key}
+- Time Signature: ${time_signature}
 
-User's request: "${userFeedback}"
+USER REQUEST: "${userFeedback}"
+
+TASK:
+Apply the user's changes while preserving the overall song structure. Return the COMPLETE refined chart with all sections.
+
+VALID SECTION LABELS: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 
 CRITICAL: Return ONLY valid JSON. No explanation, no markdown, no extra text.
 
-Apply ONLY the changes the user requested. Return the complete refined chart with ALL sections, preserving unchanged sections.
-
-Valid section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-
-JSON STRUCTURE (strictly follow):
+JSON STRUCTURE:
 {
   "key_tonic": "C",
   "key_mode": "major",
