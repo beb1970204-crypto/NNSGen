@@ -102,13 +102,16 @@ export default function ChartCreator() {
     setIsRefining(true);
     setShowRefineModal(false);
 
+    // Remove temporary draft IDs before sending to API
+    const cleanSections = draftSections.map(({ id, ...section }) => section);
+
     const response = await base44.functions.invoke('refineChartAI', {
       title: draftChart.title,
-      artist: draftChart.artist,
+      artist: draftChart.artist || 'Unknown',
       key: draftChart.key,
       time_signature: draftChart.time_signature,
       userFeedback,
-      currentSections: draftSections
+      currentSections: cleanSections
     });
 
     setIsRefining(false);
