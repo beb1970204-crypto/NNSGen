@@ -234,7 +234,6 @@ Example:
   ]
 }`;
 
-  // Simplified schema — no nested symbols array which can cause JSON parse failures
   const schema = {
     type: "object",
     properties: {
@@ -278,23 +277,13 @@ Example:
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  // Try without internet first (better output capacity), fall back to internet if empty
-  let response = await base44.integrations.Core.InvokeLLM({
+  // Always use internet context for factual transcription grounding
+  const response = await base44.integrations.Core.InvokeLLM({
     prompt,
-    add_context_from_internet: false,
+    add_context_from_internet: true,
     file_urls: fileUrls.length > 0 ? fileUrls : undefined,
     response_json_schema: schema
   });
-
-  if (!response?.sections?.length || response.sections.length < 2) {
-    console.log('First LLM call returned insufficient sections, retrying with internet context');
-    response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      add_context_from_internet: true,
-      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-      response_json_schema: schema
-    });
-  }
 
   if (!response?.sections?.length) {
     throw new Error('LLM returned no sections');
