@@ -166,7 +166,7 @@ Examples: { "tonic": "B", "mode": "minor", "time_signature": "4/4" }
   };
 }
 
-// Helper: Generate chart with LLM — key/time_sig are optional, LLM detects them
+// Helper: Generate chart with LLM — single call returns key (tonic+mode) + chart
 async function generateChartWithLLM(base44, title, artist, key, time_signature, reference_file_url) {
   let referenceText = '';
   let fileUrls = [];
@@ -181,8 +181,13 @@ async function generateChartWithLLM(base44, title, artist, key, time_signature, 
     }
   }
 
-  const keyNote = key || 'Determine from your knowledge of this song';
-  const timeSigNote = time_signature || 'Determine from your knowledge of this song';
+  const keyInstruction = key
+    ? `Key: ${key} (use this exact key)`
+    : `Key: Determine from your knowledge of this song. Return tonic (root note only, e.g. "B" not "Bm") and mode ("major" or "minor") as separate fields.`;
+
+  const timeSigInstruction = time_signature
+    ? `Time Signature: ${time_signature} (use this exact time signature)`
+    : `Time Signature: Determine from your knowledge of this song`;
 
   const prompt = `You are a professional music chart transcription assistant.
 
@@ -191,18 +196,19 @@ Task: Create an accurate standard chord chart for the following song.
 Song Details:
 - Title: ${title}
 - Artist: ${artist || 'Unknown'}
-- Key: ${keyNote}
-- Time Signature: ${timeSigNote}
+- ${keyInstruction}
+- ${timeSigInstruction}
 
 ${referenceText ? `Reference Material (use this as the primary source):\n${referenceText}\n` : `Use your knowledge of the actual song "${title}" by ${artist || 'the artist'} to produce accurate chords.`}
 
 Instructions:
-1. Output the correct key and time signature for this song
-2. Identify all sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-3. Use standard chord notation ONLY — letter names with quality suffixes (e.g., C, Dm7, F/G, Gsus4, Bbmaj7)
-4. Do NOT use Roman numerals, Nashville numbers, or any other notation system
-5. Each measure should contain the chord(s) that fall in that bar
-6. Be faithful to the actual song's chord progression`;
+1. Return the key_tonic (root note only, e.g. "B", "F#", "Bb") and key_mode ("major" or "minor") as separate fields
+2. Return the time_signature
+3. Identify all sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+4. Use standard chord notation ONLY — letter names with quality suffixes (e.g., C, Dm7, F/G, Gsus4, Bbmaj7)
+5. Do NOT use Roman numerals, Nashville numbers, or any other notation system
+6. Each measure should contain the chord(s) that fall in that bar
+7. Be faithful to the actual song's chord progression`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
@@ -210,7 +216,8 @@ Instructions:
     response_json_schema: {
       type: "object",
       properties: {
-        key: { type: "string", description: "Musical key (e.g., G, Am, Bb)" },
+        key_tonic: { type: "string", description: "Root note only, e.g. B, F#, Bb, G" },
+        key_mode: { type: "string", enum: ["major", "minor"], description: "major or minor" },
         time_signature: { type: "string", description: "Time signature (e.g., 4/4, 3/4)" },
         sections: {
           type: "array",
@@ -250,11 +257,27 @@ Instructions:
           }
         }
       },
-      required: ["key", "time_signature", "sections"]
+      required: ["key_tonic", "key_mode", "time_signature", "sections"]
     }
   });
 
-  return response;
+  // Resolve key using TonalJS Key validation
+  const tonic = response.key_tonic || key || 'C';
+  const mode = (response.key_mode || 'major').toLowerCase();
+  let resolvedKey;
+  if (mode === 'minor') {
+    const mk = Key.minorKey(tonic);
+    resolvedKey = mk.tonic ? (mk.tonic + 'm') : (tonic + 'm');
+  } else {
+    const mk = Key.majorKey(tonic);
+    resolvedKey = mk.tonic || tonic;
+  }
+
+  return {
+    key: normalizeKey(resolvedKey),
+    time_signature: response.time_signature,
+    sections: response.sections
+  };
 }
 
 // Helper: Parse Chordonomicon chord string into sections
