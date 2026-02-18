@@ -203,7 +203,7 @@ export default function ChartDisplay({
 
             {/* Measures Grid */}
             <div className="p-2">
-              <div className="grid grid-cols-6 gap-1.5">
+              <div className="grid grid-cols-4 gap-1.5">
                 {section.measures?.map((measure, measureIdx) =>
                   renderMeasureCell(measure, measureIdx, section)
                 )}
