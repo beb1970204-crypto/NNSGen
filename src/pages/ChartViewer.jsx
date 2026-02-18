@@ -330,6 +330,20 @@ export default function ChartViewer() {
     }
   };
 
+  const shareChart = useMutation({
+    mutationFn: async (sharedWithUsers) => {
+      await base44.entities.Chart.update(chartId, { shared_with_users: sharedWithUsers });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
+      toast.success('Chart sharing settings updated');
+      setShareDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Failed to update sharing settings');
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
