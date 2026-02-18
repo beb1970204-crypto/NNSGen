@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Share2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
-export default function BulkShareDialog({ open, onOpenChange, chartCount = 0, onShare, isLoading = false }) {
+export default function BulkShareDialog({ open, onOpenChange, charts = [], onShare, isLoading = false }) {
+  const chartCount = charts.length;
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState("view");
   const [sharedUsers, setSharedUsers] = useState([]);
