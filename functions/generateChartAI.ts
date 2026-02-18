@@ -211,19 +211,19 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
   }
 
   // SINGLE OPTIMIZED PROMPT for consistency — no retry variations
-  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
+  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'}.
 
 CRITICAL REQUIREMENTS:
-1. Return a COMPLETE song representation with all sections: typically Intro → Verse → Chorus → [Bridge] → Chorus → Outro
-2. Do NOT omit sections—the chart must represent a full song playthrough
+1. Return sections in this order: Intro (4-8 bars) → Verse (8-12 bars) → Chorus (8-12 bars) → Bridge [optional] → Chorus → Outro (4-8 bars)
+2. MUST include: Verse AND Chorus (minimum 16 bars total minimum)
 3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-4. Each section must have realistic measure counts (Intro: 4-8 bars, Verse: 8-16 bars, Chorus: 8-16 bars, etc.)
-5. Chords must be diatonic to the key and musically coherent
-6. Return ONLY valid JSON with no explanation
+4. Each measure must have exactly 1 chord object with beats matching the time signature
+5. All chords must be standard (no hallucinations)
+6. Return ONLY valid JSON, no explanation
 
 ${referenceText ? `REFERENCE MATERIAL PROVIDED:\n${referenceText}\n` : ''}
 
-JSON STRUCTURE (strict format):
+RETURN VALID JSON ONLY:
 {
   "key_tonic": "A",
   "key_mode": "major",
@@ -234,7 +234,8 @@ JSON STRUCTURE (strict format):
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
       ]
     },
     {
@@ -242,8 +243,8 @@ JSON STRUCTURE (strict format):
       "repeat_count": 2,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
       ]
     },
     {
@@ -254,11 +255,17 @@ JSON STRUCTURE (strict format):
         {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
         {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
       ]
+    },
+    {
+      "label": "Outro",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+      ]
     }
   ]
-}
-
-COMPLETENESS CHECK: Do these sections form a complete song cycle? If not, add missing sections.`;
+}`;
 
   const schema = {
     type: "object",
