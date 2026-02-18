@@ -110,12 +110,6 @@ export default function ChartViewer() {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modKey = isMac ? e.metaKey : e.ctrlKey;
       
-      // Cmd/Ctrl + S: Save
-      if (modKey && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-      
       // Delete: Delete selected measure
       if (e.key === 'Delete' && selectedMeasure) {
         e.preventDefault();
