@@ -11,8 +11,8 @@ import ChartCardMenu from "@/components/chart/ChartCardMenu";
 import SetlistDialog from "@/components/setlist/SetlistDialog";
 import ChartCardSkeleton from "@/components/ChartCardSkeleton";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
-import BulkShareDialog from "@/components/chart/BulkShareDialog";
 import BeginnerGuide from "@/components/BeginnerGuide";
+import BulkShareDialog from "@/components/chart/BulkShareDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,8 +35,9 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("recent");
   const [showSetlistDialog, setShowSetlistDialog] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showBulkShare, setShowBulkShare] = useState(false);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
+  const [selectedCharts, setSelectedCharts] = useState([]);
+  const [showBulkShareDialog, setShowBulkShareDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
@@ -51,7 +52,7 @@ export default function Home() {
       // Filter to shared charts when viewing "shared"
       if (currentView === 'shared' && user?.email) {
         return allCharts.filter(chart => 
-          chart.shared_with_users?.includes(user.email)
+          chart.shared_with?.some(share => share.email === user.email)
         );
       }
       
@@ -138,6 +139,25 @@ export default function Home() {
     }
   });
 
+  const bulkShare = useMutation({
+    mutationFn: async ({ chartIds, sharedWith }) => {
+      await Promise.all(
+        chartIds.map(chartId =>
+          base44.entities.Chart.update(chartId, { shared_with: sharedWith })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success('Charts shared successfully');
+      setShowBulkShareDialog(false);
+      setSelectedCharts([]);
+    },
+    onError: () => {
+      toast.error('Failed to share charts');
+    }
+  });
+
   const createSetlist = useMutation({
     mutationFn: (data) => base44.entities.Setlist.create(data),
     onSuccess: () => {
@@ -152,25 +172,6 @@ export default function Home() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['setlists'] });
       toast.success('Setlist deleted');
-    }
-  });
-
-  const bulkShareCharts = useMutation({
-    mutationFn: async ({ chartIds, email, permission }) => {
-      const { data } = await base44.functions.invoke('bulkShareCharts', {
-        chartIds,
-        email,
-        permission
-      });
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['charts'] });
-      toast.success(`Shared ${data.results.filter(r => r.success).length} chart(s) with ${data.email}`);
-      setShowBulkShare(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to share charts');
     }
   });
 
@@ -297,6 +298,15 @@ export default function Home() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {selectedCharts.length > 0 && (
+            <Button
+              onClick={() => setShowBulkShareDialog(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              Share {selectedCharts.length} Charts
+            </Button>
+          )}
           <Link to={createPageUrl("ChartCreator")}>
             <Button className="gap-2 shadow-lg shadow-red-600/20">
               <Plus className="w-4 h-4" />
@@ -630,7 +640,22 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedCharts.map((chart) => (
             <Link key={chart.id} to={createPageUrl("ChartViewer") + `?id=${chart.id}`}>
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl">
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl relative">
+                {/* Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={selectedCharts.includes(chart.id)}
+                  onChange={(e) => {
+                    e.preventDefault();
+                    if (e.target.checked) {
+                      setSelectedCharts([...selectedCharts, chart.id]);
+                    } else {
+                      setSelectedCharts(selectedCharts.filter(id => id !== chart.id));
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-4 left-4 w-4 h-4 accent-red-600 cursor-pointer"
+                />
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
@@ -642,10 +667,10 @@ export default function Home() {
                           Shared with you
                         </span>
                       )}
-                      {currentView !== 'shared' && chart.shared_with_users?.length > 0 && (
+                      {currentView !== 'shared' && chart.shared_with?.length > 0 && (
                         <span className="flex-shrink-0 px-2 py-1 rounded-full bg-purple-600/20 text-purple-400 text-xs font-semibold flex items-center gap-1 whitespace-nowrap">
                           <Users className="w-3 h-3" />
-                          {chart.shared_with_users.length}
+                          {chart.shared_with.length}
                         </span>
                       )}
                     </div>
@@ -740,6 +765,21 @@ export default function Home() {
       <KeyboardShortcutsModal
         open={showShortcuts}
         onOpenChange={setShowShortcuts}
+      />
+
+      {/* Beginner Guide */}
+      <BeginnerGuide
+        open={showBeginnerGuide}
+        onOpenChange={setShowBeginnerGuide}
+      />
+
+      {/* Bulk Share Dialog */}
+      <BulkShareDialog
+        open={showBulkShareDialog}
+        onOpenChange={setShowBulkShareDialog}
+        chartCount={selectedCharts.length}
+        onShare={(sharedWith) => bulkShare.mutate({ chartIds: selectedCharts, sharedWith })}
+        isLoading={bulkShare.isPending}
       />
     </div>
   );
