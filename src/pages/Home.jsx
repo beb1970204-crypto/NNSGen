@@ -766,6 +766,21 @@ export default function Home() {
         open={showShortcuts}
         onOpenChange={setShowShortcuts}
       />
+
+      {/* Beginner Guide */}
+      <BeginnerGuide
+        open={showBeginnerGuide}
+        onOpenChange={setShowBeginnerGuide}
+      />
+
+      {/* Bulk Share Dialog */}
+      <BulkShareDialog
+        open={showBulkShareDialog}
+        onOpenChange={setShowBulkShareDialog}
+        chartCount={selectedCharts.length}
+        onShare={(sharedWith) => bulkShare.mutate({ chartIds: selectedCharts, sharedWith })}
+        isLoading={bulkShare.isPending}
+      />
     </div>
   );
 }
