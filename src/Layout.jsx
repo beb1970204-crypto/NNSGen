@@ -87,7 +87,12 @@ export default function Layout({ children, currentPageName }) {
                 }`}
               >
                 <item.icon className="w-4 h-4" />
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {item.badge > 0 && (
+                  <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
