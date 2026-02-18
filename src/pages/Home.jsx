@@ -744,24 +744,24 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedCharts.map((chart) => {
             const isSelected = selectedChartIds.has(chart.id);
-            return (
-            <div key={chart.id} className={`bg-[#1a1a1a] border rounded-xl p-6 hover:bg-[#252525] hover:scale-[1.02] transition-all group shadow-lg hover:shadow-xl ${
-              isSelected 
-                ? 'border-red-600 bg-red-600/5' 
-                : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
-            } ${multiSelectMode ? 'cursor-pointer' : ''}`}
-              onClick={() => {
-                if (multiSelectMode) {
-                  const newSelected = new Set(selectedChartIds);
-                  if (newSelected.has(chart.id)) {
-                    newSelected.delete(chart.id);
-                  } else {
-                    newSelected.add(chart.id);
+            const cardContent = (
+              <div key={chart.id} className={`bg-[#1a1a1a] border rounded-xl p-6 hover:bg-[#252525] hover:scale-[1.02] transition-all group shadow-lg hover:shadow-xl ${
+                isSelected 
+                  ? 'border-red-600 bg-red-600/5' 
+                  : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+              } ${multiSelectMode ? 'cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (multiSelectMode) {
+                    const newSelected = new Set(selectedChartIds);
+                    if (newSelected.has(chart.id)) {
+                      newSelected.delete(chart.id);
+                    } else {
+                      newSelected.add(chart.id);
+                    }
+                    setSelectedChartIds(newSelected);
                   }
-                  setSelectedChartIds(newSelected);
-                }
-              }}
-            >
+                }}
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0 flex items-start gap-3">
                     {multiSelectMode && (
@@ -878,10 +878,15 @@ export default function Home() {
                     <Share2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                {!multiSelectMode && (
-                  <Link to={createPageUrl("ChartViewer") + `?id=${chart.id}`} className="absolute inset-0" />
-                )}
               </div>
+            );
+            
+            return !multiSelectMode ? (
+              <Link key={chart.id} to={createPageUrl("ChartViewer") + `?id=${chart.id}`}>
+                {cardContent}
+              </Link>
+            ) : (
+              cardContent
             );
           })}
         </div>
