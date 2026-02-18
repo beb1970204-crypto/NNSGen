@@ -210,9 +210,9 @@ export default function ChartDisplay({
                 {editMode && (
                   <button
                     onClick={() => onAddMeasure(section.id)}
-                    className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-lg p-4 min-h-[100px] flex items-center justify-center hover:border-red-600 hover:bg-[#1e1e1e] transition-all"
+                    className="bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-lg p-2 min-h-[70px] flex items-center justify-center hover:border-red-600 hover:bg-[#1e1e1e] transition-all"
                   >
-                    <Plus className="w-6 h-6 text-[#4a4a4a]" />
+                    <Plus className="w-4 h-4 text-[#4a4a4a]" />
                   </button>
                 )}
               </div>
