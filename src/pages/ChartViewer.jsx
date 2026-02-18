@@ -528,63 +528,59 @@ export default function ChartViewer() {
                 </div>
               </div>
             ) : (
-              // Read Mode - 2-Column Grid (vertical columns)
+              // Read Mode - 2-Column Grid (fill left column first, then right)
               <div className="grid grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-6">
-                  {sections.map((section, index) => 
-                    index % 2 === 0 ? (
-                      <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-bold text-white">{section.label}</h3>
-                          <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
-                        </div>
-                        <ChartDisplay 
-                          sections={[section]}
-                          chartKey={chart.key}
-                          displayMode={chart.display_mode}
-                          editMode={false}
-                          onUpdateSection={handleUpdateSection}
-                          onAddMeasure={handleAddMeasure}
-                          onMeasureClick={handleMeasureClick}
-                          selectedMeasureIndex={selectedMeasureIndex}
-                          selectedSectionId={selectedSection?.id}
-                          onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                          onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                          onMoveSectionUp={() => moveSectionUp(index)}
-                          onMoveSectionDown={() => moveSectionDown(index)}
-                        />
+                  {sections.slice(0, Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-white">{section.label}</h3>
+                        <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
                       </div>
-                    ) : null
-                  )}
+                      <ChartDisplay 
+                        sections={[section]}
+                        chartKey={chart.key}
+                        displayMode={chart.display_mode}
+                        editMode={false}
+                        onUpdateSection={handleUpdateSection}
+                        onAddMeasure={handleAddMeasure}
+                        onMeasureClick={handleMeasureClick}
+                        selectedMeasureIndex={selectedMeasureIndex}
+                        selectedSectionId={selectedSection?.id}
+                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                        onMoveSectionUp={() => moveSectionUp(index)}
+                        onMoveSectionDown={() => moveSectionDown(index)}
+                      />
+                    </div>
+                  ))}
                 </div>
                 {/* Right Column */}
                 <div className="space-y-6">
-                  {sections.map((section, index) => 
-                    index % 2 === 1 ? (
-                      <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-bold text-white">{section.label}</h3>
-                          <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
-                        </div>
-                        <ChartDisplay 
-                          sections={[section]}
-                          chartKey={chart.key}
-                          displayMode={chart.display_mode}
-                          editMode={false}
-                          onUpdateSection={handleUpdateSection}
-                          onAddMeasure={handleAddMeasure}
-                          onMeasureClick={handleMeasureClick}
-                          selectedMeasureIndex={selectedMeasureIndex}
-                          selectedSectionId={selectedSection?.id}
-                          onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                          onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                          onMoveSectionUp={() => moveSectionUp(index)}
-                          onMoveSectionDown={() => moveSectionDown(index)}
-                        />
+                  {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-white">{section.label}</h3>
+                        <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
                       </div>
-                    ) : null
-                  )}
+                      <ChartDisplay 
+                        sections={[section]}
+                        chartKey={chart.key}
+                        displayMode={chart.display_mode}
+                        editMode={false}
+                        onUpdateSection={handleUpdateSection}
+                        onAddMeasure={handleAddMeasure}
+                        onMeasureClick={handleMeasureClick}
+                        selectedMeasureIndex={selectedMeasureIndex}
+                        selectedSectionId={selectedSection?.id}
+                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                        onMoveSectionUp={() => moveSectionUp(index + Math.ceil(sections.length / 2))}
+                        onMoveSectionDown={() => moveSectionDown(index + Math.ceil(sections.length / 2))}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
