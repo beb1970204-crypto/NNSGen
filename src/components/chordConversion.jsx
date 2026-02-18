@@ -12,8 +12,10 @@ export function chordToRoman(chord, chartKey) {
   const chordData = Chord.get(chord);
   if (!chordData || chordData.empty) return chord;
 
-  const tonic = chartKey.replace(/m$/, '');
-  const interval = distance(tonic, chordData.tonic);
+  // Use only the letter root of the chart key (strip minor suffix for distance calc)
+  const keyRoot = chartKey.replace(/m$/, '');
+  const tonic = Note.get(chordData.tonic).pc || chordData.tonic;
+  const interval = distance(keyRoot, tonic);
 
   const intervalToRoman = {
     '1P': 'I',   'P1': 'I',
