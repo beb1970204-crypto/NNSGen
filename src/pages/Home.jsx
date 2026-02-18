@@ -34,10 +34,27 @@ export default function Home() {
   const [showSetlistDialog, setShowSetlistDialog] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  const { data: user } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: charts, isLoading, error: chartsError } = useQuery({
-    queryKey: ['charts'],
-    queryFn: () => base44.entities.Chart.list('-updated_date'),
+    queryKey: ['charts', currentView],
+    queryFn: async () => {
+      const allCharts = await base44.entities.Chart.list('-updated_date');
+      
+      // Filter to shared charts when viewing "shared"
+      if (currentView === 'shared' && user?.email) {
+        return allCharts.filter(chart => 
+          chart.shared_with_users?.includes(user.email)
+        );
+      }
+      
+      return allCharts;
+    },
     initialData: [],
+    enabled: currentView !== 'shared' || !!user?.email,
   });
 
   const { data: setlists = [], error: setlistsError } = useQuery({
