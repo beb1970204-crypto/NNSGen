@@ -205,16 +205,21 @@ export default function ChartViewer() {
 
   const createSection = useMutation({
     mutationFn: async (label) => {
-      const newSection = {
+      const newSection = await base44.entities.Section.create({
         chart_id: chartId,
         label,
         measures: [{ chords: [{ chord: '-', beats: 4, symbols: [] }], cue: '' }],
         repeat_count: 1
-      };
-      await base44.entities.Section.create(newSection);
+      });
+      // Append the new section ID to the chart's ordered sections list
+      const currentOrderedIds = chart?.sections || [];
+      await base44.entities.Chart.update(chartId, {
+        sections: [...currentOrderedIds, newSection.id]
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', chartId] });
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
       toast.success('Section added');
     }
   });
