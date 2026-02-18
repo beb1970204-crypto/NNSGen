@@ -467,6 +467,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    const resolvedBeatsPerBar = parseInt((detectedTimeSig || '4/4').split('/')[0]) || 4;
+
     chartData = {
       title: spotifyMatch?.title || title,
       artist: spotifyMatch?.artist || artist || 'Unknown',
@@ -475,7 +477,8 @@ Deno.serve(async (req) => {
       reference_file_url,
       ...chordonomiconData.chart_data
     };
-    sectionsData = chordonomiconData.sections;
+    // Parse Chordonomicon sections NOW that we know the time signature
+    sectionsData = parseChordProgressionToSections(chordonomiconData.rawChords, resolvedBeatsPerBar);
   } else {
     // Step 4: LLM fallback — detects key/time_sig if not provided
     dataSource = 'llm';
