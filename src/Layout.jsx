@@ -60,13 +60,28 @@ export default function Layout({ children, currentPageName }) {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-[#141414] border-b border-[#2a2a2a] z-50 flex items-center px-6 shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 border-2 border-red-500 rounded-lg flex items-center justify-center" style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }}>
-            <span className="text-red-500 font-black text-lg">1</span>
+        <div className="flex items-center gap-2">
+          <div className="relative w-10 h-10 flex items-center justify-center">
+            {/* Outer glowing square */}
+            <div 
+              className="absolute inset-0 border border-[#D0021B]"
+              style={{ boxShadow: '0 0 12px #D0021B, inset 0 0 8px rgba(208, 2, 27, 0.3)' }}
+            />
+            {/* Inner number */}
+            <span className="text-[#D0021B] font-black text-sm">1</span>
+            {/* Stylus pen detail - top right */}
+            <div 
+              className="absolute -top-1 -right-1 w-3 h-3"
+              style={{
+                background: '#D0021B',
+                clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
+                boxShadow: '0 0 8px #D0021B'
+              }}
+            />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-xl font-black tracking-tight text-white">ChartScribe</span>
-            <span className="text-xl font-black tracking-tight text-red-500">AI</span>
+            <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "'JetBrains Mono', monospace" }}>ChartScribe</span>
+            <span className="text-lg font-bold tracking-tight text-[#D0021B]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>AI</span>
           </div>
         </div>
       </div>
