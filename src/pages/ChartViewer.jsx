@@ -539,6 +539,15 @@ export default function ChartViewer() {
           }}
         />
       </div>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        currentSharedUsers={chart?.shared_with_users || []}
+        onShare={(sharedUsers) => shareChart.mutate(sharedUsers)}
+        isLoading={shareChart.isPending}
+      />
     </div>
   );
 }
