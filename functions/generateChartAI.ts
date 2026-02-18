@@ -260,12 +260,23 @@ Example output:
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  const response = await base44.integrations.Core.InvokeLLM({
+  // Try without internet first (better output capacity), fall back to internet if empty
+  let response = await base44.integrations.Core.InvokeLLM({
     prompt,
-    add_context_from_internet: true,
+    add_context_from_internet: false,
     file_urls: fileUrls.length > 0 ? fileUrls : undefined,
     response_json_schema: schema
   });
+
+  if (!response?.sections?.length || response.sections.length < 2) {
+    console.log('First LLM call returned insufficient sections, retrying with internet context');
+    response = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+      response_json_schema: schema
+    });
+  }
 
   if (!response?.sections?.length) {
     throw new Error('LLM returned no sections');
