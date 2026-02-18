@@ -24,12 +24,8 @@ export default function BeginnerGuide({ open, onOpenChange }) {
       icon: Music,
       content: (
         <div className="space-y-3 text-[#a0a0a0]">
-          <p><strong>Two ways to create:</strong></p>
-          <ul className="list-disc list-inside space-y-2 text-sm">
-            <li><strong>Chordonomicon:</strong> AI finds the chords automatically</li>
-            <li><strong>Manual Entry:</strong> Add chords yourself section by section</li>
-          </ul>
-          <p className="text-sm"><strong>Key Settings:</strong> Choose musical key, time signature, and tempo for your chart.</p>
+          <p>Create a new chart by providing the song title, artist, and optionally uploading a reference file. Our AI will help you generate the chord chart.</p>
+          <p className="text-sm"><strong>Customize your chart:</strong> Set the musical key, time signature, and tempo to match your needs.</p>
         </div>
       )
     },

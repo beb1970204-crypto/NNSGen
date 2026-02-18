@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { 
-  LayoutGrid, Star, Clock, List, Share2, FolderOpen, 
+  LayoutGrid, Star, Clock, List, Share2, 
   Settings, HelpCircle, User, Music2, HelpingHand
 } from "lucide-react";
 
@@ -23,6 +23,12 @@ export default function Layout({ children, currentPageName }) {
   const { data: charts = [] } = useQuery({
     queryKey: ['charts-count'],
     queryFn: () => base44.entities.Chart.list(),
+    initialData: [],
+  });
+
+  const { data: setlists = [] } = useQuery({
+    queryKey: ['setlists'],
+    queryFn: () => base44.entities.Setlist.list('-created_date'),
     initialData: [],
   });
 
@@ -97,25 +103,32 @@ export default function Layout({ children, currentPageName }) {
             ))}
           </nav>
 
-          {/* Folders */}
+          {/* Setlists */}
           <div>
             <div className="flex items-center justify-between mb-4 px-2">
-              <span className="text-xs font-bold text-[#6b6b6b] uppercase tracking-widest">Folders</span>
-              <button className="text-[#6b6b6b] hover:text-red-500 hover:scale-110 transition-all">
-                <span className="text-lg">+</span>
-              </button>
+              <span className="text-xs font-bold text-[#6b6b6b] uppercase tracking-widest">Setlists</span>
+              <Link to={`${createPageUrl("Home")}?view=setlists`}>
+                <button className="text-[#6b6b6b] hover:text-red-500 hover:scale-110 transition-all">
+                  <span className="text-lg">+</span>
+                </button>
+              </Link>
             </div>
             <div className="space-y-1.5">
-              {folders.map((folder) => (
-                <div
-                  key={folder.name}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm hover:bg-[#252525] cursor-pointer text-[#a0a0a0] hover:text-white transition-all group"
-                >
-                  <div className={`w-3 h-3 rounded ${folder.color} group-hover:scale-110 transition-transform`} />
-                  <span className="flex-1 font-medium">{folder.name}</span>
-                  <span className="text-xs text-[#6b6b6b] font-semibold">{folder.count}</span>
-                </div>
-              ))}
+              {setlists && setlists.length > 0 ? (
+                setlists.map((setlist) => (
+                  <Link
+                    key={setlist.id}
+                    to={`${createPageUrl("SetlistViewer")}?id=${setlist.id}`}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm hover:bg-[#252525] cursor-pointer text-[#a0a0a0] hover:text-white transition-all group"
+                  >
+                    <List className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                    <span className="flex-1 font-medium truncate">{setlist.name}</span>
+                    <span className="text-xs text-[#6b6b6b] font-semibold">{setlist.chart_ids?.length || 0}</span>
+                  </Link>
+                ))
+              ) : (
+                <p className="text-xs text-[#4a4a4a] italic px-4 py-2">No setlists yet</p>
+              )}
             </div>
           </div>
         </div>

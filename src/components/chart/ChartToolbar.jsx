@@ -1,10 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Bold, Square, ArrowUp, ArrowDown, Eye, Plus, Trash2, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowUp, ArrowDown, Eye, Plus, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 
 export default function ChartToolbar({ 
-  onBold,
-  onBox,
   onUp,
   onDown,
   onToggleView,
@@ -18,25 +16,6 @@ export default function ChartToolbar({
   return (
     <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between transition-all">
       <div className="flex items-center gap-1">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
-          disabled={!hasSelection}
-          onClick={onBold}
-        >
-          <Bold className="w-4 h-4" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
-          disabled={!hasSelection}
-          onClick={onBox}
-        >
-          <Square className="w-4 h-4" />
-        </Button>
-        <div className="w-px h-6 bg-[#2a2a2a] mx-2" />
         <Button 
           variant="ghost" 
           size="sm" 

@@ -13,7 +13,8 @@ export default function ChartCardMenu({
   onDuplicate, 
   onDelete, 
   onShare,
-  onOpenNewTab 
+  onOpenNewTab,
+  chart
 }) {
   return (
     <DropdownMenu>
@@ -55,7 +56,7 @@ export default function ChartCardMenu({
         <DropdownMenuItem 
           onClick={(e) => {
             e.preventDefault();
-            onShare();
+            onShare(chart);
           }}
           className="text-white hover:bg-[#252525] cursor-pointer"
         >

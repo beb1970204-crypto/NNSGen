@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X, Trash2, Calendar, MapPin, MoreVertical, Users } from "lucide-react";
+import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X, Trash2, Calendar, MapPin, MoreVertical, Users, CheckCircle2, Circle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -37,6 +37,10 @@ export default function Home() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showBulkShare, setShowBulkShare] = useState(false);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedChartIds, setSelectedChartIds] = useState(new Set());
+  const [shareDialogChart, setShareDialogChart] = useState(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
@@ -168,9 +172,50 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: ['charts'] });
       toast.success(`Shared ${data.results.filter(r => r.success).length} chart(s) with ${data.email}`);
       setShowBulkShare(false);
+      setSelectedChartIds(new Set());
+      setMultiSelectMode(false);
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to share charts');
+    }
+  });
+
+  const bulkAddToSetlist = useMutation({
+    mutationFn: async ({ chartIds, setlistId }) => {
+      const setlist = await base44.entities.Setlist.get(setlistId);
+      const updatedChartIds = [...(setlist.chart_ids || []), ...chartIds];
+      await base44.entities.Setlist.update(setlistId, { chart_ids: updatedChartIds });
+      return { setlistId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+      toast.success('Charts added to setlist');
+      setSelectedChartIds(new Set());
+      setMultiSelectMode(false);
+    },
+    onError: () => {
+      toast.error('Failed to add charts to setlist');
+    }
+  });
+
+  const bulkDeleteCharts = useMutation({
+    mutationFn: async (chartIds) => {
+      await Promise.all(
+        chartIds.map(async (chartId) => {
+          const sections = await base44.entities.Section.filter({ chart_id: chartId });
+          await Promise.all(sections.map(section => base44.entities.Section.delete(section.id)));
+          await base44.entities.Chart.delete(chartId);
+        })
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success('Charts deleted');
+      setSelectedChartIds(new Set());
+      setMultiSelectMode(false);
+    },
+    onError: () => {
+      toast.error('Failed to delete charts');
     }
   });
 
@@ -306,14 +351,27 @@ export default function Home() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {currentView !== 'setlists' && charts.length > 0 && (
+          {currentView !== 'setlists' && charts.length > 0 && !multiSelectMode && (
             <Button 
               variant="outline" 
-              onClick={() => setShowBulkShare(true)}
+              onClick={() => setMultiSelectMode(true)}
               className="gap-2"
             >
-              <Share2 className="w-4 h-4" />
-              Bulk Share
+              <CheckCircle2 className="w-4 h-4" />
+              Select Charts
+            </Button>
+          )}
+          {multiSelectMode && (
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setMultiSelectMode(false);
+                setSelectedChartIds(new Set());
+              }}
+              className="gap-2 text-[#a0a0a0]"
+            >
+              <X className="w-4 h-4" />
+              Cancel
             </Button>
           )}
           <Link to={createPageUrl("ChartCreator")}>
@@ -325,6 +383,43 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {multiSelectMode && selectedChartIds.size > 0 && (
+        <div className="bg-red-600/10 border border-red-600/30 rounded-xl p-4 mb-6 flex items-center justify-between">
+          <span className="font-semibold text-white">{selectedChartIds.size} chart{selectedChartIds.size !== 1 ? 's' : ''} selected</span>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => setShowBulkShare(true)}
+              className="gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowSetlistDialog(true)}
+              className="gap-2"
+            >
+              <List className="w-4 h-4" />
+              Add to Setlist
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (window.confirm(`Delete ${selectedChartIds.size} chart${selectedChartIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) {
+                  bulkDeleteCharts.mutate(Array.from(selectedChartIds));
+                }
+              }}
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Search & Filter Bar */}
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 mb-6">
@@ -647,15 +742,54 @@ export default function Home() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedCharts.map((chart) => (
-            <Link key={chart.id} to={createPageUrl("ChartViewer") + `?id=${chart.id}`}>
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl">
+          {filteredAndSortedCharts.map((chart) => {
+            const isSelected = selectedChartIds.has(chart.id);
+            return (
+            <div key={chart.id} className={`bg-[#1a1a1a] border rounded-xl p-6 hover:bg-[#252525] hover:scale-[1.02] transition-all group shadow-lg hover:shadow-xl ${
+              isSelected 
+                ? 'border-red-600 bg-red-600/5' 
+                : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+            } ${multiSelectMode ? 'cursor-pointer' : ''}`}
+              onClick={() => {
+                if (multiSelectMode) {
+                  const newSelected = new Set(selectedChartIds);
+                  if (newSelected.has(chart.id)) {
+                    newSelected.delete(chart.id);
+                  } else {
+                    newSelected.add(chart.id);
+                  }
+                  setSelectedChartIds(newSelected);
+                }
+              }}
+            >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-bold text-white truncate group-hover:text-red-500 transition-colors" title={chart.title}>
-                        {chart.title}
-                      </h3>
+                  <div className="flex-1 min-w-0 flex items-start gap-3">
+                    {multiSelectMode && (
+                      <button 
+                        className="mt-1 text-[#6b6b6b] hover:text-red-500 transition-colors flex-shrink-0"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const newSelected = new Set(selectedChartIds);
+                          if (newSelected.has(chart.id)) {
+                            newSelected.delete(chart.id);
+                          } else {
+                            newSelected.add(chart.id);
+                          }
+                          setSelectedChartIds(newSelected);
+                        }}
+                      >
+                        {isSelected ? (
+                          <CheckCircle2 className="w-5 h-5 text-red-600" />
+                        ) : (
+                          <Circle className="w-5 h-5" />
+                        )}
+                      </button>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-bold text-white truncate group-hover:text-red-500 transition-colors" title={chart.title}>
+                          {chart.title}
+                        </h3>
                       {currentView === 'shared' && (
                         <span className="flex-shrink-0 px-2 py-1 rounded-full bg-red-600/20 text-red-400 text-xs font-semibold whitespace-nowrap">
                           Shared with you
@@ -667,19 +801,20 @@ export default function Home() {
                           {chart.shared_with_users.length}
                         </span>
                       )}
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-[#a0a0a0]">Key: <span className="text-white font-semibold">{chart.key}</span></span>
-                      <span className="text-[#4a4a4a]">•</span>
-                      <span className="text-[#a0a0a0]">{chart.time_signature}</span>
-                      {currentView === 'shared' && chart.created_by && (
-                        <>
+                      </div>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-[#a0a0a0]">Key: <span className="text-white font-semibold">{chart.key}</span></span>
                           <span className="text-[#4a4a4a]">•</span>
-                          <span className="text-[#a0a0a0]">by <span className="text-white font-semibold">{chart.created_by}</span></span>
-                        </>
-                      )}
+                          <span className="text-[#a0a0a0]">{chart.time_signature}</span>
+                          {currentView === 'shared' && chart.created_by && (
+                            <>
+                              <span className="text-[#4a4a4a]">•</span>
+                              <span className="text-[#a0a0a0]">by <span className="text-white font-semibold">{chart.created_by}</span></span>
+                            </>
+                          )}
+                        </div>
                     </div>
-                  </div>
+                    </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => {
@@ -690,21 +825,24 @@ export default function Home() {
                     >
                       <Star className={`w-5 h-5 ${chart.starred ? 'fill-yellow-500 text-yellow-500' : ''}`} />
                     </button>
-                    <ChartCardMenu
-                      onDuplicate={() => duplicateChart.mutate(chart)}
-                      onDelete={() => {
-                        if (window.confirm(`Delete "${chart.title}"? This cannot be undone.`)) {
-                          deleteChart.mutate(chart.id);
-                        }
-                      }}
-                      onShare={() => {
-                        navigator.clipboard.writeText(window.location.origin + createPageUrl("ChartViewer") + `?id=${chart.id}`);
-                        toast.success('Link copied to clipboard');
-                      }}
-                      onOpenNewTab={() => {
-                        window.open(createPageUrl("ChartViewer") + `?id=${chart.id}`, '_blank');
-                      }}
-                    />
+                    {!multiSelectMode && (
+                      <ChartCardMenu
+                        chart={chart}
+                        onDuplicate={() => duplicateChart.mutate(chart)}
+                        onDelete={() => {
+                          if (window.confirm(`Delete "${chart.title}"? This cannot be undone.`)) {
+                            deleteChart.mutate(chart.id);
+                          }
+                        }}
+                        onShare={(chartToShare) => {
+                          setShareDialogChart(chartToShare);
+                          setShowShareDialog(true);
+                        }}
+                        onOpenNewTab={() => {
+                          window.open(createPageUrl("ChartViewer") + `?id=${chart.id}`, '_blank');
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
                 
@@ -740,9 +878,12 @@ export default function Home() {
                     <Share2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
+                {!multiSelectMode && (
+                  <Link to={createPageUrl("ChartViewer") + `?id=${chart.id}`} className="absolute inset-0" />
+                )}
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
         </>
@@ -751,8 +892,24 @@ export default function Home() {
       {/* Setlist Dialog */}
       <SetlistDialog
         open={showSetlistDialog}
-        onOpenChange={setShowSetlistDialog}
-        onSave={(data) => createSetlist.mutate(data)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowSetlistDialog(false);
+            return;
+          }
+          setShowSetlistDialog(open);
+        }}
+        onSave={(data) => {
+          if (multiSelectMode && selectedChartIds.size > 0) {
+            // Add selected charts to new setlist
+            bulkAddToSetlist.mutate({
+              chartIds: Array.from(selectedChartIds),
+              setlistId: data.id
+            });
+          } else {
+            createSetlist.mutate(data);
+          }
+        }}
       />
 
       {/* Keyboard Shortcuts Modal */}
@@ -765,9 +922,14 @@ export default function Home() {
       <BulkShareDialog
         open={showBulkShare}
         onOpenChange={setShowBulkShare}
-        charts={charts}
+        charts={charts.filter(c => selectedChartIds.has(c.id))}
         isLoading={bulkShareCharts.isPending}
-        onShare={(data) => bulkShareCharts.mutate(data)}
+        onShare={(data) => {
+          bulkShareCharts.mutate({
+            ...data,
+            chartIds: Array.from(selectedChartIds)
+          });
+        }}
       />
 
       {/* Beginner Guide */}
