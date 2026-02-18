@@ -402,7 +402,9 @@ export default function ChartViewer() {
             size="sm" 
             variant="outline"
             onClick={() => setShareDialogOpen(true)}
-            className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all"
+            className="gap-2 transition-all"
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(208, 2, 27, 0.1)'; e.currentTarget.style.borderColor = 'rgba(208, 2, 27, 0.5)'; e.currentTarget.style.color = '#D0021B'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = 'inherit'; }}
           >
             <Share2 className="w-4 h-4" />
             Share
@@ -412,7 +414,9 @@ export default function ChartViewer() {
             variant="outline"
             onClick={handleExportPDF}
             disabled={exportingPDF}
-            className="gap-2 hover:bg-red-600/10 hover:text-red-500 hover:border-red-600/50 transition-all"
+            className="gap-2 transition-all"
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(208, 2, 27, 0.1)'; e.currentTarget.style.borderColor = 'rgba(208, 2, 27, 0.5)'; e.currentTarget.style.color = '#D0021B'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = 'inherit'; }}
           >
             <Download className="w-4 h-4" />
             Export PDF
@@ -465,7 +469,7 @@ export default function ChartViewer() {
                   {editMode && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button className="gap-2">
+                        <Button className="gap-2" style={{ backgroundColor: '#D0021B' }}>
                           <Plus className="w-4 h-4" />
                           Add Section
                         </Button>
@@ -521,7 +525,7 @@ export default function ChartViewer() {
                 <div className="mt-8">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2 w-full">
+                      <Button variant="outline" className="gap-2 w-full" style={{ borderColor: '#D0021B', color: '#D0021B' }}>
                         <Plus className="w-4 h-4" />
                         Add Section
                       </Button>
