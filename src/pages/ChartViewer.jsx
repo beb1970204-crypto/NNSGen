@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, User, Plus, Share2, LayoutGrid, Columns2 } from "lucide-react";
+import { ArrowLeft, Download, User, Plus, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChartDisplay from "@/components/chart/ChartDisplay";
@@ -31,7 +31,7 @@ export default function ChartViewer() {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [gridViewMode, setGridViewMode] = useState(false);
+  const [editMode, setEditMode] = useState(true);
 
 
   const { data: chart, isLoading, error } = useQuery({
@@ -413,10 +413,10 @@ export default function ChartViewer() {
         </div>
       </div>
 
-      {/* 3-Panel Layout or Grid View */}
+      {/* 3-Panel Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Song Settings */}
-        {!gridViewMode && (
+        {editMode && (
         <SongSettingsSidebar
           chart={chart}
           sections={sections}
@@ -432,26 +432,17 @@ export default function ChartViewer() {
           )}
 
         {/* Center Canvas */}
-        <div className={`${gridViewMode ? 'flex-1' : 'flex-1'} flex flex-col overflow-hidden`}>
-          <div className="flex items-center justify-between bg-[#0a0a0a] border-b border-[#2a2a2a] px-6 py-3">
-            <ChartToolbar
-              hasSelection={!!selectedMeasure}
-              zoomLevel={zoomLevel}
-              onZoomIn={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
-              onZoomOut={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
-              onDelete={handleDeleteSelectedMeasure}
-              onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setGridViewMode(!gridViewMode)}
-              className="text-[#a0a0a0] hover:text-white ml-auto"
-              title={gridViewMode ? "Switch to standard view" : "Switch to 2-column grid view"}
-            >
-              {gridViewMode ? <LayoutGrid className="w-4 h-4" /> : <Columns2 className="w-4 h-4" />}
-            </Button>
-          </div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ChartToolbar
+            hasSelection={!!selectedMeasure}
+            zoomLevel={zoomLevel}
+            onZoomIn={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
+            onZoomOut={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
+            onDelete={handleDeleteSelectedMeasure}
+            onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
+            editMode={editMode}
+            onToggleEditMode={() => setEditMode(!editMode)}
+          />
           
           <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
             {sections.length === 0 ? (
@@ -479,59 +470,7 @@ export default function ChartViewer() {
                   </DropdownMenu>
                 </div>
               </div>
-            ) : gridViewMode ? (
-              // 2-Column Grid View
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-6">
-                  {sections.map((section, index) => (
-                    <div key={section.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-white">{section.label}</h3>
-                        <span className="text-xs text-[#6b6b6b]">{section.measures?.length || 0} measures</span>
-                      </div>
-                      <ChartDisplay 
-                        sections={[section]}
-                        chartKey={chart.key}
-                        displayMode={chart.display_mode}
-                        editMode={true}
-                        onUpdateSection={handleUpdateSection}
-                        onAddMeasure={handleAddMeasure}
-                        onMeasureClick={handleMeasureClick}
-                        selectedMeasureIndex={selectedMeasureIndex}
-                        selectedSectionId={selectedSection?.id}
-                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                        onMoveSectionUp={() => moveSectionUp(index)}
-                        onMoveSectionDown={() => moveSectionDown(index)}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {/* Add Section Button */}
-                <div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2 w-full">
-                        <Plus className="w-4 h-4" />
-                        Add Section
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-[#1a1a1a] border-[#2a2a2a]">
-                      {['Intro', 'Verse', 'Pre', 'Chorus', 'Bridge', 'Instrumental Solo', 'Outro'].map(label => (
-                        <DropdownMenuItem 
-                          key={label}
-                          onClick={() => createSection.mutate(label)}
-                          className="text-white hover:bg-[#252525]"
-                        >
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
             ) : (
-              // Standard View
               <div style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="sections">
@@ -545,7 +484,7 @@ export default function ChartViewer() {
                           sections={sections}
                           chartKey={chart.key}
                           displayMode={chart.display_mode}
-                          editMode={true}
+                          editMode={editMode}
                           onUpdateSection={handleUpdateSection}
                           onAddMeasure={handleAddMeasure}
                           onMeasureClick={handleMeasureClick}
@@ -590,7 +529,7 @@ export default function ChartViewer() {
         </div>
 
         {/* Right Sidebar - Measure Properties */}
-        {!gridViewMode && (
+        {editMode && (
         <MeasurePropertiesSidebar
           selectedMeasure={selectedMeasure}
           selectedMeasureIndex={selectedMeasureIndex}
