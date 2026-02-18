@@ -442,7 +442,12 @@ Deno.serve(async (req) => {
       dataSource = 'chordonomicon';
       console.log('Using Chordonomicon data');
 
-      const resolvedKey = key || inferKeyFromChords(chordonomiconData.rawChords);
+      let resolvedKey = key || inferKeyFromChords(chordonomiconData.rawChords);
+      // Validate key is not a Chordonomicon tag (e.g., <verse_1>)
+      if (resolvedKey.startsWith('<') || resolvedKey.endsWith('>')) {
+        console.warn(`Invalid key parsed: ${resolvedKey}, falling back to C`);
+        resolvedKey = 'C';
+      }
       const resolvedTimeSig = time_signature || '4/4';
       const beatsPerBar = parseInt(resolvedTimeSig.split('/')[0]) || 4;
 
