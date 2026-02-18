@@ -2,178 +2,167 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Share2, User, X, Search } from "lucide-react";
+import { Share2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
-export default function BulkShareDialog({ open, onOpenChange, charts = [], onShare, isLoading = false }) {
-  const [selectedCharts, setSelectedCharts] = useState([]);
+export default function BulkShareDialog({ open, onOpenChange, chartCount = 0, onShare, isLoading = false }) {
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState("view");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [sharedUsers, setSharedUsers] = useState([]);
 
-  const filteredCharts = charts.filter(chart =>
-    chart.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chart.artist?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleSelectChart = (chartId) => {
-    setSelectedCharts(prev =>
-      prev.includes(chartId)
-        ? prev.filter(id => id !== chartId)
-        : [...prev, chartId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedCharts.length === filteredCharts.length) {
-      setSelectedCharts([]);
-    } else {
-      setSelectedCharts(filteredCharts.map(c => c.id));
-    }
-  };
-
-  const handleShare = async () => {
+  const handleAddUser = () => {
     const trimmedEmail = email.trim().toLowerCase();
-
+    
     if (!trimmedEmail) {
       toast.error("Please enter an email");
       return;
     }
-
+    
     if (!trimmedEmail.includes("@")) {
       toast.error("Please enter a valid email");
       return;
     }
-
-    if (selectedCharts.length === 0) {
-      toast.error("Please select at least one chart");
+    
+    if (sharedUsers.some(u => u.email === trimmedEmail)) {
+      toast.error("Already added this email");
       return;
     }
-
-    await onShare({
-      chartIds: selectedCharts,
-      email: trimmedEmail,
-      permission
-    });
-
-    setSelectedCharts([]);
+    
+    setSharedUsers([...sharedUsers, { email: trimmedEmail, permission }]);
     setEmail("");
     setPermission("view");
   };
 
+  const handleRemoveUser = (userEmail) => {
+    setSharedUsers(sharedUsers.filter(u => u.email !== userEmail));
+  };
+
+  const handleUpdatePermission = (userEmail, newPermission) => {
+    setSharedUsers(sharedUsers.map(u => 
+      u.email === userEmail ? { ...u, permission: newPermission } : u
+    ));
+  };
+
+  const handleShare = async () => {
+    if (sharedUsers.length === 0) {
+      toast.error("Please add at least one user");
+      return;
+    }
+    await onShare(sharedUsers);
+    setSharedUsers([]);
+    setEmail("");
+  };
+
+  const handleClose = () => {
+    setSharedUsers([]);
+    setEmail("");
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-2xl max-h-[80vh] flex flex-col">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
             <Share2 className="w-5 h-5" />
-            Share Multiple Charts
+            Share {chartCount} Charts
           </DialogTitle>
           <DialogDescription className="text-[#a0a0a0]">
-            Select charts and share them with a user at once.
+            Share these charts with multiple users at once.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4">
-          {/* User Input Section */}
-          <div className="space-y-2 bg-[#0a0a0a] rounded-lg p-4 border border-[#2a2a2a]">
-            <label className="text-sm font-medium text-[#a0a0a0]">Share With</label>
+        <div className="space-y-4 py-4">
+          {/* Email Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[#a0a0a0]">Add User</label>
             <div className="flex gap-2">
               <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddUser()}
                 placeholder="Enter email address"
-                className="bg-[#1a1a1a] border-[#2a2a2a] text-white"
+                className="bg-[#0a0a0a] border-[#2a2a2a] text-white"
                 disabled={isLoading}
               />
               <select
                 value={permission}
                 onChange={(e) => setPermission(e.target.value)}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                className="bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 disabled={isLoading}
               >
                 <option value="view">View</option>
                 <option value="edit">Edit</option>
               </select>
+              <Button
+                onClick={handleAddUser}
+                variant="outline"
+                disabled={isLoading || !email.trim()}
+              >
+                Add
+              </Button>
             </div>
           </div>
 
-          {/* Charts Selection */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-[#a0a0a0]">Select Charts</label>
-              <button
-                onClick={handleSelectAll}
-                className="text-xs text-red-500 hover:text-red-400 transition-colors"
-                disabled={isLoading}
-              >
-                {selectedCharts.length === filteredCharts.length && filteredCharts.length > 0
-                  ? "Deselect All"
-                  : "Select All"}
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b6b6b]" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search charts..."
-                className="pl-10 bg-[#0a0a0a] border-[#2a2a2a] text-white"
-              />
-            </div>
-
-            {/* Charts List */}
-            <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg divide-y divide-[#2a2a2a] max-h-64 overflow-y-auto">
-              {filteredCharts.length === 0 ? (
-                <div className="p-4 text-center text-[#6b6b6b] text-sm">
-                  No charts found
-                </div>
-              ) : (
-                filteredCharts.map((chart) => (
-                  <label
-                    key={chart.id}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-[#1a1a1a] cursor-pointer transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedCharts.includes(chart.id)}
-                      onChange={() => handleSelectChart(chart.id)}
-                      disabled={isLoading}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">{chart.title}</p>
-                      <p className="text-xs text-[#6b6b6b]">
-                        {chart.artist} • {chart.key} • {chart.time_signature}
-                      </p>
+          {/* Users List */}
+          {sharedUsers.length > 0 && (
+            <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4 space-y-2">
+              <p className="text-xs font-semibold text-[#6b6b6b] uppercase tracking-wide mb-3">
+                Sharing with {sharedUsers.length} {sharedUsers.length === 1 ? "user" : "users"}
+              </p>
+              {sharedUsers.map((user) => (
+                <div
+                  key={user.email}
+                  className="flex items-center justify-between bg-[#1a1a1a] rounded-lg px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-8 h-8 rounded-full bg-red-600/20 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-red-500" />
                     </div>
-                  </label>
-                ))
-              )}
+                    <span className="text-sm text-white font-medium truncate">{user.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={user.permission}
+                      onChange={(e) => handleUpdatePermission(user.email, e.target.value)}
+                      className="bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-md px-2 py-1 text-xs focus:outline-none focus:border-red-600"
+                      disabled={isLoading}
+                    >
+                      <option value="view">View</option>
+                      <option value="edit">Edit</option>
+                    </select>
+                    <button
+                      onClick={() => handleRemoveUser(user.email)}
+                      disabled={isLoading}
+                      className="text-[#6b6b6b] hover:text-red-500 transition-colors p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
 
-            {/* Selection Counter */}
-            <p className="text-xs text-[#6b6b6b]">
-              {selectedCharts.length} chart{selectedCharts.length !== 1 ? "s" : ""} selected
-            </p>
+          <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-3 text-sm text-blue-300">
+            These {chartCount} charts will be shared with all added users at once.
           </div>
         </div>
 
         <DialogFooter className="gap-2">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={handleClose}
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleShare}
-            disabled={isLoading || selectedCharts.length === 0 || !email.trim()}
+            disabled={isLoading || sharedUsers.length === 0}
             className="shadow-lg shadow-red-600/20"
           >
-            {isLoading ? "Sharing..." : `Share ${selectedCharts.length} Chart${selectedCharts.length !== 1 ? "s" : ""}`}
+            {isLoading ? "Sharing..." : "Share Charts"}
           </Button>
         </DialogFooter>
       </DialogContent>
