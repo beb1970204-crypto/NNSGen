@@ -38,10 +38,7 @@ function validateChartOutput(sections) {
     }
   }
 
-  // Validate minimum measure count for completeness
-  if (totalMeasures < 12) {
-    return { valid: false, reason: `Song too short (${totalMeasures} measures). Need at least 12 measures for a complete chart.` };
-  }
+
 
   console.log(`Refinement validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
 
