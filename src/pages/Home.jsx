@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import ChartCardMenu from "@/components/chart/ChartCardMenu";
+import ShareDialog from "@/components/chart/ShareDialog";
 import SetlistDialog from "@/components/setlist/SetlistDialog";
 import AddChartsToSetlistDialog from "@/components/setlist/AddChartsToSetlistDialog";
 import ChartCardSkeleton from "@/components/ChartCardSkeleton";
@@ -43,6 +44,8 @@ export default function Home() {
   const [shareDialogChart, setShareDialogChart] = useState(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showAddToSetlistDialog, setShowAddToSetlistDialog] = useState(false);
+  const [shareDialogChart, setShareDialogChart] = useState(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
@@ -239,6 +242,20 @@ export default function Home() {
     },
     onError: () => {
       toast.error('Failed to delete charts');
+    }
+  });
+
+  const shareChart = useMutation({
+    mutationFn: async (sharedWith) => {
+      await base44.entities.Chart.update(shareDialogChart.id, { shared_with: sharedWith });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success('Chart sharing settings updated');
+      setShowShareDialog(false);
+    },
+    onError: () => {
+      toast.error('Failed to update sharing settings');
     }
   });
 
@@ -953,6 +970,18 @@ export default function Home() {
         open={showBeginnerGuide}
         onOpenChange={setShowBeginnerGuide}
       />
+
+      {/* Share Dialog */}
+      {shareDialogChart && (
+        <ShareDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          currentSharedUsers={shareDialogChart?.shared_with || []}
+          onShare={(sharedWith) => shareChart.mutate(sharedWith)}
+          isLoading={shareChart.isPending}
+          chartId={shareDialogChart?.id}
+        />
+      )}
     </div>
   );
 }
