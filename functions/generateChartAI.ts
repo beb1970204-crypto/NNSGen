@@ -315,10 +315,12 @@ function mapLabel(type) {
   return labelMap[type.toLowerCase()] || 'Verse';
 }
 
-function createSection(label, chordsText) {
-  const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim());
+// beatsPerBar is passed so Chordonomicon sections use the correct time signature
+function createSection(label, chordsText, beatsPerBar = 4) {
+  const chordArray = chordsText.split(/\s+/).filter(c => c && c.trim()).map(normalizeChordName);
+  // Each chord token from Chordonomicon = one bar (one chord held for the full bar)
   const measures = chordArray.map(chord => ({
-    chords: [{ chord: normalizeChordName(chord), beats: 4, symbols: [] }],
+    chords: [{ chord, beats: beatsPerBar, symbols: [] }],
     cue: ''
   }));
   return { label, measures, repeat_count: 1, arrangement_cue: '' };
