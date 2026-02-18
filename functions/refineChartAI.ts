@@ -69,47 +69,17 @@ Deno.serve(async (req) => {
     // Build full current chart structure for LLM context
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Refinement prompt — context-aware with full chart data, STRONG preservation of unchanged sections
-    const prompt = `You are refining a chord chart for "${title}" by ${artist || 'Unknown'}.
+    // Simplified refinement prompt — let schema enforce structure, keep instruction clear
+    const prompt = `You are refining a chord chart. Here is the current chart in JSON:
 
-CURRENT CHART DATA (JSON):
 ${currentChartJSON}
 
 Key: ${key}
 Time Signature: ${time_signature}
 
-USER FEEDBACK / REFINEMENT REQUEST:
-"${userFeedback}"
+User's refinement request: "${userFeedback}"
 
-CRITICAL REFINEMENT INSTRUCTIONS:
-1. READ the user feedback carefully and identify ONLY what they asked to change
-2. PRESERVE section order and ALL sections NOT mentioned in feedback
-3. PRESERVE exact chord progressions for sections not mentioned
-4. PRESERVE all arrangement cues, cues, and repeat counts unless user explicitly requested changes
-5. If user asks to add/expand/extend a section, add MORE measures WITHIN that section only
-6. If user asks to fix/change/improve a section, modify ONLY that section while keeping others identical
-7. Maintain the same key and time signature unless explicitly requested
-8. Return the COMPLETE chart in JSON format with all original sections + requested refinements
-
-DO NOT:
-- Remove, rename, or reorganize sections the user didn't mention
-- Change chord progressions in sections not mentioned in feedback
-- Add hallucinated or extra sections not requested
-- Alter Intro, Outro, Pre, Bridge, or other sections unless explicitly asked
-- Change section cues or arrangement details unless requested
-
-EXAMPLE: If user says "Add more Verse measures", keep all other sections identical and add measures to ONLY the Verse.
-
-RETURN FORMAT:
-{
-  "key_tonic": "${key.replace(/m$/, '')}",
-  "key_mode": "${key.endsWith('m') ? 'minor' : 'major'}",
-  "time_signature": "${time_signature}",
-  "sections": [
-    {"label": "Intro", "repeat_count": 1, "arrangement_cue": "", "measures": [...]},
-    {"label": "Verse", "repeat_count": 2, "arrangement_cue": "", "measures": [...]}
-  ]
-}`;
+Review the chart and make ONLY the changes the user requested. Return the complete refined chart with all sections.`;
 
     const schema = {
       type: "object",
