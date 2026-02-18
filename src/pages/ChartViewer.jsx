@@ -102,10 +102,7 @@ export default function ChartViewer() {
     updateSection.mutate({ sectionId, data });
   };
 
-  const handleSave = () => {
-    // All changes are auto-saved via mutations — this is just a user confirmation
-    toast.success('All changes are saved automatically');
-  };
+  // No manual save needed in ChartViewer — all edits are persisted immediately via mutations.
 
   // Keyboard shortcuts
   useEffect(() => {
