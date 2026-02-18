@@ -170,7 +170,7 @@ export default function ChartDisplay({
 
   return (
     <div className="space-y-4 chart-grid">
-      {normalizedSections.map((section, sectionIdx) => {
+      {sections.map((section, sectionIdx) => {
         const sectionColors = getSectionColor(section.label);
         
         const barCount = section.measures?.length || 0;
