@@ -491,6 +491,7 @@ Deno.serve(async (req) => {
       time_signature: time_signature || llmResponse.time_signature || '4/4',
       reference_file_url
     };
+    console.log(`LLM key resolved: ${chartData.key}`);
     sectionsData = llmResponse.sections;
   }
 
