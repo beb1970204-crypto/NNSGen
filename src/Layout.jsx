@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { 
   LayoutGrid, Star, Clock, List, Share2, 
-  Settings, HelpCircle, User, Music2, HelpingHand
+  Settings, HelpCircle, User, HelpingHand
 } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
@@ -61,10 +61,13 @@ export default function Layout({ children, currentPageName }) {
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-[#141414] border-b border-[#2a2a2a] z-50 flex items-center px-6 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-600/20">
-            <Music2 className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 border-2 border-red-500 rounded-lg flex items-center justify-center" style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }}>
+            <span className="text-red-500 font-black text-lg">1</span>
           </div>
-          <span className="text-xl font-black tracking-tight">NNSGen</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-black tracking-tight text-white">ChartScribe</span>
+            <span className="text-xl font-black tracking-tight text-red-500">AI</span>
+          </div>
         </div>
       </div>
 
