@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, User, Plus } from "lucide-react";
+import { ArrowLeft, Download, User, Plus, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ChartDisplay from "@/components/chart/ChartDisplay";
 import SongSettingsSidebar from "@/components/chart/SongSettingsSidebar";
 import MeasurePropertiesSidebar from "@/components/chart/MeasurePropertiesSidebar";
 import ChartToolbar from "@/components/chart/ChartToolbar";
+import ShareDialog from "@/components/chart/ShareDialog";
 import { toast } from "sonner";
 
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
