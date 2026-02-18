@@ -331,8 +331,8 @@ export default function ChartViewer() {
   };
 
   const shareChart = useMutation({
-    mutationFn: async (sharedWithUsers) => {
-      await base44.entities.Chart.update(chartId, { shared_with_users: sharedWithUsers });
+    mutationFn: async (sharedWith) => {
+      await base44.entities.Chart.update(chartId, { shared_with: sharedWith });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
@@ -544,9 +544,10 @@ export default function ChartViewer() {
       <ShareDialog
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
-        currentSharedUsers={chart?.shared_with_users || []}
-        onShare={(sharedUsers) => shareChart.mutate(sharedUsers)}
+        currentSharedUsers={chart?.shared_with || []}
+        onShare={(sharedWith) => shareChart.mutate(sharedWith)}
         isLoading={shareChart.isPending}
+        chartId={chartId}
       />
     </div>
   );
