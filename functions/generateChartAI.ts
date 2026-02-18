@@ -475,4 +475,8 @@ Deno.serve(async (req) => {
     chartData,
     sectionsData
   });
+  } catch (error) {
+    console.error('generateChartAI error:', error);
+    return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
 });
