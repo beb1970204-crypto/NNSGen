@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     const measuresPerRow = 4;
     const cellWidth = columnWidth / measuresPerRow;
     const cellHeight = 11;
-    const sectionSpacing = 10;
+    const sectionSpacing = 2;
 
     // Render sections in 2-column layout
     let leftX = margin;
@@ -75,20 +75,30 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
-      const isLeftColumn = i % 2 === 0;
-      const x = isLeftColumn ? leftX : rightX;
-      let y = isLeftColumn ? leftY : rightY;
-
-      // Calculate space needed for this section
       const numRows = Math.ceil(section.measures.length / measuresPerRow);
       const sectionHeight = 5 + (section.arrangement_cue ? 3.5 : 0) + (numRows * cellHeight);
 
-      // Check if we need a new page
+      // Determine which column to place this section
+      let isLeftColumn = leftY <= rightY;
+      let x = isLeftColumn ? leftX : rightX;
+      let y = isLeftColumn ? leftY : rightY;
+
+      // Check if section fits in current column
       if (y + sectionHeight > pageHeight - margin) {
-        doc.addPage();
-        leftY = margin;
-        rightY = margin;
+        // Try the other column
+        isLeftColumn = !isLeftColumn;
+        x = isLeftColumn ? leftX : rightX;
         y = isLeftColumn ? leftY : rightY;
+
+        // If still doesn't fit, move to new page
+        if (y + sectionHeight > pageHeight - margin) {
+          doc.addPage();
+          leftY = margin;
+          rightY = margin;
+          isLeftColumn = true;
+          x = leftX;
+          y = margin;
+        }
       }
 
       // Section Header
