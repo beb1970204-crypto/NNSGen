@@ -435,7 +435,7 @@ Deno.serve(async (req) => {
     chartData = {
       title,
       artist: artist || 'Unknown',
-      key: key || llmResponse.key || 'C',
+      key: normalizeKey(key || llmResponse.key || 'C'),
       time_signature: time_signature || llmResponse.time_signature || '4/4',
       reference_file_url
     };
