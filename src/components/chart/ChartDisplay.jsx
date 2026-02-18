@@ -29,9 +29,9 @@ export default function ChartDisplay({
     return chordText;
   };
 
-  const baseFontSize = 'text-2xl';
-  const measurePadding = 'p-4';
-  const measureHeight = 'min-h-[100px]';
+  const baseFontSize = 'text-lg';
+  const measurePadding = 'p-2';
+  const measureHeight = 'min-h-[70px]';
 
   const handleUpdateMeasure = (section, measureIdx, updatedMeasure) => {
     const updatedMeasures = [...section.measures];
