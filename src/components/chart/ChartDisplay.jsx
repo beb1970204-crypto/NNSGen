@@ -113,13 +113,13 @@ export default function ChartDisplay({
           </div>
         )}
         {chordCount > 2 && (
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1 w-full">
-            {measure.chords.map((chordObj, i) => (
-              <div key={i} className={`text-center ${chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}`}>
-                {renderChord(chordObj)}
-              </div>
-            ))}
-          </div>
+         <div className="flex items-center justify-around w-full gap-1">
+           {measure.chords.map((chordObj, i) => (
+             <div key={i} className={`flex-1 text-center text-sm ${chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}`}>
+               {renderChord(chordObj)}
+             </div>
+           ))}
+         </div>
         )}
       </div>
     );
