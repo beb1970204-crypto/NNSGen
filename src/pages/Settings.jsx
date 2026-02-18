@@ -8,14 +8,12 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 export default function Settings() {
@@ -180,28 +178,32 @@ export default function Settings() {
       </div>
 
       {/* Delete Account Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-[#1a1a1a] border-[#2a2a2a]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Account?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#a0a0a0]">
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete Account?</DialogTitle>
+            <DialogDescription className="text-[#a0a0a0]">
               This will permanently delete your account and all your charts. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-[#2a2a2a] text-white border-[#3a3a3a] hover:bg-[#3a3a3a]">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deleting}
+            >
               Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={handleDeleteAccount}
               disabled={deleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {deleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
