@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     // Build full current chart structure for LLM context
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Refinement prompt — context-aware with full chart data, preserves working elements
+    // Refinement prompt — context-aware with full chart data, STRONG preservation of unchanged sections
     const prompt = `You are refining a chord chart for "${title}" by ${artist || 'Unknown'}.
 
 CURRENT CHART DATA (JSON):
@@ -86,13 +86,24 @@ Time Signature: ${time_signature}
 USER FEEDBACK / REFINEMENT REQUEST:
 "${userFeedback}"
 
-INSTRUCTIONS:
-- Carefully read the USER FEEDBACK and apply those specific requested changes
-- Preserve ALL sections and chord progressions that the user did NOT explicitly ask to change
-- If user asks to "add" or "expand" a section, intelligently add more measures to that section
-- If user asks to "fix" or "change" a section, regenerate just that section while keeping all other sections exactly as they are
-- Maintain the same key and time signature unless explicitly requested otherwise
-- Return ONLY valid JSON with no explanation or additional context
+CRITICAL REFINEMENT INSTRUCTIONS:
+1. READ the user feedback carefully and identify ONLY what they asked to change
+2. PRESERVE section order and ALL sections NOT mentioned in feedback
+3. PRESERVE exact chord progressions for sections not mentioned
+4. PRESERVE all arrangement cues, cues, and repeat counts unless user explicitly requested changes
+5. If user asks to add/expand/extend a section, add MORE measures WITHIN that section only
+6. If user asks to fix/change/improve a section, modify ONLY that section while keeping others identical
+7. Maintain the same key and time signature unless explicitly requested
+8. Return the COMPLETE chart in JSON format with all original sections + requested refinements
+
+DO NOT:
+- Remove, rename, or reorganize sections the user didn't mention
+- Change chord progressions in sections not mentioned in feedback
+- Add hallucinated or extra sections not requested
+- Alter Intro, Outro, Pre, Bridge, or other sections unless explicitly asked
+- Change section cues or arrangement details unless requested
+
+EXAMPLE: If user says "Add more Verse measures", keep all other sections identical and add measures to ONLY the Verse.
 
 RETURN FORMAT:
 {
@@ -100,9 +111,8 @@ RETURN FORMAT:
   "key_mode": "${key.endsWith('m') ? 'minor' : 'major'}",
   "time_signature": "${time_signature}",
   "sections": [
-    {"label": "Verse", "repeat_count": 1, "arrangement_cue": "", "measures": [
-      {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""}
-    ]}
+    {"label": "Intro", "repeat_count": 1, "arrangement_cue": "", "measures": [...]},
+    {"label": "Verse", "repeat_count": 2, "arrangement_cue": "", "measures": [...]}
   ]
 }`;
 
