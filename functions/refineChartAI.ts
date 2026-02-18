@@ -251,7 +251,7 @@ TASK: Determine if the fresh chart addresses what the user complained about. Ans
     const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
     const beatsPerMeasure = parseInt(time_signature.split('/')[0]) || 4;
 
-    const refinedSections = response.sections.map(section => ({
+    const refinedSections = freshChart.sections.map(section => ({
       ...section,
       repeat_count: Number(section.repeat_count) || 1,
       arrangement_cue: section.arrangement_cue || '',
