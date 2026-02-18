@@ -141,9 +141,9 @@ async function generateChartWithLLM(base44, title, artist, key, time_signature, 
   const keyNote = key || 'Determine from your knowledge of this song';
   const timeSigNote = time_signature || 'Determine from your knowledge of this song';
 
-  const prompt = `You are a professional music chart transcription assistant specializing in Nashville Number System (NNS) charts.
+  const prompt = `You are a professional music chart transcription assistant.
 
-Task: Create an accurate chord chart for the following song.
+Task: Create an accurate standard chord chart for the following song.
 
 Song Details:
 - Title: ${title}
@@ -156,9 +156,10 @@ ${referenceText ? `Reference Material (use this as the primary source):\n${refer
 Instructions:
 1. Output the correct key and time signature for this song
 2. Identify all sections: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-3. Each measure should contain ONE chord (standard for 4/4 time), with 4 beats
-4. Use standard chord notation (e.g., C, Dm7, F/G, Gsus4)
-5. Be faithful to the actual song's chord progression`;
+3. Use standard chord notation ONLY — letter names with quality suffixes (e.g., C, Dm7, F/G, Gsus4, Bbmaj7)
+4. Do NOT use Roman numerals, Nashville numbers, or any other notation system
+5. Each measure should contain the chord(s) that fall in that bar
+6. Be faithful to the actual song's chord progression`;
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
