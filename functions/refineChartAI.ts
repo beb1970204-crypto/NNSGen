@@ -168,7 +168,7 @@ RESPONSE FORMAT:
       return Response.json({ error: 'LLM refinement returned no sections' }, { status: 500 });
     }
 
-    // Validate that refined chart preserves all original sections
+    // Step 1: Validate that refined chart preserves all original sections
     const originalSectionCount = currentSections.length;
     const refinedSectionCount = response.sections.length;
     
@@ -179,11 +179,59 @@ RESPONSE FORMAT:
       }, { status: 400 });
     }
 
-    // Validate refined output quality
+    // Step 2: Validate refined output quality
     const validation = validateChartOutput(response.sections);
     if (!validation.valid) {
       console.log('Refinement validation failed:', validation.reason);
       return Response.json({ error: `Refinement validation failed: ${validation.reason}. Please try different feedback.` }, { status: 400 });
+    }
+
+    // Step 3: Review if the refinement actually solves the user's stated issue
+    const refinedChartJSON = JSON.stringify(response.sections, null, 2);
+    const reviewPrompt = `You are reviewing a refined chord chart. Determine if the refinement addresses the user's stated problem.
+
+ORIGINAL CHART:
+${currentChartJSON}
+
+REFINED CHART:
+${refinedChartJSON}
+
+USER'S FEEDBACK/ISSUE: "${userFeedback}"
+
+TASK: Does the refined chart address what the user complained about? Answer with a JSON object:
+{
+  "solves_issue": true or false,
+  "reasoning": "brief explanation"
+}`;
+
+    const reviewSchema = {
+      type: "object",
+      properties: {
+        solves_issue: { type: "boolean" },
+        reasoning: { type: "string" }
+      },
+      required: ["solves_issue", "reasoning"]
+    };
+
+    let reviewResponse;
+    try {
+      reviewResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: reviewPrompt,
+        add_context_from_internet: false,
+        response_json_schema: reviewSchema
+      });
+    } catch (reviewError) {
+      console.error('Review validation failed:', reviewError.message);
+      return Response.json({ 
+        error: 'Failed to validate refinement. Try refining again.'
+      }, { status: 400 });
+    }
+
+    if (!reviewResponse?.solves_issue) {
+      console.log('Review determined refinement does not solve issue:', reviewResponse?.reasoning);
+      return Response.json({ 
+        error: `Refinement did not address your concern (${reviewResponse?.reasoning || 'unknown reason'}). Try refining again with clearer feedback.`
+      }, { status: 400 });
     }
 
     // Sanitize and expand measures (same as generateChartAI)
