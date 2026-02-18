@@ -397,11 +397,29 @@ Deno.serve(async (req) => {
   if (chordonomiconData) {
     dataSource = 'chordonomicon';
 
+    // Detect key + time sig with a focused, fast LLM call (much cheaper than full chart gen)
+    let detectedKey = key;
+    let detectedTimeSig = time_signature;
+    if (!detectedKey || !detectedTimeSig) {
+      try {
+        const songTitle = spotifyMatch?.title || title;
+        const songArtist = spotifyMatch?.artist || artist;
+        const meta = await detectKeyAndTimeSig(base44, songTitle, songArtist);
+        detectedKey = detectedKey || meta.key;
+        detectedTimeSig = detectedTimeSig || meta.time_signature;
+        console.log(`Key detected: ${detectedKey} / ${detectedTimeSig}`);
+      } catch (e) {
+        console.log('Key detection failed, using defaults:', e.message);
+        detectedKey = detectedKey || 'C';
+        detectedTimeSig = detectedTimeSig || '4/4';
+      }
+    }
+
     chartData = {
       title: spotifyMatch?.title || title,
       artist: spotifyMatch?.artist || artist || 'Unknown',
-      key: normalizeKey(key || 'C'),
-      time_signature: time_signature || '4/4',
+      key: normalizeKey(detectedKey),
+      time_signature: detectedTimeSig,
       reference_file_url,
       ...chordonomiconData.chart_data
     };
