@@ -106,27 +106,29 @@ export default function SongSettingsSidebar({
         <div>
           <Label className="text-xs text-[#a0a0a0] mb-3 block">Notation Mode</Label>
           <div className="flex rounded-lg overflow-hidden border border-[#2a2a2a]">
-            <button
-              onClick={() => onToggleNotation('roman')}
-              className={`flex-1 py-2 text-sm font-bold tracking-widest transition-all ${
-                chart.display_mode === 'roman'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-[#1a1a1a] text-[#6b6b6b] hover:text-white hover:bg-[#252525]'
-              }`}
-            >
-              1 2 3
-            </button>
-            <button
-              onClick={() => onToggleNotation('chords')}
-              className={`flex-1 py-2 text-sm font-bold tracking-widest transition-all border-l border-[#2a2a2a] ${
-                chart.display_mode === 'chords'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-[#1a1a1a] text-[#6b6b6b] hover:text-white hover:bg-[#252525]'
-              }`}
-            >
-              A B C
-            </button>
+            {[
+              { mode: 'chords', label: 'ABC' },
+              { mode: 'roman', label: 'I II' },
+              { mode: 'nns',   label: '1 2 3' },
+            ].map(({ mode, label }, i) => (
+              <button
+                key={mode}
+                onClick={() => onToggleNotation(mode)}
+                className={`flex-1 py-2 text-xs font-bold tracking-widest transition-all ${i > 0 ? 'border-l border-[#2a2a2a]' : ''} ${
+                  chart.display_mode === mode
+                    ? 'bg-red-600 text-white'
+                    : 'bg-[#1a1a1a] text-[#6b6b6b] hover:text-white hover:bg-[#252525]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+          {chart.display_mode !== 'chords' && (
+            <p className="text-xs text-[#6b6b6b] mt-2 italic">
+              {chart.display_mode === 'roman' ? 'Roman numerals — display only' : 'Nashville Numbers — display only'}
+            </p>
+          )}
         </div>
 
         {/* Structure */}
