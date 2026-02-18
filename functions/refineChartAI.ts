@@ -1,5 +1,93 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
 
+// ─── Spotify ──────────────────────────────────────────────────────────────────
+
+async function searchSpotify(title, artist) {
+  const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
+  const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
+  if (!clientId || !clientSecret) throw new Error('Spotify credentials not configured');
+
+  const { access_token } = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + btoa(`${clientId}:${clientSecret}`)
+    },
+    body: 'grant_type=client_credentials'
+  }).then(r => r.json());
+
+  const q = artist ? `track:${title} artist:${artist}` : `track:${title}`;
+  const data = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=5`, {
+    headers: { 'Authorization': `Bearer ${access_token}` }
+  }).then(r => r.json());
+
+  return (data.tracks?.items || []).map(t => ({
+    spotify_song_id: t.id,
+    spotify_artist_id: t.artists[0]?.id,
+    title: t.name,
+    artist: t.artists[0]?.name,
+    release_date: t.album?.release_date
+  }));
+}
+
+// ─── Chordonomicon ────────────────────────────────────────────────────────────
+
+async function fetchChordonomicon(params) {
+  const { spotify_song_id, spotify_artist_id, title, artist } = params;
+  const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
+
+  let queries = [];
+  
+  if (spotify_song_id && spotify_artist_id) {
+    queries.push(`"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`);
+  }
+  
+  if (title && artist) {
+    const cleanTitle = title.split(' - ')[0].replace(/\s*\(.*?\)/g, '').trim().replace(/'/g, "''");
+    const cleanArtist = artist.replace(/'/g, "''");
+    queries.push(`"title"='${cleanTitle}' AND "artist"='${cleanArtist}'`);
+    const titleWords = cleanTitle.split(' ').filter(w => w.length > 2).join('%');
+    if (titleWords) {
+      queries.push(`"title" LIKE '%${titleWords}%' AND "artist"='${cleanArtist}'`);
+    }
+    const firstWord = cleanTitle.split(' ')[0];
+    if (firstWord && firstWord.length > 2) {
+      queries.push(`"title" LIKE '${firstWord}%' AND "artist"='${cleanArtist}'`);
+    }
+  }
+
+  const headers = { 'Accept': 'application/json' };
+  if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
+
+  for (const where of queries) {
+    try {
+      const url = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(where)}&offset=0&length=1`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const row = data.rows?.[0]?.row;
+      if (!row?.chords) continue;
+
+      console.log('Chordonomicon hit found');
+      return {
+        rawChords: row.chords,
+        metadata: {
+          spotify_song_id: row.spotify_song_id,
+          spotify_artist_id: row.spotify_artist_id,
+          genres: row.genres,
+          release_date: row.release_date,
+          decade: row.decade
+        }
+      };
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 // ─── Output Validation (refinement-specific, more lenient than generation) ────────
 
 function validateChartOutput(sections) {
