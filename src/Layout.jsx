@@ -25,6 +25,10 @@ export default function Layout({ children, currentPageName }) {
     queryFn: () => base44.entities.Chart.list(),
     initialData: [],
   });
+
+  const sharedChartsCount = charts.filter(chart => 
+    user?.email && chart.shared_with_users?.includes(user.email)
+  ).length;
   
   const navItems = [
     { label: "My Charts", icon: LayoutGrid, path: "Home", view: "all", active: currentView === "all" },
