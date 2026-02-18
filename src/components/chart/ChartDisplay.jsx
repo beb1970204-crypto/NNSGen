@@ -168,8 +168,6 @@ export default function ChartDisplay({
     );
   };
 
-  const normalizedSections = sections;
-
   return (
     <div className="space-y-4 chart-grid">
       {normalizedSections.map((section, sectionIdx) => {
