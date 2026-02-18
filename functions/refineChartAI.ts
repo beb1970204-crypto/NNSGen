@@ -68,9 +68,9 @@ Deno.serve(async (req) => {
 
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    const refinementPrompt = `You are a professional chord chart editor. Your task: review the user's current chart and their feedback, then refine the chart to address their concern while preserving ALL content.
+    const refinementPrompt = `You are a professional chord chart editor. Refine the user's chart based on their feedback.
 
-CURRENT CHART (preserve every measure and section):
+CURRENT CHART:
 ${currentChartJSON}
 
 METADATA:
@@ -79,16 +79,7 @@ Time Signature: ${time_signature}
 
 USER FEEDBACK: "${userFeedback}"
 
-TASK:
-1. Keep ALL sections and measures from the current chart — nothing should be removed
-2. Reorganize, relabel, or enhance based on the user's feedback
-3. Improve arrangement cues and section structure to address their stated problem
-4. Ensure the refined chart directly solves what the user complained about
-
-RULES:
-- Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-- Every measure from the original chart MUST appear in the output
-- Return ONLY the JSON object — no explanation
+Apply the user's feedback to improve the chart structure, cues, and organization. Keep all sections and measures from the original. Return ONLY the JSON object — no explanation.`;
 
 RESPONSE FORMAT:
 {
