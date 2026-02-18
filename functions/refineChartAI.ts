@@ -69,17 +69,19 @@ Deno.serve(async (req) => {
     // Build full current chart structure for LLM context
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Simplified refinement prompt — let schema enforce structure, keep instruction clear
-    const prompt = `You are refining a chord chart. Here is the current chart in JSON:
+    // Refinement prompt — clear context for restructuring without over-specification
+    const prompt = `You are refining a chord chart. Here is the current chart:
 
 ${currentChartJSON}
 
 Key: ${key}
 Time Signature: ${time_signature}
 
-User's refinement request: "${userFeedback}"
+Available section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 
-Review the chart and make ONLY the changes the user requested. Return the complete refined chart with all sections.`;
+User's request: "${userFeedback}"
+
+Apply the user's requested changes. If they ask to restructure (separate into sections, reorganize, etc.), analyze the chord patterns and intelligently assign measures to appropriate section labels. Return the complete refined chart.`;
 
     const schema = {
       type: "object",
