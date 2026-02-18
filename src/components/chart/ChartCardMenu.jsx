@@ -55,9 +55,8 @@ export default function ChartCardMenu({
         
         <DropdownMenuItem 
           onClick={(e) => {
-            e.preventDefault();
             e.stopPropagation();
-            onShare(e, chart);
+            onShare(chart);
           }}
           className="text-white hover:bg-[#252525] cursor-pointer"
         >
