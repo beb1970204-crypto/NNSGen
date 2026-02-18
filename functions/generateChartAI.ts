@@ -106,11 +106,25 @@ async function fetchChordonomiconData(params) {
   };
 }
 
+// Normalize LLM key output to a clean enum value
+// e.g. "A major" → "A", "F# minor" → "F#m", "Bb" → "Bb"
+function normalizeKey(rawKey) {
+  if (!rawKey) return 'C';
+  let k = rawKey.trim();
+  // Replace written-out "minor" / "major"
+  k = k.replace(/\s+major$/i, '').replace(/\s+minor$/i, 'm');
+  // Collapse spaces (e.g. "F# m" → "F#m")
+  k = k.replace(/\s+/g, '');
+  // Capitalize root note
+  k = k.charAt(0).toUpperCase() + k.slice(1);
+  return k;
+}
+
 // Helper: Detect key + time signature for a known song using LLM
 async function detectKeyForSong(base44, title, artist) {
   const response = await base44.integrations.Core.InvokeLLM({
     prompt: `What is the original musical key and time signature of the song "${title}" by ${artist || 'Unknown'}? 
-Return the standard key (e.g. G, Am, Bb, F#m) and time signature (e.g. 4/4, 3/4).`,
+Return ONLY the standard short key name (e.g. G, Am, Bb, F#m — no "major"/"minor" words) and time signature (e.g. 4/4, 3/4).`,
     response_json_schema: {
       type: "object",
       properties: {
@@ -120,7 +134,10 @@ Return the standard key (e.g. G, Am, Bb, F#m) and time signature (e.g. 4/4, 3/4)
       required: ["key", "time_signature"]
     }
   });
-  return response;
+  return {
+    key: normalizeKey(response.key),
+    time_signature: response.time_signature || '4/4'
+  };
 }
 
 // Helper: Generate chart with LLM — key/time_sig are optional, LLM detects them
