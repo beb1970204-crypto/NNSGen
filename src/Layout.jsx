@@ -35,7 +35,7 @@ export default function Layout({ children, currentPageName }) {
     { label: "Favorites", icon: Star, path: "Home", view: "favorites", active: currentView === "favorites" },
     { label: "Recent", icon: Clock, path: "Home", view: "recent", active: currentView === "recent" },
     { label: "Setlists", icon: List, path: "Home", view: "setlists", active: currentView === "setlists" },
-    { label: "Shared with me", icon: Share2, path: "Home", view: "shared", active: currentView === "shared" },
+    { label: "Shared with me", icon: Share2, path: "Home", view: "shared", active: currentView === "shared", badge: sharedChartsCount },
   ];
 
   const folders = [
