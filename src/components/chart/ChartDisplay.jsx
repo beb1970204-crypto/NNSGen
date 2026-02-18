@@ -160,50 +160,50 @@ export default function ChartDisplay({
   };
 
   return (
-    <div className="space-y-4 chart-grid">
+    <div className="space-y-2 chart-grid">
       {sections.map((section, sectionIdx) => {
         const sectionColors = getSectionColor(section.label);
         
         const barCount = section.measures?.length || 0;
 
         const sectionContent = (
-          <div key={section.id || sectionIdx} className="bg-[#111111] rounded-xl overflow-hidden border border-[#2a2a2a]">
+          <div key={section.id || sectionIdx} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
             {/* Section Header - Full colored bar like the design */}
-            <div className={`${sectionColors.bg} px-5 py-2.5 flex items-center justify-between`}>
-              <div className="flex items-center gap-3">
+            <div className={`${sectionColors.bg} px-3 py-1.5 flex items-center justify-between gap-2`}>
+              <div className="flex items-center gap-2 min-w-0">
                 {editMode && (
-                  <div className="cursor-grab active:cursor-grabbing">
-                    <GripVertical className="w-4 h-4 text-white/40" />
+                  <div className="cursor-grab active:cursor-grabbing flex-shrink-0">
+                    <GripVertical className="w-3 h-3 text-white/40" />
                   </div>
                 )}
-                <span className="text-sm font-black uppercase tracking-wider text-white">
+                <span className="text-xs font-black uppercase tracking-wider text-white flex-shrink-0">
                   [{section.label}]
                 </span>
-                <span className="text-xs text-white/60 font-medium">{barCount} bars</span>
+                <span className="text-xs text-white/60 font-medium flex-shrink-0">{barCount}b</span>
                 {section.repeat_count > 1 && (
-                  <span className="bg-black/20 text-white px-2 py-0.5 rounded text-xs font-semibold">
+                  <span className="bg-black/20 text-white px-1.5 py-0.5 rounded text-xs font-semibold flex-shrink-0">
                     x{section.repeat_count}
                   </span>
                 )}
                 {section.modulation_key && (
-                  <span className="bg-black/30 text-yellow-300 border border-yellow-400/50 px-2 py-0.5 rounded text-xs font-bold">
-                    MOD to {section.modulation_key}
+                  <span className="bg-black/30 text-yellow-300 border border-yellow-400/50 px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 whitespace-nowrap">
+                    MOD {section.modulation_key}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {section.arrangement_cue && (
-                  <span className="text-xs text-white/50 italic">{section.arrangement_cue}</span>
+                  <span className="text-xs text-white/50 italic truncate">{section.arrangement_cue}</span>
                 )}
                 {section.pivot_cue && (
-                  <span className="text-xs text-white/50 italic">Pivot: {section.pivot_cue}</span>
+                  <span className="text-xs text-white/50 italic truncate">P: {section.pivot_cue}</span>
                 )}
               </div>
             </div>
 
             {/* Measures Grid */}
-            <div className="p-4">
-              <div className="grid grid-cols-4 gap-3">
+            <div className="p-2">
+              <div className="grid grid-cols-6 gap-1.5">
                 {section.measures?.map((measure, measureIdx) =>
                   renderMeasureCell(measure, measureIdx, section)
                 )}
