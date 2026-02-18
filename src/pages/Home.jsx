@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X, Trash2, Calendar, MapPin, MoreVertical } from "lucide-react";
+import { Music, Star, List, Share2, Filter, ChevronDown, Plus, Search, X, Trash2, Calendar, MapPin, MoreVertical, Users } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
