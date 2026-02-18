@@ -281,6 +281,15 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
+  // Show beginner guide on first visit
+  useEffect(() => {
+    const hasSeenGuide = localStorage.getItem('nnsgen-seen-guide');
+    if (!hasSeenGuide && charts.length === 0) {
+      setShowBeginnerGuide(true);
+      localStorage.setItem('nnsgen-seen-guide', 'true');
+    }
+  }, [charts.length]);
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-8">
       {/* Header */}
