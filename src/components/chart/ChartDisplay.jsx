@@ -96,7 +96,7 @@ export default function ChartDisplay({
               {renderChord(measure.chords[0])}
             </span>
             {measure.chords[0].symbols?.length > 0 && (
-              <span className="ml-2 text-lg text-yellow-500">{renderSymbols(measure.chords[0].symbols)}</span>
+              <span className="ml-1 text-sm text-yellow-500">{renderSymbols(measure.chords[0].symbols)}</span>
             )}
           </div>
         )}
