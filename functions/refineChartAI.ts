@@ -168,7 +168,18 @@ RESPONSE FORMAT:
       return Response.json({ error: 'LLM refinement returned no sections' }, { status: 500 });
     }
 
-    // Validate refined output
+    // Validate that refined chart preserves all original sections
+    const originalSectionCount = currentSections.length;
+    const refinedSectionCount = response.sections.length;
+    
+    if (refinedSectionCount < originalSectionCount) {
+      console.log(`Refinement lost sections: ${originalSectionCount} → ${refinedSectionCount}`);
+      return Response.json({ 
+        error: `Refinement removed sections. Please provide different feedback or refine again.` 
+      }, { status: 400 });
+    }
+
+    // Validate refined output quality
     const validation = validateChartOutput(response.sections);
     if (!validation.valid) {
       console.log('Refinement validation failed:', validation.reason);
