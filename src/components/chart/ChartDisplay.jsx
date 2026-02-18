@@ -169,14 +169,14 @@ export default function ChartDisplay({
     );
   };
 
-  // Normalize sections: if a measure has >2 chords, explode it into individual measures (1 chord each)
+  // Normalize sections: if a measure has >1 chord (packed together), explode into individual measures
   const normalizeSections = (rawSections) => {
     return rawSections.map(section => ({
       ...section,
       measures: (section.measures || []).flatMap(measure => {
         const chords = measure.chords || [];
-        if (chords.length <= 2) return [measure]; // 1 chord (normal) or 2 (split) — keep as-is
-        // >2 chords crammed into one measure: explode into individual measures
+        if (chords.length <= 1) return [measure]; // 1 chord — keep as-is
+        // Multiple chords crammed into one measure: explode into individual measures
         return chords.map(chord => ({ chords: [chord], cue: '' }));
       })
     }));
