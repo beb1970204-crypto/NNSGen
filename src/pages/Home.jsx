@@ -155,6 +155,25 @@ export default function Home() {
     }
   });
 
+  const bulkShareCharts = useMutation({
+    mutationFn: async ({ chartIds, email, permission }) => {
+      const { data } = await base44.functions.invoke('bulkShareCharts', {
+        chartIds,
+        email,
+        permission
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+      toast.success(`Shared ${data.results.filter(r => r.success).length} chart(s) with ${data.email}`);
+      setShowBulkShare(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to share charts');
+    }
+  });
+
   const filteredAndSortedCharts = useMemo(() => {
     let result = [...charts];
 
