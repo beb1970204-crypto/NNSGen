@@ -298,6 +298,15 @@ export default function Home() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {selectedCharts.length > 0 && (
+            <Button
+              onClick={() => setShowBulkShareDialog(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              Share {selectedCharts.length} Charts
+            </Button>
+          )}
           <Link to={createPageUrl("ChartCreator")}>
             <Button className="gap-2 shadow-lg shadow-red-600/20">
               <Plus className="w-4 h-4" />
@@ -631,7 +640,22 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedCharts.map((chart) => (
             <Link key={chart.id} to={createPageUrl("ChartViewer") + `?id=${chart.id}`}>
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl">
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl relative">
+                {/* Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={selectedCharts.includes(chart.id)}
+                  onChange={(e) => {
+                    e.preventDefault();
+                    if (e.target.checked) {
+                      setSelectedCharts([...selectedCharts, chart.id]);
+                    } else {
+                      setSelectedCharts(selectedCharts.filter(id => id !== chart.id));
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-4 left-4 w-4 h-4 accent-red-600 cursor-pointer"
+                />
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
