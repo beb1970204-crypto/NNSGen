@@ -16,6 +16,12 @@ export default function ChartCreator() {
   const [referenceFile, setReferenceFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Draft state — populated after generation, before save
+  const [draftChart, setDraftChart] = useState(null);
+  const [draftSections, setDraftSections] = useState(null);
+  const [dataSource, setDataSource] = useState(null);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -30,6 +36,8 @@ export default function ChartCreator() {
   const handleGenerateChart = async () => {
     if (!title) { toast.error("Please enter a song title"); return; }
     setIsGenerating(true);
+    setDraftChart(null);
+    setDraftSections(null);
 
     const response = await base44.functions.invoke('generateChartAI', {
       title,
@@ -37,16 +45,27 @@ export default function ChartCreator() {
       reference_file_url: referenceFile || null
     });
 
+    setIsGenerating(false);
+
     if (response.data.error) {
       toast.error(response.data.error);
-      setIsGenerating(false);
       return;
     }
 
-    // Save chart and sections, then navigate to ChartViewer
-    const { chartData, sectionsData } = response.data;
-    const chart = await base44.entities.Chart.create(chartData);
-    await Promise.all(sectionsData.map(section =>
+    // Store as draft — DO NOT save yet
+    const { chartData, sectionsData, source } = response.data;
+    setDraftChart(chartData);
+    setDraftSections(sectionsData);
+    setDataSource(source);
+    toast.success(response.data.message || "Chart generated — review and save when ready.");
+  };
+
+  const handleSaveChart = async () => {
+    if (!draftChart || !draftSections) return;
+    setIsSaving(true);
+
+    const chart = await base44.entities.Chart.create(draftChart);
+    await Promise.all(draftSections.map(section =>
       base44.entities.Section.create({
         chart_id: chart.id,
         label: section.label,
@@ -56,8 +75,14 @@ export default function ChartCreator() {
       })
     ));
 
-    toast.success(response.data.message || "Chart created!");
+    toast.success("Chart saved!");
     navigate(createPageUrl("ChartViewer") + `?id=${chart.id}`);
+  };
+
+  const handleDiscard = () => {
+    setDraftChart(null);
+    setDraftSections(null);
+    setDataSource(null);
   };
 
   return (
