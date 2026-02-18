@@ -13,7 +13,14 @@ export default function RefineFeedbackModal({ onSubmit, onCancel, isLoading }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-full max-w-md shadow-2xl">
+      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-full max-w-md shadow-2xl relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center z-50">
+            <Loader2 className="w-10 h-10 animate-spin text-red-500 mb-3" />
+            <p className="text-sm text-white font-semibold">Refining your chart...</p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-lg font-bold text-white">Refine Chart</h2>
@@ -27,14 +34,7 @@ export default function RefineFeedbackModal({ onSubmit, onCancel, isLoading }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4 relative">
-          {isLoading && (
-            <div className="absolute inset-0 bg-[#1a1a1a]/80 backdrop-blur-xs rounded-lg flex flex-col items-center justify-center z-10">
-              <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-3" />
-              <p className="text-sm text-[#a0a0a0] font-medium">Refining your chart...</p>
-            </div>
-          )}
-
+        <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
             Describe how you'd like to refine the chart. For example: "Add more measures to the Verse", "Change the Bridge chord progression", "Shorten the Intro"
           </p>
