@@ -210,47 +210,73 @@ async function generateWithLLM(base44, title, artist, reference_file_url, retryC
     }
   }
 
-  // Adjust prompt based on retry (first time: transcription-focused, retry: more permissive)
+  // First attempt: strict transcription-focused prompt
+  // Second attempt: looser prompt emphasizing song structure
+  // Third attempt: ultra-simplified fallback for stubborn songs
   let prompt;
   if (retryCount === 0) {
-    prompt = `You are a professional musician transcribing chord charts. Your job is to find and accurately transcribe the REAL chord progression from online sources.
+    prompt = `You are a professional musician transcribing chord charts. Your goal is to accurately transcribe the REAL chord progression for "${title}" by ${artist || 'Unknown'}.
 
-Song: "${title}" by ${artist || 'Unknown'}
-${referenceText ? `\nReference material:\n${referenceText}\n` : ''}
+STRUCTURAL REQUIREMENTS (CRITICAL):
+- MUST return exactly 3-5 sections: Intro (or skip), Verse, Chorus, Bridge (or skip), Outro (or skip)
+- EVERY section MUST have at least 1 measure
+- EVERY measure MUST have chords array with 1-4 chord objects
+- EVERY chord object MUST have: "chord" (string like "A", "Dm", "G7") and "beats" (1-4 matching time sig)
 
-CRITICAL RULES:
-- Transcribe what you find online; do NOT invent chords
-- Each measure = one object with chord(s)
-- Beats in a measure MUST sum to the time signature's top number (usually 4)
-- Return at least 3 different sections (Intro, Verse, Chorus, Bridge, Outro, etc.)
-- Use section labels from: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+${referenceText ? `Reference material:\n${referenceText}\n` : 'Use web context to find accurate chords.'}
 
-Example structure:
+EXAMPLE OUTPUT:
 {
   "key_tonic": "A",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
-    {"label": "Intro", "repeat_count": 1, "measures": [{"chords": [{"chord": "A", "beats": 4}], "cue": ""}]},
-    {"label": "Verse", "repeat_count": 2, "measures": [{"chords": [{"chord": "A", "beats": 2}, {"chord": "G", "beats": 2}], "cue": ""}]},
-    {"label": "Chorus", "repeat_count": 2, "measures": [{"chords": [{"chord": "D", "beats": 4}], "cue": ""}]}
+    {"label": "Intro", "repeat_count": 1, "arrangement_cue": "", "measures": [
+      {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+    ]},
+    {"label": "Verse", "repeat_count": 1, "arrangement_cue": "", "measures": [
+      {"chords": [{"chord": "A", "beats": 2}, {"chord": "G", "beats": 2}], "cue": ""}
+    ]},
+    {"label": "Chorus", "repeat_count": 1, "arrangement_cue": "", "measures": [
+      {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
+    ]}
   ]
 }`;
+  } else if (retryCount === 1) {
+    prompt = `Create a chord chart for "${title}" by ${artist || 'Unknown'}.
+
+Return 3-5 DISTINCT sections. MUST include Intro, Verse, and Chorus. Add Bridge or Outro if the song has them.
+
+STRICT FORMAT:
+{
+  "key_tonic": "E",
+  "key_mode": "major",
+  "time_signature": "4/4",
+  "sections": [
+    {"label": "Intro", "repeat_count": 1, "arrangement_cue": "", "measures": [{"chords": [{"chord": "E", "beats": 4}], "cue": ""}]},
+    {"label": "Verse", "repeat_count": 2, "arrangement_cue": "", "measures": [{"chords": [{"chord": "E", "beats": 2}, {"chord": "A", "beats": 2}], "cue": ""}]},
+    {"label": "Chorus", "repeat_count": 2, "arrangement_cue": "", "measures": [{"chords": [{"chord": "B", "beats": 4}], "cue": ""}]}
+  ]
+}
+
+DO NOT add any chords not in the actual song. Keep it simple.`;
   } else {
-    // Retry prompt: more relaxed, ask for clear distinction between sections
-    prompt = `You are creating a chord chart for "${title}" by ${artist || 'Unknown'}.
+    // Ultra-fallback: minimal viable structure for any song
+    prompt = `Chord chart for "${title}" by ${artist || 'Unknown'}. 
 
-Generate the song structure with DISTINCT sections that are clearly different (e.g., Intro, Verse, Chorus, Bridge, Outro). Each section should be recognizable and separate.
+Return ONLY this JSON (no explanation):
+{
+  "key_tonic": "C",
+  "key_mode": "major",
+  "time_signature": "4/4",
+  "sections": [
+    {"label": "Intro", "repeat_count": 1, "arrangement_cue": "", "measures": [{"chords": [{"chord": "C", "beats": 4}], "cue": ""}]},
+    {"label": "Verse", "repeat_count": 2, "arrangement_cue": "", "measures": [{"chords": [{"chord": "C", "beats": 2}, {"chord": "F", "beats": 2}], "cue": ""}]},
+    {"label": "Chorus", "repeat_count": 1, "arrangement_cue": "", "measures": [{"chords": [{"chord": "G", "beats": 4}], "cue": ""}]}
+  ]
+}
 
-Return JSON with:
-- key_tonic: root note (A, Bb, C, etc.)
-- key_mode: "major" or "minor"
-- time_signature: "4/4" or similar
-- sections: array with AT LEAST 3-4 different sections (Intro, Verse, Chorus, Bridge, Outro, etc.)
-  - label: must be one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-  - measures: array of measure objects with chords (each chord has "chord" name and "beats" duration)
-
-Make sections distinct from each other. For example: Intro (short), Verse (melodic), Chorus (hook), Bridge (different feel), Outro (resolution).`;
+Replace C, F, G with actual chords. Keep 3 sections minimum.`;
   }
 
   const schema = {
