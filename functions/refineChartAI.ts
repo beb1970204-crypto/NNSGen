@@ -1,91 +1,111 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
+import { Key } from 'npm:tonal@6.0.1';
 
-// ─── Spotify ──────────────────────────────────────────────────────────────────
+// ─── LLM chart generation (same as generateChartAI) ─────────────────────────────
 
-async function searchSpotify(title, artist) {
-  const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
-  const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
-  if (!clientId || !clientSecret) throw new Error('Spotify credentials not configured');
+async function generateRefreshChart(base44, title, artist) {
+  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
 
-  const { access_token } = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ' + btoa(`${clientId}:${clientSecret}`)
+CRITICAL REQUIREMENTS:
+1. Return a COMPLETE chart: Verse + Chorus are MANDATORY. Include Intro/Outro/Bridge as appropriate for the song.
+2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+3. Chart the ENTIRE song structure naturally — do not truncate or summarize
+4. Measures may contain 1 or more chords; beats must sum to the time signature
+5. All chords must be musically coherent and diatonic where possible
+6. Return ONLY valid JSON, no explanation
+
+JSON STRUCTURE:
+{
+  "key_tonic": "A",
+  "key_mode": "major",
+  "time_signature": "4/4",
+  "sections": [
+    {
+      "label": "Verse",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""}
+      ]
     },
-    body: 'grant_type=client_credentials'
-  }).then(r => r.json());
-
-  const q = artist ? `track:${title} artist:${artist}` : `track:${title}`;
-  const data = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=5`, {
-    headers: { 'Authorization': `Bearer ${access_token}` }
-  }).then(r => r.json());
-
-  return (data.tracks?.items || []).map(t => ({
-    spotify_song_id: t.id,
-    spotify_artist_id: t.artists[0]?.id,
-    title: t.name,
-    artist: t.artists[0]?.name,
-    release_date: t.album?.release_date
-  }));
-}
-
-// ─── Chordonomicon ────────────────────────────────────────────────────────────
-
-async function fetchChordonomicon(params) {
-  const { spotify_song_id, spotify_artist_id, title, artist } = params;
-  const hfToken = Deno.env.get("HUGGINGFACE_API_TOKEN");
-
-  let queries = [];
-  
-  if (spotify_song_id && spotify_artist_id) {
-    queries.push(`"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`);
-  }
-  
-  if (title && artist) {
-    const cleanTitle = title.split(' - ')[0].replace(/\s*\(.*?\)/g, '').trim().replace(/'/g, "''");
-    const cleanArtist = artist.replace(/'/g, "''");
-    queries.push(`"title"='${cleanTitle}' AND "artist"='${cleanArtist}'`);
-    const titleWords = cleanTitle.split(' ').filter(w => w.length > 2).join('%');
-    if (titleWords) {
-      queries.push(`"title" LIKE '%${titleWords}%' AND "artist"='${cleanArtist}'`);
+    {
+      "label": "Chorus",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
+      ]
     }
-    const firstWord = cleanTitle.split(' ')[0];
-    if (firstWord && firstWord.length > 2) {
-      queries.push(`"title" LIKE '${firstWord}%' AND "artist"='${cleanArtist}'`);
-    }
-  }
+  ]
+}`;
 
-  const headers = { 'Accept': 'application/json' };
-  if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
-
-  for (const where of queries) {
-    try {
-      const url = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(where)}&offset=0&length=1`;
-      const res = await fetch(url, { headers });
-      if (!res.ok) continue;
-
-      const data = await res.json();
-      const row = data.rows?.[0]?.row;
-      if (!row?.chords) continue;
-
-      console.log('Chordonomicon hit found');
-      return {
-        rawChords: row.chords,
-        metadata: {
-          spotify_song_id: row.spotify_song_id,
-          spotify_artist_id: row.spotify_artist_id,
-          genres: row.genres,
-          release_date: row.release_date,
-          decade: row.decade
+  const schema = {
+    type: "object",
+    properties: {
+      key_tonic: { type: "string" },
+      key_mode: { type: "string", enum: ["major", "minor"] },
+      time_signature: { type: "string" },
+      sections: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+            repeat_count: { type: "number" },
+            arrangement_cue: { type: "string" },
+            measures: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  chords: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        chord: { type: "string" },
+                        beats: { type: "number" }
+                      },
+                      required: ["chord", "beats"]
+                    }
+                  },
+                  cue: { type: "string" }
+                },
+                required: ["chords"]
+              }
+            }
+          },
+          required: ["label", "measures"]
         }
-      };
-    } catch (e) {
-      continue;
-    }
+      }
+    },
+    required: ["key_tonic", "key_mode", "time_signature", "sections"]
+  };
+
+  const response = await base44.integrations.Core.InvokeLLM({
+    prompt,
+    add_context_from_internet: true,
+    response_json_schema: schema
+  });
+
+  if (!response?.sections?.length) {
+    throw new Error('LLM failed to generate reference chart');
   }
 
-  return null;
+  // Resolve key with TonalJS
+  const tonic = response.key_tonic || 'C';
+  const isMinor = response.key_mode === 'minor';
+  let key;
+  if (isMinor) {
+    const mk = Key.minorKey(tonic);
+    key = (mk.tonic || tonic) + 'm';
+  } else {
+    const mk = Key.majorKey(tonic);
+    key = mk.tonic || tonic;
+  }
+
+  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
 }
 
 // ─── Output Validation (refinement-specific, more lenient than generation) ────────
@@ -99,7 +119,6 @@ function validateChartOutput(sections) {
   }
 
   // For refinement, be more lenient: just require at least one section
-  // (user may be restructuring a song that doesn't fit traditional patterns)
   const labels = sections.map(s => s.label);
   if (labels.length === 0) {
     return { valid: false, reason: 'No sections generated' };
@@ -123,8 +142,6 @@ function validateChartOutput(sections) {
       }
     }
   }
-
-
 
   console.log(`Refinement validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
 
@@ -154,13 +171,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // Build refinement task — include chart context but structure output instructions clearly
+    // Step 1: Generate a fresh reference chart using the same AI pathway as generateChartAI
+    console.log('Generating fresh reference chart from AI');
+    let referenceChart;
+    try {
+      referenceChart = await generateRefreshChart(base44, title, artist);
+    } catch (e) {
+      console.warn('Reference chart generation failed:', e.message);
+      // Continue with refinement using current chart only
+      referenceChart = null;
+    }
+
+    // Step 2: Refine the chart with reference knowledge + user feedback
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
+    const referenceChartJSON = referenceChart ? JSON.stringify(referenceChart.sections, null, 2) : 'Unable to generate reference';
 
-    // Refinement prompt — clear input/output separation, no internet needed (already have the chart)
-    const prompt = `You are a professional chord chart editor. Refine this existing chart based on user feedback.
+    const refinementPrompt = `You are a professional chord chart editor. Refine the user's existing chart based on their feedback and a fresh AI-generated reference.
 
-CURRENT CHART TO REFINE:
+FRESH AI REFERENCE (from internet research):
+${referenceChartJSON}
+
+USER'S CURRENT CHART (to refine):
 ${currentChartJSON}
 
 METADATA:
@@ -169,14 +200,14 @@ Time Signature: ${time_signature}
 
 USER FEEDBACK: "${userFeedback}"
 
-TASK: Apply the user's requested changes to the chart structure. Return the COMPLETE refined chart.
+TASK: Apply the user's requested changes to align with the reference structure where appropriate. Return the COMPLETE refined chart.
 
 RULES:
 - Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-- Preserve chords and measures unless feedback explicitly requests changes
+- Compare reference structure with user's chart and user feedback to guide refinement
 - Return ONLY the JSON object below — no explanation, no markdown
 
-RESPONSE FORMAT (return this exact structure):
+RESPONSE FORMAT:
 {
   "key_tonic": "C",
   "key_mode": "major",
@@ -245,69 +276,6 @@ RESPONSE FORMAT (return this exact structure):
       required: ["key_tonic", "key_mode", "time_signature", "sections"]
     };
 
-    // Step 1: Look up actual song structure online
-    const songLookupPrompt = `What is the typical song structure for "${title}" by ${artist}? List the sections in order (e.g., Intro, Verse, Chorus, Bridge, Outro). Be concise.`;
-    
-    let actualSongStructure = '';
-    try {
-      const songLookup = await base44.integrations.Core.InvokeLLM({
-        prompt: songLookupPrompt,
-        add_context_from_internet: true
-      });
-      actualSongStructure = songLookup;
-    } catch (e) {
-      console.warn('Song lookup failed, proceeding without internet reference:', e.message);
-      actualSongStructure = 'Unable to lookup song structure';
-    }
-
-    // Step 2: Refine the chart with actual structure knowledge
-    const refinementPrompt = `You are a professional chord chart editor. Refine this existing chart based on user feedback and the actual song structure.
-
-ACTUAL SONG STRUCTURE (from research):
-${actualSongStructure}
-
-CURRENT CHART TO REFINE:
-${currentChartJSON}
-
-METADATA:
-Song Key: ${key}
-Time Signature: ${time_signature}
-
-USER FEEDBACK: "${userFeedback}"
-
-TASK: Apply the user's requested changes to align the chart with the actual song structure. Return the COMPLETE refined chart.
-
-RULES:
-- Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-- Preserve chords and measures unless feedback or song structure comparison requires changes
-- Return ONLY the JSON object below — no explanation, no markdown
-
-RESPONSE FORMAT (return this exact structure):
-{
-  "key_tonic": "C",
-  "key_mode": "major",
-  "time_signature": "4/4",
-  "sections": [
-    {
-      "label": "Verse",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "F", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Chorus",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
-      ]
-    }
-  ]
-}`;
-
     let response;
     try {
       response = await base44.integrations.Core.InvokeLLM({
@@ -317,12 +285,9 @@ RESPONSE FORMAT (return this exact structure):
       });
     } catch (llmError) {
       console.error('LLM refinement call failed:', llmError.message);
-      if (llmError.message && llmError.message.includes('LLM returned invalid JSON')) {
-        return Response.json({ 
-          error: 'LLM response parsing failed. Please try refining with different feedback or shorter requests.'
-        }, { status: 400 });
-      }
-      throw llmError;
+      return Response.json({ 
+        error: 'LLM response parsing failed. Please try refining with different feedback.'
+      }, { status: 400 });
     }
 
     if (!response?.sections?.length) {
