@@ -857,7 +857,8 @@ export default function Home() {
                             deleteChart.mutate(chart.id);
                           }
                         }}
-                        onShare={(chartToShare) => {
+                        onShare={(e, chartToShare) => {
+                          e.stopPropagation();
                           setShareDialogChart(chartToShare);
                           setShowShareDialog(true);
                         }}
