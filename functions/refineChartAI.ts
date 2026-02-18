@@ -10,6 +10,15 @@ function validateChartOutput(sections) {
     return { valid: false, reason: 'Too many sections (likely fragmented)' };
   }
 
+  // Check for completeness: must have Verse + Chorus at minimum
+  const labels = sections.map(s => s.label);
+  const hasVerse = labels.includes('Verse');
+  const hasChorus = labels.includes('Chorus');
+  
+  if (!hasVerse || !hasChorus) {
+    return { valid: false, reason: `Incomplete song structure. Found: ${labels.join(', ')}. Need at minimum: Verse + Chorus` };
+  }
+
   const uniqueChords = new Set();
   let totalMeasures = 0;
   let totalChords = 0;
@@ -27,6 +36,11 @@ function validateChartOutput(sections) {
         }
       }
     }
+  }
+
+  // Validate minimum measure count for completeness
+  if (totalMeasures < 16) {
+    return { valid: false, reason: `Song too short (${totalMeasures} measures). Complete songs typically have 20+ measures.` };
   }
 
   console.log(`Refinement validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
