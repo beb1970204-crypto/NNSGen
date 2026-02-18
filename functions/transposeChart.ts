@@ -28,8 +28,10 @@ Deno.serve(async (req) => {
 
     const originalKey = chart.key;
     
-    // Calculate the interval between keys
-    const interval = distance(originalKey, target_key);
+    // Use pitch classes to avoid octave-related distance issues
+    const fromPc = Note.get(originalKey.replace(/m$/, '')).pc || originalKey.replace(/m$/, '');
+    const toPc = Note.get(target_key.replace(/m$/, '')).pc || target_key.replace(/m$/, '');
+    const interval = distance(fromPc, toPc);
     
     if (!interval) {
       return Response.json({ 
@@ -44,7 +46,17 @@ Deno.serve(async (req) => {
         chords: measure.chords?.map(chordObj => {
           const chord = chordObj.chord;
           if (!chord || chord === '-') return chordObj;
-          
+
+          // Handle slash chords: transpose root and bass separately
+          const slashIdx = chord.indexOf('/');
+          if (slashIdx !== -1) {
+            const root = chord.slice(0, slashIdx);
+            const bassNote = chord.slice(slashIdx + 1);
+            const transposedRoot = transpose(root, interval) || root;
+            const transposedBass = transpose(bassNote, interval) || bassNote;
+            return { ...chordObj, chord: transposedRoot + '/' + transposedBass };
+          }
+
           const transposedChord = transpose(chord, interval);
           return {
             ...chordObj,
