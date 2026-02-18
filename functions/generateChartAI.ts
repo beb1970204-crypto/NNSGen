@@ -217,7 +217,7 @@ Example measure with two chords: {"chords": [{"chord": "Em", "beats": 2, "symbol
           items: {
             type: "object",
             properties: {
-              label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+              label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"], description: "Must be exactly one of the listed values" },
               measures: {
                 type: "array",
                 items: {
