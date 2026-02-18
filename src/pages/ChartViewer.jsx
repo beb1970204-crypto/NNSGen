@@ -312,12 +312,23 @@ export default function ChartViewer() {
   const handleExportPDF = async () => {
     setExportingPDF(true);
     try {
-      const response = await base44.functions.invoke('exportChartPDF', { chart_id: chartId });
+      let functionName = 'exportChartPDF';
+      let filename = `${chart.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+
+      if (chart.display_mode === 'roman') {
+        functionName = 'exportChartPDFRoman';
+        filename = `${chart.title.replace(/[^a-z0-9]/gi, '_')}_roman.pdf`;
+      } else if (chart.display_mode === 'nns') {
+        functionName = 'exportChartPDFNNS';
+        filename = `${chart.title.replace(/[^a-z0-9]/gi, '_')}_nns.pdf`;
+      }
+
+      const response = await base44.functions.invoke(functionName, { chart_id: chartId });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${chart.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
