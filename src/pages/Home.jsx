@@ -610,13 +610,32 @@ export default function Home() {
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] hover:scale-[1.02] transition-all cursor-pointer group shadow-lg hover:shadow-xl">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-bold text-white mb-2 truncate group-hover:text-red-500 transition-colors" title={chart.title}>
-                      {chart.title}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold text-white truncate group-hover:text-red-500 transition-colors" title={chart.title}>
+                        {chart.title}
+                      </h3>
+                      {currentView === 'shared' && (
+                        <span className="flex-shrink-0 px-2 py-1 rounded-full bg-red-600/20 text-red-400 text-xs font-semibold whitespace-nowrap">
+                          Shared with you
+                        </span>
+                      )}
+                      {currentView !== 'shared' && chart.shared_with_users?.length > 0 && (
+                        <span className="flex-shrink-0 px-2 py-1 rounded-full bg-purple-600/20 text-purple-400 text-xs font-semibold flex items-center gap-1 whitespace-nowrap">
+                          <Users className="w-3 h-3" />
+                          {chart.shared_with_users.length}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 text-sm">
                       <span className="text-[#a0a0a0]">Key: <span className="text-white font-semibold">{chart.key}</span></span>
                       <span className="text-[#4a4a4a]">•</span>
                       <span className="text-[#a0a0a0]">{chart.time_signature}</span>
+                      {currentView === 'shared' && chart.created_by && (
+                        <>
+                          <span className="text-[#4a4a4a]">•</span>
+                          <span className="text-[#a0a0a0]">by <span className="text-white font-semibold">{chart.created_by}</span></span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
