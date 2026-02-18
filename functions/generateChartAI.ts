@@ -102,7 +102,8 @@ async function fetchChordonomiconData(params) {
       release_date: rowData.release_date,
       decade: rowData.decade
     },
-    sections: parseChordProgressionToSections(rowData.chords)
+    // Store raw chords string — parse after time sig is resolved
+    rawChords: rowData.chords
   };
 }
 
