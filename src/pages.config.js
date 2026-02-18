@@ -47,7 +47,6 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import ChartCreator from './pages/ChartCreator';
 import ChartViewer from './pages/ChartViewer';
 import Home from './pages/Home';
 import SetlistViewer from './pages/SetlistViewer';
@@ -55,7 +54,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "ChartCreator": ChartCreator,
     "ChartViewer": ChartViewer,
     "Home": Home,
     "SetlistViewer": SetlistViewer,
