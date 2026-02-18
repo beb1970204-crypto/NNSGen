@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     // Build full current chart structure for LLM context
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Refinement prompt — same level of detail as generation with example structure
+    // Refinement prompt — explicit JSON-only instruction to prevent internet context from breaking output
     const prompt = `You are refining a chord chart. Here is the current chart:
 
 ${currentChartJSON}
@@ -79,9 +79,13 @@ Time Signature: ${time_signature}
 
 User's request: "${userFeedback}"
 
-Apply ONLY the changes the user requested. Return the complete refined chart.
+CRITICAL: Return ONLY valid JSON. No explanation, no markdown, no extra text.
 
-JSON STRUCTURE:
+Apply ONLY the changes the user requested. Return the complete refined chart with ALL sections, preserving unchanged sections.
+
+Valid section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+
+JSON STRUCTURE (strictly follow):
 {
   "key_tonic": "C",
   "key_mode": "major",
