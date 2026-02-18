@@ -196,60 +196,80 @@ Rules:
 - Each measure = one object in the measures array
 - All chord beats within one measure must sum to the time signature's top number
 - Use standard chord names: Bm, Em7, F#7, Gmaj7, etc.
-- key_tonic = root note only (e.g. "B", not "Bm")
-- Section labels must be exactly one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro — no numbering or suffixes
+- key_tonic = root note only (e.g. "G", not "Gm")
+- Section labels must be exactly one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 
-Example measure with one chord: {"chords": [{"chord": "Bm", "beats": 4, "symbols": []}], "cue": ""}
-Example measure with two chords: {"chords": [{"chord": "Em", "beats": 2, "symbols": []}, {"chord": "F#7", "beats": 2, "symbols": []}], "cue": ""}`;
+Example output:
+{
+  "key_tonic": "G",
+  "key_mode": "major",
+  "time_signature": "4/4",
+  "sections": [
+    {
+      "label": "Verse",
+      "repeat_count": 1,
+      "measures": [
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "C", "beats": 2}, {"chord": "D", "beats": 2}], "cue": ""}
+      ]
+    }
+  ]
+}`;
+
+  // Simplified schema — no nested symbols array which can cause JSON parse failures
+  const schema = {
+    type: "object",
+    properties: {
+      key_tonic: { type: "string" },
+      key_mode: { type: "string", enum: ["major", "minor"] },
+      time_signature: { type: "string" },
+      sections: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+            repeat_count: { type: "number" },
+            arrangement_cue: { type: "string" },
+            measures: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  chords: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        chord: { type: "string" },
+                        beats: { type: "number" }
+                      },
+                      required: ["chord", "beats"]
+                    }
+                  },
+                  cue: { type: "string" }
+                },
+                required: ["chords"]
+              }
+            }
+          },
+          required: ["label", "measures"]
+        }
+      }
+    },
+    required: ["key_tonic", "key_mode", "time_signature", "sections"]
+  };
 
   const response = await base44.integrations.Core.InvokeLLM({
     prompt,
     add_context_from_internet: true,
     file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-    response_json_schema: {
-      type: "object",
-      properties: {
-        key_tonic: { type: "string" },
-        key_mode: { type: "string", enum: ["major", "minor"] },
-        time_signature: { type: "string" },
-        sections: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"], description: "Must be exactly one of the listed values" },
-              measures: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    chords: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          chord: { type: "string" },
-                          beats: { type: "number" },
-                          symbols: { type: "array", items: { type: "string" } }
-                        },
-                        required: ["chord", "beats", "symbols"]
-                      }
-                    },
-                    cue: { type: "string" }
-                  },
-                  required: ["chords"]
-                }
-              },
-              repeat_count: { type: "number" },
-              arrangement_cue: { type: "string" }
-            },
-            required: ["label", "measures"]
-          }
-        }
-      },
-      required: ["key_tonic", "key_mode", "time_signature", "sections"]
-    }
+    response_json_schema: schema
   });
+
+  if (!response?.sections?.length) {
+    throw new Error('LLM returned no sections');
+  }
 
   // Resolve key with TonalJS
   const tonic = response.key_tonic || 'C';
