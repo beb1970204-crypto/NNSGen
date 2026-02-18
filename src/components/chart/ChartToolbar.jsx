@@ -13,7 +13,9 @@ export default function ChartToolbar({
   onZoomIn,
   onZoomOut,
   editMode = true,
-  onToggleEditMode
+  onToggleEditMode,
+  displayMode = 'chords',
+  onToggleDisplayMode
 }) {
   return (
     <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between transition-all">
