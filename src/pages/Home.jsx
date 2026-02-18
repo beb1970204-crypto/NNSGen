@@ -783,12 +783,13 @@ export default function Home() {
           {filteredAndSortedCharts.map((chart) => {
             const isSelected = selectedChartIds.has(chart.id);
             const cardContent = (
-              <div key={chart.id} className={`bg-[#1a1a1a] border rounded-xl p-6 hover:bg-[#252525] hover:scale-[1.02] transition-all group shadow-lg hover:shadow-xl ${
+              <div key={chart.id} 
+                className={`bg-[#1a1a1a] border rounded-xl p-6 hover:bg-[#252525] hover:scale-[1.02] transition-all group shadow-lg hover:shadow-xl ${
                 isSelected 
-                  ? 'bg-[#2a2a2a]' 
+                   ? 'bg-[#2a2a2a]' 
                     : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
-                  style={isSelected ? { borderColor: '#D0021B' } : {}}
               } ${multiSelectMode ? 'cursor-pointer' : ''}`}
+                style={isSelected ? { borderColor: '#D0021B' } : {}}
                 onClick={() => {
                   if (multiSelectMode) {
                     const newSelected = new Set(selectedChartIds);
