@@ -120,24 +120,21 @@ function normalizeKey(rawKey) {
   return k;
 }
 
-// Helper: Detect only key + time signature for a known song via LLM
-// Then validate/normalize using TonalJS Key.majorKey / Key.minorKey
-async function detectKeyAndTimeSig(base44, title, artist) {
+// Helper: Detect key + time signature for a known song via LLM
+// Optionally pass a sample of chords from Chordonomicon for grounding
+async function detectKeyAndTimeSig(base44, title, artist, chordSample) {
+  const chordContext = chordSample
+    ? `\n\nHere is a sample of the actual chords from this recording: ${chordSample}\nUse these chords to confirm the key.`
+    : '';
+
   const response = await base44.integrations.Core.InvokeLLM({
-    prompt: `What is the original musical key and time signature of "${title}" by ${artist || 'Unknown'}?
+    prompt: `What is the musical key and time signature of "${title}" by ${artist || 'Unknown'}?${chordContext}
 
-Rules:
-- Return the tonic note letter (A-G, with # or b accidental if needed)
-- Return "major" or "minor" as separate field
-- Return time signature (e.g. 4/4, 3/4, 6/8)
-
-Examples: { "tonic": "B", "mode": "minor", "time_signature": "4/4" }
-         { "tonic": "G", "mode": "major", "time_signature": "4/4" }
-         { "tonic": "F#", "mode": "minor", "time_signature": "4/4" }`,
+Return the tonic note (e.g. B, F#, Bb) and whether it is major or minor as separate fields.`,
     response_json_schema: {
       type: "object",
       properties: {
-        tonic: { type: "string", description: "Root note, e.g. B, F#, Bb" },
+        tonic: { type: "string", description: "Root note only, e.g. B, F#, Bb" },
         mode: { type: "string", enum: ["major", "minor"] },
         time_signature: { type: "string" }
       },
@@ -148,18 +145,15 @@ Examples: { "tonic": "B", "mode": "minor", "time_signature": "4/4" }
   const tonic = response.tonic || 'C';
   const mode = (response.mode || 'major').toLowerCase();
 
-  // Use TonalJS to validate the key exists
   let validatedKey;
   if (mode === 'minor') {
-    const minorKey = Key.minorKey(tonic);
-    // minorKey.tonic will be null if invalid; fall back to raw tonic + 'm'
-    validatedKey = minorKey.tonic ? (minorKey.tonic + 'm') : (tonic + 'm');
+    const mk = Key.minorKey(tonic);
+    validatedKey = mk.tonic ? (mk.tonic + 'm') : (tonic + 'm');
   } else {
-    const majorKey = Key.majorKey(tonic);
-    validatedKey = majorKey.tonic || tonic;
+    const mk = Key.majorKey(tonic);
+    validatedKey = mk.tonic || tonic;
   }
 
-  // Final normalizeKey pass to ensure correct casing/format
   return {
     key: normalizeKey(validatedKey),
     time_signature: response.time_signature || '4/4'
