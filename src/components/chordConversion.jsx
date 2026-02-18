@@ -2,7 +2,7 @@
 // The database ALWAYS stores standard chord names (e.g. "C", "Am7", "F/G").
 // These utilities convert for display only — they never mutate stored data.
 
-import { Chord, distance, transpose } from "tonal";
+import { Chord, distance, Note } from "tonal";
 
 // ─── Roman Numeral Conversion ─────────────────────────────────────────────────
 
