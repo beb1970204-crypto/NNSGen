@@ -27,7 +27,14 @@ export default function RefineFeedbackModal({ onSubmit, onCancel, isLoading }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-[#1a1a1a]/80 backdrop-blur-xs rounded-lg flex flex-col items-center justify-center z-10">
+              <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-3" />
+              <p className="text-sm text-[#a0a0a0] font-medium">Refining your chart...</p>
+            </div>
+          )}
+
           <p className="text-sm text-[#a0a0a0]">
             Describe how you'd like to refine the chart. For example: "Add more measures to the Verse", "Change the Bridge chord progression", "Shorten the Intro"
           </p>
