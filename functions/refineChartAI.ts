@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     // Build full current chart structure for LLM context
     const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    // Refinement prompt — clear context for restructuring without over-specification
+    // Refinement prompt — same level of detail as generation with example structure
     const prompt = `You are refining a chord chart. Here is the current chart:
 
 ${currentChartJSON}
@@ -77,11 +77,35 @@ ${currentChartJSON}
 Key: ${key}
 Time Signature: ${time_signature}
 
-Available section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-
 User's request: "${userFeedback}"
 
-Apply the user's requested changes. If they ask to restructure (separate into sections, reorganize, etc.), analyze the chord patterns and intelligently assign measures to appropriate section labels. Return the complete refined chart.`;
+Apply ONLY the changes the user requested. Return the complete refined chart.
+
+JSON STRUCTURE:
+{
+  "key_tonic": "C",
+  "key_mode": "major",
+  "time_signature": "4/4",
+  "sections": [
+    {
+      "label": "Verse",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "F", "beats": 4}], "cue": ""}
+      ]
+    },
+    {
+      "label": "Chorus",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+      ]
+    }
+  ]
+}`;
 
     const schema = {
       type: "object",
