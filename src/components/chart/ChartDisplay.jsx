@@ -153,7 +153,7 @@ export default function ChartDisplay({
       >
         {chordContent}
         {measure.cue && (
-          <div className="text-xs mt-2 pt-1 border-t border-[#2a2a2a] text-[#a0a0a0] italic">{measure.cue}</div>
+          <div className="text-xs mt-1 pt-0.5 border-t border-[#2a2a2a] text-[#a0a0a0] italic text-[10px]">{measure.cue}</div>
         )}
       </div>
     );
