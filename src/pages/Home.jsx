@@ -9,6 +9,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import ChartCardMenu from "@/components/chart/ChartCardMenu";
 import SetlistDialog from "@/components/setlist/SetlistDialog";
+import AddChartsToSetlistDialog from "@/components/setlist/AddChartsToSetlistDialog";
 import ChartCardSkeleton from "@/components/ChartCardSkeleton";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import BulkShareDialog from "@/components/chart/BulkShareDialog";
@@ -41,6 +42,7 @@ export default function Home() {
   const [selectedChartIds, setSelectedChartIds] = useState(new Set());
   const [shareDialogChart, setShareDialogChart] = useState(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showAddToSetlistDialog, setShowAddToSetlistDialog] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['current-user'],
@@ -181,9 +183,9 @@ export default function Home() {
   });
 
   const bulkAddToSetlist = useMutation({
-    mutationFn: async ({ chartIds, setlistId }) => {
+    mutationFn: async (setlistId) => {
       const setlist = await base44.entities.Setlist.get(setlistId);
-      const updatedChartIds = [...(setlist.chart_ids || []), ...chartIds];
+      const updatedChartIds = [...(setlist.chart_ids || []), ...Array.from(selectedChartIds)];
       await base44.entities.Setlist.update(setlistId, { chart_ids: updatedChartIds });
       return { setlistId };
     },
@@ -192,9 +194,30 @@ export default function Home() {
       toast.success('Charts added to setlist');
       setSelectedChartIds(new Set());
       setMultiSelectMode(false);
+      setShowAddToSetlistDialog(false);
     },
     onError: () => {
       toast.error('Failed to add charts to setlist');
+    }
+  });
+
+  const createAndAddToSetlist = useMutation({
+    mutationFn: async (data) => {
+      const newSetlist = await base44.entities.Setlist.create({
+        ...data,
+        chart_ids: Array.from(selectedChartIds)
+      });
+      return newSetlist;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+      toast.success('Setlist created and charts added');
+      setSelectedChartIds(new Set());
+      setMultiSelectMode(false);
+      setShowAddToSetlistDialog(false);
+    },
+    onError: () => {
+      toast.error('Failed to create setlist');
     }
   });
 
@@ -399,7 +422,7 @@ export default function Home() {
             </Button>
             <Button 
               variant="outline"
-              onClick={() => setShowSetlistDialog(true)}
+              onClick={() => setShowAddToSetlistDialog(true)}
               className="gap-2"
             >
               <List className="w-4 h-4" />
@@ -894,26 +917,19 @@ export default function Home() {
         </>
       )}
 
-      {/* Setlist Dialog */}
-      <SetlistDialog
-        open={showSetlistDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowSetlistDialog(false);
-            return;
-          }
-          setShowSetlistDialog(open);
-        }}
-        onSave={(data) => {
-          if (multiSelectMode && selectedChartIds.size > 0) {
-            // Add selected charts to new setlist
-            bulkAddToSetlist.mutate({
-              chartIds: Array.from(selectedChartIds),
-              setlistId: data.id
-            });
-          } else {
-            createSetlist.mutate(data);
-          }
+      {/* Add to Setlist Dialog */}
+      <AddChartsToSetlistDialog
+        open={showAddToSetlistDialog}
+        onOpenChange={setShowAddToSetlistDialog}
+        setlists={setlists}
+        isLoading={bulkAddToSetlist.isPending || createAndAddToSetlist.isPending}
+        onAddToSetlist={(setlistId) => bulkAddToSetlist.mutate(setlistId)}
+        onCreateSetlist={(data, callback) => {
+          createAndAddToSetlist.mutate(data, {
+            onSuccess: (newSetlist) => {
+              callback(newSetlist.id);
+            }
+          });
         }}
       />
 
