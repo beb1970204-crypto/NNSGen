@@ -124,7 +124,9 @@ function normalizeKey(rawKey) {
 async function detectKeyAndTimeSig(base44, title, artist) {
   const response = await base44.integrations.Core.InvokeLLM({
     prompt: `What is the original musical key and time signature of "${title}" by ${artist || 'Unknown'}?
-Return ONLY the short key name (e.g. Bm, G, F#m, Bb — no "major"/"minor" words) and time signature (e.g. 4/4, 3/4).`,
+
+CRITICAL: If the song is in a MINOR key, you MUST append lowercase "m" to the root (e.g. "Bm" not "B", "Am" not "A", "F#m" not "F#").
+Return ONLY the short key name and time signature. Examples: Bm, G, F#m, Bb, Em, C, Am.`,
     response_json_schema: {
       type: "object",
       properties: {
