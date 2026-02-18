@@ -160,10 +160,16 @@ export default function ShareDialog({ open, onOpenChange, currentSharedUsers = [
                 <Button
                   size="icon"
                   onClick={handleCopyLink}
-                  disabled={!shareToken || isLoading}
+                  disabled={!shareToken || isLoading || generatingToken}
                   variant="outline"
                 >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {generatingToken ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : copied ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-[#6b6b6b] mt-2">Share this link with logged-in users to grant access</p>
