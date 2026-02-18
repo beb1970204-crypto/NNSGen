@@ -66,28 +66,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // Preserve the original chart structure — refinement should enhance, not truncate
-    const originalJSON = JSON.stringify(currentSections, null, 2);
-    
-    // Generate a reference ONLY for guidance on structure/arrangement cues, but prioritize original completeness
-    console.log('Generating reference chart for structural guidance');
-    let referenceChart;
-    try {
-      referenceChart = await generateRefreshChart(base44, title, artist);
-    } catch (e) {
-      console.warn('Reference chart generation failed:', e.message);
-      referenceChart = null;
-    }
+    const currentChartJSON = JSON.stringify(currentSections, null, 2);
 
-    const referenceChartJSON = referenceChart ? JSON.stringify(referenceChart.sections, null, 2) : 'No reference available';
+    const refinementPrompt = `You are a professional chord chart editor. Your task: review the user's current chart and their feedback, then refine the chart to address their concern while preserving ALL content.
 
-    const refinementPrompt = `You are a professional chord chart editor. Refine the user's existing chart based on their feedback.
-
-USER'S CURRENT CHART (preserve ALL sections and measures):
-${originalJSON}
-
-STRUCTURAL REFERENCE (optional guidance only, do NOT truncate original):
-${referenceChartJSON}
+CURRENT CHART (preserve every measure and section):
+${currentChartJSON}
 
 METADATA:
 Song Key: ${key}
@@ -95,17 +79,16 @@ Time Signature: ${time_signature}
 
 USER FEEDBACK: "${userFeedback}"
 
-CRITICAL TASK:
-1. PRESERVE the complete structure of the user's current chart — all sections and measures MUST be retained
-2. Apply user feedback changes while maintaining completeness
-3. Enhance arrangement_cue and structure labels based on feedback
-4. DO NOT truncate or remove sections — this is the most important rule
-5. Return the COMPLETE refined chart with all original sections intact
+TASK:
+1. Keep ALL sections and measures from the current chart — nothing should be removed
+2. Reorganize, relabel, or enhance based on the user's feedback
+3. Improve arrangement cues and section structure to address their stated problem
+4. Ensure the refined chart directly solves what the user complained about
 
 RULES:
 - Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-- ALL measures from the original chart MUST appear in the output
-- Return ONLY the JSON object below — no explanation, no markdown
+- Every measure from the original chart MUST appear in the output
+- Return ONLY the JSON object — no explanation
 
 RESPONSE FORMAT:
 {
