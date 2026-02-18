@@ -350,11 +350,11 @@ Replace C, F, G with actual chords. Keep 3 sections minimum.`;
     return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
   } catch (error) {
     console.error('LLM generation error:', error.message);
-    if (retryCount === 0) {
-      console.log('Retrying with more relaxed prompt...');
-      return generateWithLLM(base44, title, artist, reference_file_url, 1);
+    if (retryCount < 2) {
+      console.log(`Retry attempt ${retryCount + 1}...`);
+      return generateWithLLM(base44, title, artist, reference_file_url, retryCount + 1);
     }
-    throw new Error(`LLM generation failed: ${error.message}`);
+    throw new Error(`LLM generation failed after 3 attempts: ${error.message}`);
   }
 }
 
