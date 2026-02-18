@@ -278,14 +278,15 @@ ${exampleSection}`;
 }
 
 // Helper: Parse Chordonomicon chord string into sections
-function parseChordProgressionToSections(chordsString) {
+// beatsPerBar must be passed in so each chord token gets the correct beat count
+function parseChordProgressionToSections(chordsString, beatsPerBar = 4) {
   const sections = [];
   const sectionPattern = /<([a-zA-Z]+)(?:_(\d+))?>/g;
 
   const firstTagMatch = sectionPattern.exec(chordsString);
   if (firstTagMatch && firstTagMatch.index > 0) {
     const introChords = chordsString.substring(0, firstTagMatch.index).trim();
-    if (introChords) sections.push(createSection('Intro', introChords));
+    if (introChords) sections.push(createSection('Intro', introChords, beatsPerBar));
   }
 
   sectionPattern.lastIndex = 0;
@@ -295,12 +296,12 @@ function parseChordProgressionToSections(chordsString) {
     const type = parts[i];
     const content = parts[i + 2];
     if (content && content.trim()) {
-      sections.push(createSection(mapLabel(type), content, /* beatsPerBar resolved later */ 4));
+      sections.push(createSection(mapLabel(type), content, beatsPerBar));
     }
   }
 
   if (sections.length === 0 && chordsString.trim()) {
-    sections.push(createSection('Verse', chordsString));
+    sections.push(createSection('Verse', chordsString, beatsPerBar));
   }
 
   return sections;
