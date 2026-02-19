@@ -60,17 +60,12 @@
 @layer base {
   * {
     @apply border-border;
+    /* Override Tailwind's default mono stack for all elements */
+    font-family: 'Inter', system-ui, sans-serif;
   }
   body {
     @apply bg-[#0a0a0a] text-white;
     font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  /* Musical data elements — always monospace */
-  .font-mono,
-  .chart-chord,
-  .chart-grid {
-    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
   }
 }
 
