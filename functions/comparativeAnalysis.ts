@@ -6,21 +6,24 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { chartData, sectionData, genre } = await req.json();
-    if (!chartData || !sectionData) {
-      return Response.json({ error: 'Chart and section data required' }, { status: 400 });
+    const { chartData, genre } = await req.json();
+    if (!chartData) {
+      return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
 
-    const chords = sectionData.measures?.map(m => m.chords?.[0]?.chord).join('-') || '';
+    const allChords = chartData.sections?.flatMap(sectionId => {
+      const section = chartData._sections?.find(s => s.id === sectionId);
+      return section?.measures?.flatMap(m => m.chords?.map(c => c.chord)) || [];
+    }).join(' ') || '';
 
     const prompt = `You are a music analyst comparing chord progressions across famous songs.
 
-Progression to analyze: ${chords}
+Song to analyze: "${chartData.title}" by ${chartData.artist}
+Full Progression: ${allChords}
 Key: ${chartData.key}
-Genre: ${genre || 'various'}
-Section Type: ${sectionData.label}
+Genres: ${genre || chartData.genres || 'various'}
 
-Find 3-4 famous songs that use similar harmonic ideas or progressions. Explain how they approach it similarly or differently.
+Find 4-6 famous songs with similar harmonic structures, progressions, or song forms. Explain how they approach it and what you can learn.
 
 Return ONLY valid JSON:
 {
