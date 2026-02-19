@@ -70,14 +70,19 @@ export default function ChartViewer() {
     }
   });
 
+  // Keep displayMode in sync with chart data
+  useEffect(() => {
+    if (chart?.display_mode) {
+      setDisplayMode(chart.display_mode);
+    }
+  }, [chart?.display_mode]);
+
   const toggleDisplayMode = (mode) => {
     setDisplayMode(mode);
     base44.entities.Chart.update(chartId, { display_mode: mode }).catch(() => {
       toast.error('Failed to save notation mode');
     });
   };
-
-  const [displayMode, setDisplayMode] = useState(chart?.display_mode || 'chords');
 
   const transposeChart = useMutation({
     mutationFn: async (newKey) => {
