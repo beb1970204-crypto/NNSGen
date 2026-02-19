@@ -827,7 +827,7 @@ export default function Home() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-bold text-white truncate transition-colors" title={chart.title} style={{ color: 'inherit' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'} onMouseLeave={(e) => e.currentTarget.style.color = 'white'}>
+                        <h3 className="text-base font-bold text-white truncate transition-colors" title={chart.title} style={{ color: 'inherit' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'} onMouseLeave={(e) => e.currentTarget.style.color = 'white'}>
                           {chart.title}
                         </h3>
                       {currentView === 'shared' && (
