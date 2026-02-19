@@ -725,34 +725,6 @@ export default function MusicTheoryTabs({
 
   if (!isOpen) return null;
 
-  // For sidebar mode, always show content as sidebar
-  if (isSidebar) {
-    return (
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Music className="w-4 h-4 text-[#D0021B]" />
-            <h2 className="text-sm font-bold text-white">Theory</h2>
-          </div>
-          <button onClick={onClose} className="text-[#6b6b6b] hover:text-white p-1" title="Close">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Sidebar Navigation and Content */}
-        <div className="flex flex-1 overflow-hidden">
-          <div className="w-40 bg-[#0a0a0a] border-r border-[#2a2a2a] overflow-y-auto flex-shrink-0">
-            <SidebarNavigation />
-          </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            {renderFeatureContent()}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const SidebarNavigation = () => (
     <div className="p-3 space-y-3">
       {Object.entries(FEATURE_GROUPS).map(([groupId, group]) => (
@@ -790,6 +762,34 @@ export default function MusicTheoryTabs({
       ))}
     </div>
   );
+
+  // For sidebar mode, always show content as sidebar
+  if (isSidebar) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Music className="w-4 h-4 text-[#D0021B]" />
+            <h2 className="text-sm font-bold text-white">Theory</h2>
+          </div>
+          <button onClick={onClose} className="text-[#6b6b6b] hover:text-white p-1" title="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Sidebar Navigation and Content */}
+        <div className="flex flex-1 overflow-hidden">
+          <div className="w-40 bg-[#0a0a0a] border-r border-[#2a2a2a] overflow-y-auto flex-shrink-0">
+            <SidebarNavigation />
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            {renderFeatureContent()}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const panelContent = (
     <div className={`flex flex-col h-full ${isSidebar ? 'bg-[#141414]' : 'bg-[#0a0a0a] rounded-lg border border-[#2a2a2a]'} overflow-hidden`}>
