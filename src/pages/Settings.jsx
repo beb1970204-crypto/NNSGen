@@ -39,10 +39,6 @@ export default function Settings() {
     }
   });
 
-  const handleSaveSettings = () => {
-    updateSettings.mutate({ defaultKey });
-  };
-
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
