@@ -80,8 +80,8 @@ export default function Layout({ children, currentPageName }) {
             />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "'JetBrains Mono', monospace" }}>ChartScribe</span>
-            <span className="text-lg font-bold tracking-tight text-[#D0021B]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>AI</span>
+            <span className="text-lg font-bold tracking-tight text-white font-mono">ChartScribe</span>
+            <span className="text-lg font-bold tracking-tight text-[#D0021B] font-mono">AI</span>
           </div>
         </div>
       </div>
