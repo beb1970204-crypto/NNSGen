@@ -9,7 +9,7 @@ import ChartDisplay from "@/components/chart/ChartDisplay";
 import SongSettingsSidebar from "@/components/chart/SongSettingsSidebar";
 import MeasurePropertiesSidebar from "@/components/chart/MeasurePropertiesSidebar";
 import ChartToolbar from "@/components/chart/ChartToolbar";
-import MusicTheoryPanel from "@/components/chart/MusicTheoryPanel";
+import MusicTheoryTabs from "@/components/chart/MusicTheoryTabs";
 import ShareDialog from "@/components/chart/ShareDialog";
 import { toast } from "sonner";
 
@@ -648,12 +648,13 @@ export default function ChartViewer() {
       />
 
       {/* Music Theory Panel */}
-      <MusicTheoryPanel
+      <MusicTheoryTabs
         isOpen={musicTheoryOpen}
         onClose={() => setMusicTheoryOpen(false)}
         chartData={chart}
         sectionData={selectedSection}
         selectedMeasure={selectedMeasure}
+        selectedMeasureIndex={selectedMeasureIndex}
       />
     </div>
   );
