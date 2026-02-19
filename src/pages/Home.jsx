@@ -378,13 +378,13 @@ export default function Home() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2 font-sans">
             {currentView === 'favorites' ? 'Favorites' : 
              currentView === 'recent' ? 'Recent' :
              currentView === 'setlists' ? 'Setlists' :
              currentView === 'shared' ? 'Shared with me' : 'My Charts'}
           </h1>
-          <p className="text-sm text-[#a0a0a0]">
+          <p className="text-sm text-[#a0a0a0] font-sans">
             {filteredAndSortedCharts.length} of {charts.length} {charts.length === 1 ? 'chart' : 'charts'}
           </p>
         </div>
@@ -692,43 +692,43 @@ export default function Home() {
       <div className="grid grid-cols-4 gap-6 mb-10">
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Total Charts</span>
+            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors font-sans">Total Charts</span>
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
               <Music className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.total}</div>
-          <div className="text-xs text-green-500 font-medium">+{statsData.recent} this week</div>
+          <div className="text-xs text-green-500 font-medium font-sans">+{statsData.recent} this week</div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Favorites</span>
+            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors font-sans">Favorites</span>
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
               <Star className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.favorites}</div>
-          <div className="text-xs text-[#6b6b6b]">Starred charts</div>
+          <div className="text-xs text-[#6b6b6b] font-sans">Starred charts</div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Setlists</span>
+            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors font-sans">Setlists</span>
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
               <List className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.setlists}</div>
-          <div className="text-xs text-[#6b6b6b]">Total setlists</div>
+          <div className="text-xs text-[#6b6b6b] font-sans">Total setlists</div>
         </div>
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:bg-[#252525] hover:border-[#3a3a3a] transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors">Shared</span>
+            <span className="text-sm font-medium text-[#a0a0a0] group-hover:text-white transition-colors font-sans">Shared</span>
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(208, 2, 27, 0.15)' }}>
               <Share2 className="w-5 h-5" style={{ color: '#D0021B' }} />
             </div>
           </div>
           <div className="text-3xl font-bold text-white mb-1">{statsData.recent}</div>
-          <div className="text-xs text-[#6b6b6b]">Edited this week</div>
+          <div className="text-xs text-[#6b6b6b] font-sans">Edited this week</div>
         </div>
       </div>
 
