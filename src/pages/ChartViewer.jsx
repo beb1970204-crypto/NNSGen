@@ -384,7 +384,7 @@ export default function ChartViewer() {
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
       {/* Top Bar */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 flex items-center shadow-lg">
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 flex items-center shadow-lg relative">
         {/* Logo — left aligned */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
