@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Send, Loader2, BookOpen, Lightbulb, Music, Ear, Download, Zap, TrendingUp, Users, Maximize2, Minimize2, ChevronDown } from 'lucide-react';
+import { X, Send, Loader2, BookOpen, Lightbulb, Music, Ear, Download, Zap, TrendingUp, Users, Maximize2, Minimize2, ChevronDown, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
 import FeatureEmptyState from './FeatureEmptyState';
 import ResultCard from './ResultCard';
 
@@ -79,6 +80,8 @@ export default function MusicTheoryTabs({
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [practiceData, setPracticeData] = useState(null);
   const [practiceLoading, setPracticeLoading] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const messagesEndRef = useRef(null);
 
@@ -134,17 +137,23 @@ export default function MusicTheoryTabs({
   const loadSuggestions = async () => {
     if (!selectedMeasure || selectedMeasureIndex === null) return;
     setSuggestLoading(true);
+    setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('chordSuggestions', {
         chartData,
         sectionData,
         measureIndex: selectedMeasureIndex
       });
-      if (response.data?.success) {
-        setSuggestData(response.data.suggestions);
+      if (response.data?.success && response.data?.substitutions) {
+        setSuggestData(response.data.substitutions);
+      } else {
+        setErrorMessage('Failed to load chord suggestions');
+        toast.error('Failed to load chord suggestions');
       }
     } catch (error) {
       console.error('Suggestions error:', error);
+      setErrorMessage(error.message || 'Failed to load suggestions');
+      toast.error('Failed to load suggestions');
     } finally {
       setSuggestLoading(false);
     }
@@ -153,6 +162,7 @@ export default function MusicTheoryTabs({
   const loadVoicing = async () => {
     if (!selectedMeasure) return;
     setVoicingLoading(true);
+    setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('voicingTips', {
         chartData,
@@ -160,11 +170,16 @@ export default function MusicTheoryTabs({
         instrument: 'guitar',
         context: sectionData?.label
       });
-      if (response.data?.success) {
-        setVoicingData(response.data.voicing);
+      if (response.data?.success && response.data?.voicings) {
+        setVoicingData(response.data.voicings);
+      } else {
+        setErrorMessage('Failed to load voicing suggestions');
+        toast.error('Failed to load voicing suggestions');
       }
     } catch (error) {
       console.error('Voicing error:', error);
+      setErrorMessage(error.message || 'Failed to load voicings');
+      toast.error('Failed to load voicings');
     } finally {
       setVoicingLoading(false);
     }
@@ -173,16 +188,27 @@ export default function MusicTheoryTabs({
   const loadEarTraining = async () => {
     if (!sectionData) return;
     setEarTrainingLoading(true);
+    setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('earTrainingGuide', {
         chartData,
         sectionData
       });
       if (response.data?.success) {
-        setEarTrainingData(response.data.guide);
+        const guide = response.data.guide;
+        if (typeof guide === 'object') {
+          setEarTrainingData(JSON.stringify(guide, null, 2));
+        } else {
+          setEarTrainingData(guide);
+        }
+      } else {
+        setErrorMessage('Failed to load ear training guide');
+        toast.error('Failed to load ear training guide');
       }
     } catch (error) {
       console.error('Ear training error:', error);
+      setErrorMessage(error.message || 'Failed to load ear training');
+      toast.error('Failed to load ear training');
     } finally {
       setEarTrainingLoading(false);
     }
@@ -319,16 +345,60 @@ export default function MusicTheoryTabs({
                 onAction={loadQuiz}
               />
             ) : (
-              <div className="space-y-3 overflow-y-auto">
+              <div className="space-y-3 overflow-y-auto pb-4">
                 {quizData.map((q, idx) => (
-                  <ResultCard
-                    key={idx}
-                    title={`Question ${idx + 1}`}
-                    content={q.question}
-                    details={q.options?.map((opt, i) => `${String.fromCharCode(65 + i)}) ${opt}`)}
-                    badge={idx === 0 ? 'Easiest' : idx === quizData.length - 1 ? 'Hardest' : undefined}
-                  />
+                  <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold text-[#6b6b6b] uppercase">Q{idx + 1}</span>
+                        <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                          q.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
+                          q.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}>
+                          {q.difficulty}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white font-medium">{q.question}</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {q.hints?.map((hint, hIdx) => (
+                        <div key={hIdx} className="text-xs text-[#a0a0a0] bg-[#0a0a0a] p-2 rounded border-l-2 border-[#D0021B]">
+                          💡 {hint}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-2">
+                      {['A', 'B', 'C', 'D'].map((letter, optIdx) => (
+                        <button
+                          key={letter}
+                          onClick={() => setQuizAnswers(prev => ({ ...prev, [idx]: letter }))}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
+                            quizAnswers[idx] === letter
+                              ? 'bg-[#D0021B] text-white font-medium'
+                              : 'bg-[#252525] text-[#a0a0a0] hover:bg-[#2a2a2a]'
+                          }`}
+                        >
+                          <span className="font-bold">{letter})</span> {q.options?.[optIdx] || `Option ${letter}`}
+                        </button>
+                      ))}
+                    </div>
+
+                    {quizAnswers[idx] && (
+                      <div className="bg-green-500/20 border border-green-500/50 rounded p-3 text-xs text-green-400">
+                        <p className="font-semibold mb-1">Your Answer: {quizAnswers[idx]}</p>
+                        <p className="text-green-300">{q.answer}</p>
+                        <p className="text-green-300/80 mt-2 italic">💡 {q.teachingPoint}</p>
+                      </div>
+                    )}
+                  </div>
                 ))}
+                
+                <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-xs text-[#a0a0a0]">
+                  <span className="font-semibold text-white">{Object.keys(quizAnswers).length}/{quizData.length}</span> answered
+                </div>
               </div>
             )}
           </div>
@@ -337,6 +407,12 @@ export default function MusicTheoryTabs({
       case 'suggest':
         return (
           <div className="flex flex-col gap-4 h-full">
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500/50 rounded p-3 flex gap-2 items-start">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 mt-0.5" />
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              </div>
+            )}
             {!suggestData ? (
               <FeatureEmptyState
                 icon={Lightbulb}
@@ -354,12 +430,12 @@ export default function MusicTheoryTabs({
                 {suggestData.map((s, idx) => (
                   <ResultCard
                     key={idx}
-                    title={s.chord}
-                    subtitle={`Score: ${s.similarity || 95}%`}
-                    content={s.chord}
-                    copyText={s.chord}
-                    details={s.reason}
-                    badge={idx === 0 ? 'Best match' : undefined}
+                    title={s.suggested || s.chord}
+                    subtitle={`Type: ${s.type || 'Substitution'}`}
+                    content={s.suggested || s.chord}
+                    copyText={s.suggested || s.chord}
+                    details={[s.reasoning, s.musicEffect].filter(Boolean)}
+                    badge={idx === 0 ? 'Recommended' : undefined}
                     color="text-[#D0021B] font-bold"
                   />
                 ))}
@@ -371,6 +447,12 @@ export default function MusicTheoryTabs({
       case 'voice':
         return (
           <div className="flex flex-col gap-4 h-full">
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500/50 rounded p-3 flex gap-2 items-start">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 mt-0.5" />
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              </div>
+            )}
             {!voicingData ? (
               <FeatureEmptyState
                 icon={Music}
@@ -385,14 +467,28 @@ export default function MusicTheoryTabs({
               />
             ) : (
               <div className="space-y-3 overflow-y-auto">
-                <ResultCard
-                  title={voicingData.name || 'Suggested Voicing'}
-                  content={voicingData.voicing}
-                  copyText={voicingData.voicing}
-                  details={[voicingData.tips, `Context: ${voicingData.context || 'Jazz/contemporary'}`]}
-                  badge="Guitar"
-                  color="text-[#D0021B] font-mono text-lg font-bold"
-                />
+                {Array.isArray(voicingData) ? (
+                  voicingData.map((v, idx) => (
+                    <ResultCard
+                      key={idx}
+                      title={v.name}
+                      content={v.notes}
+                      copyText={v.notes}
+                      details={[v.description, `Technique: ${v.technique}`, `When: ${v.context}`]}
+                      badge={v.difficulty}
+                      color="text-[#D0021B] font-mono text-lg font-bold"
+                    />
+                  ))
+                ) : (
+                  <ResultCard
+                    title={voicingData.name || 'Suggested Voicing'}
+                    content={voicingData.notes || voicingData.voicing}
+                    copyText={voicingData.notes || voicingData.voicing}
+                    details={[voicingData.description || voicingData.tips, `Context: ${voicingData.context || 'Jazz/contemporary'}`]}
+                    badge="Guitar"
+                    color="text-[#D0021B] font-mono text-lg font-bold"
+                  />
+                )}
               </div>
             )}
           </div>
@@ -401,6 +497,12 @@ export default function MusicTheoryTabs({
       case 'ear':
         return (
           <div className="flex flex-col gap-4 h-full">
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500/50 rounded p-3 flex gap-2 items-start">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 mt-0.5" />
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              </div>
+            )}
             {!earTrainingData ? (
               <FeatureEmptyState
                 icon={Ear}
@@ -415,7 +517,7 @@ export default function MusicTheoryTabs({
               />
             ) : (
               <div className="text-sm text-[#a0a0a0] overflow-y-auto space-y-3">
-                <ReactMarkdown className="prose prose-sm prose-invert max-w-none">
+                <ReactMarkdown className="prose prose-sm prose-invert max-w-none [&>*]:mb-3 [&>h2]:text-base [&>h2]:font-bold [&>h2]:text-white [&>ul]:list-disc [&>ul]:ml-4">
                   {earTrainingData}
                 </ReactMarkdown>
               </div>
