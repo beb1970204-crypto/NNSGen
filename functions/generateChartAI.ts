@@ -292,47 +292,42 @@ JSON STRUCTURE:
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  // Try with internet context first; fall back to without if the search model returns invalid JSON
-  let response = null;
-  let lastError = null;
-  for (const useInternet of [true, false]) {
-    try {
-      console.log(`LLM attempt with add_context_from_internet=${useInternet}`);
-      response = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        add_context_from_internet: useInternet,
-        file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-        response_json_schema: schema
-      });
-      if (response?.sections?.length) break;
-      lastError = new Error('LLM returned no sections');
-    } catch (error) {
-      console.error(`LLM attempt failed (internet=${useInternet}):`, error.message);
-      lastError = error;
-      // Only retry on JSON parse errors — other errors are fatal
-      if (!error.message?.includes('invalid JSON') && !error.message?.includes('JSON')) break;
+  // Use internet context for factual transcription grounding
+  try {
+    const response = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+      response_json_schema: schema
+    });
+
+    if (!response?.sections?.length) {
+      throw new Error('LLM returned no sections');
     }
-  }
 
-  if (!response?.sections?.length) {
-    const msg = lastError?.message || 'LLM returned no sections';
-    console.error('LLM generation error:', msg);
-    throw new Error(`Chart generation failed: ${msg}`);
-  }
+    // Validate for completeness BEFORE resolving key
+    const completenessCheck = validateChartOutput(response.sections);
+    if (!completenessCheck.valid) {
+      throw new Error(`Completeness check failed: ${completenessCheck.reason}`);
+    }
 
-  // Resolve key with TonalJS
-  const tonic = response.key_tonic || 'C';
-  const isMinor = response.key_mode === 'minor';
-  let key;
-  if (isMinor) {
-    const mk = Key.minorKey(tonic);
-    key = (mk.tonic || tonic) + 'm';
-  } else {
-    const mk = Key.majorKey(tonic);
-    key = mk.tonic || tonic;
-  }
+    // Resolve key with TonalJS
+    const tonic = response.key_tonic || 'C';
+    const isMinor = response.key_mode === 'minor';
+    let key;
+    if (isMinor) {
+      const mk = Key.minorKey(tonic);
+      key = (mk.tonic || tonic) + 'm';
+    } else {
+      const mk = Key.majorKey(tonic);
+      key = mk.tonic || tonic;
+    }
 
-  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
+    return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
+  } catch (error) {
+    console.error('LLM generation error:', error.message);
+    throw new Error(`Chart generation failed: ${error.message}`);
+  }
 }
 
 // ─── Output Validation ─────────────────────────────────────────────────────────
@@ -461,6 +456,13 @@ Deno.serve(async (req) => {
 
       const llm = await generateWithLLM(base44, title, artist, reference_file_url);
       if (!llm.sections?.length) return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
+
+      // Validate LLM output
+      const validation = validateChartOutput(llm.sections);
+      if (!validation.valid) {
+        console.log('LLM output validation failed:', validation.reason);
+        return Response.json({ error: `Chart validation failed: ${validation.reason}. Please try again or provide a reference.` }, { status: 400 });
+      }
 
       chartData = {
         title,
