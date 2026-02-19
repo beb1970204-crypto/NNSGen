@@ -392,7 +392,7 @@ export default function ChartViewer() {
             <span className="text-[#D0021B] font-black text-xs">1</span>
           </div>
           <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
-        </div>
+        </Link>
 
         {/* Center — Song title + artist */}
         <div className="flex flex-col items-center">
