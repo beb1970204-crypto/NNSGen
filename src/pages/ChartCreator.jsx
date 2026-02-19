@@ -243,14 +243,18 @@ export default function ChartCreator() {
         <div />
       </div>
 
+      {/* Back button strip */}
+      <div className="bg-[#111111] px-6 py-2">
+        <Link to={createPageUrl("Home")} className="inline-flex items-center gap-1.5 text-[#6b6b6b] hover:text-white transition-colors text-sm">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Charts
+        </Link>
+      </div>
+
       {/* Centered form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 space-y-6">
           <div className="text-center mb-8">
-            <Link to={createPageUrl("Home")} className="inline-flex items-center gap-1.5 text-[#6b6b6b] hover:text-white transition-colors text-sm mb-4">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Charts
-            </Link>
             <div className="text-5xl mb-4">🎵</div>
             <h2 className="text-2xl font-bold text-white font-sans">New Chart</h2>
             <p className="text-[#6b6b6b] mt-2 font-sans">Enter a song title to generate a chart with AI</p>
