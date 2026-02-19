@@ -219,8 +219,15 @@ export default function ChartCreator() {
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       {/* Top bar */}
       <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 grid grid-cols-3 items-center">
-        {/* Left — Logo */}
-        <Link to={createPageUrl("Home")} className="flex items-center gap-1.5">
+        {/* Left — Back */}
+        <Link to={createPageUrl("Home")}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </Link>
+        {/* Center — Logo */}
+        <Link to={createPageUrl("Home")} className="flex items-center gap-1.5 justify-center">
           <div className="grid grid-cols-2 gap-0.5 w-7 h-7 flex-shrink-0">
             <div className="bg-white rounded-[2px] flex items-center justify-center">
               <span className="text-black font-black text-[7px] leading-none">1</span>
@@ -237,18 +244,8 @@ export default function ChartCreator() {
           </div>
           <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
         </Link>
-        {/* Center — Title */}
-        <h1 className="text-base font-bold text-white font-sans text-center">Create New Chart</h1>
         {/* Right — empty */}
         <div />
-      </div>
-
-      {/* Back button strip */}
-      <div className="bg-[#111111] px-6 py-2">
-        <Link to={createPageUrl("Home")} className="inline-flex items-center gap-1.5 text-[#6b6b6b] hover:text-white transition-colors text-sm">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Charts
-        </Link>
       </div>
 
       {/* Centered form */}
