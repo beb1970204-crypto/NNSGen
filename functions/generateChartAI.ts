@@ -399,37 +399,27 @@ Deno.serve(async (req) => {
     const { title, artist, key, time_signature, reference_file_url } = await req.json();
     if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
 
-    // ── Step 1: Try Chordonomicon ──────────────────────────────────────────────
-    // Run Spotify search + direct title/artist Chordonomicon lookup in parallel.
-    // If direct lookup hits, great. If not and Spotify found a track, do one
-    // sequential Chordonomicon lookup using the Spotify ID.
+    // ── Step 1: Try Chordonomicon via Spotify ID ───────────────────────────────
+    // Spotify is the only way to get an ID to look up Chordonomicon.
+    // Search Spotify → use top result's ID → lookup Chordonomicon. Fall back to LLM.
     let chordonomiconData = null;
     let spotifyMatch = null;
 
     try {
-      const [tracks, directResult] = await Promise.all([
-        searchSpotify(title, artist).catch(e => { console.log('Spotify failed:', e.message); return []; }),
-        fetchChordonomicon({ title, artist }).catch(() => null)
-      ]);
-
-      if (directResult) {
-        chordonomiconData = directResult;
-        console.log('Chordonomicon hit via title+artist');
-      } else if (tracks[0]) {
-        // Spotify IDs required — sequential by necessity
-        const topTrack = tracks[0];
-        const spotifyResult = await fetchChordonomicon({
+      const tracks = await searchSpotify(title, artist);
+      const topTrack = tracks[0];
+      if (topTrack) {
+        chordonomiconData = await fetchChordonomicon({
           spotify_song_id: topTrack.spotify_song_id,
           spotify_artist_id: topTrack.spotify_artist_id
         }).catch(() => null);
-        if (spotifyResult) {
-          chordonomiconData = spotifyResult;
+        if (chordonomiconData) {
           spotifyMatch = topTrack;
           console.log('Chordonomicon hit via Spotify ID');
         }
       }
     } catch (e) {
-      console.log('Chordonomicon lookup failed:', e.message);
+      console.log('Spotify/Chordonomicon lookup failed:', e.message);
     }
 
     // ── Step 2a: Chordonomicon hit — parse chords, infer key, no LLM needed ───
