@@ -218,28 +218,39 @@ export default function ChartCreator() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       {/* Top bar */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-4 flex items-center gap-4">
-        <Link to={createPageUrl("Home")}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </Link>
-        {/* Logo mark */}
-        <div className="flex items-center gap-1.5 pr-4 border-r border-[#2a2a2a]">
-          <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
-            <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
-            <span className="text-[#D0021B] font-black text-xs">1</span>
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 grid grid-cols-3 items-center">
+        {/* Left — Logo */}
+        <Link to={createPageUrl("Home")} className="flex items-center gap-1.5">
+          <div className="grid grid-cols-2 gap-0.5 w-7 h-7 flex-shrink-0">
+            <div className="bg-white rounded-[2px] flex items-center justify-center">
+              <span className="text-black font-black text-[7px] leading-none">1</span>
+            </div>
+            <div className="rounded-[2px] flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 4px #D0021B' }}>
+              <span className="text-[#D0021B] font-black text-[7px] leading-none">4</span>
+            </div>
+            <div className="rounded-[2px] flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 4px #D0021B' }}>
+              <span className="text-[#D0021B] font-black text-[7px] leading-none">5</span>
+            </div>
+            <div className="rounded-[2px] flex items-center justify-center border border-[#c17f00]" style={{ background: '#0a0a0a', boxShadow: '0 0 4px #c17f00' }}>
+              <span className="text-[#e09a00] font-black text-[6px] leading-none">6-</span>
+            </div>
           </div>
           <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
-        </div>
-        <h1 className="text-lg font-bold text-white font-sans">Create New Chart</h1>
+        </Link>
+        {/* Center — Title */}
+        <h1 className="text-base font-bold text-white font-sans text-center">Create New Chart</h1>
+        {/* Right — empty */}
+        <div />
       </div>
 
       {/* Centered form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 space-y-6">
           <div className="text-center mb-8">
+            <Link to={createPageUrl("Home")} className="inline-flex items-center gap-1.5 text-[#6b6b6b] hover:text-white transition-colors text-sm mb-4">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Charts
+            </Link>
             <div className="text-5xl mb-4">🎵</div>
             <h2 className="text-2xl font-bold text-white font-sans">New Chart</h2>
             <p className="text-[#6b6b6b] mt-2 font-sans">Enter a song title to generate a chart with AI</p>
