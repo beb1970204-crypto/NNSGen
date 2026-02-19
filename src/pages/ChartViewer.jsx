@@ -566,8 +566,8 @@ export default function ChartViewer() {
                   </DropdownMenu>
                 </div>
               </div>
-            ) : (
-              // Read Mode - Single Column with optional right sidebar
+            ) : musicTheoryOpen ? (
+              // Read Mode - Single Column (with theory sidebar)
               <div className="space-y-3">
                 {sections.map((section, index) => (
                   <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
@@ -588,6 +588,54 @@ export default function ChartViewer() {
                      />
                   </div>
                 ))}
+              </div>
+            ) : (
+              // Read Mode - 2-Column Grid (no theory sidebar)
+              <div className="grid grid-cols-2 gap-4">
+                {/* Left Column */}
+                <div className="space-y-3">
+                  {sections.slice(0, Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
+                      <ChartDisplay 
+                         sections={[section]}
+                         chartKey={chart.key}
+                         displayMode={displayMode}
+                         editMode={false}
+                         onUpdateSection={handleUpdateSection}
+                         onAddMeasure={handleAddMeasure}
+                         onMeasureClick={handleMeasureClick}
+                         selectedMeasureIndex={selectedMeasureIndex}
+                         selectedSectionId={selectedSection?.id}
+                         onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                         onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                         onMoveSectionUp={() => moveSectionUp(index)}
+                         onMoveSectionDown={() => moveSectionDown(index)}
+                       />
+                    </div>
+                  ))}
+                </div>
+                {/* Right Column */}
+                <div className="space-y-3">
+                  {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
+                      <ChartDisplay 
+                         sections={[section]}
+                         chartKey={chart.key}
+                         displayMode={displayMode}
+                         editMode={false}
+                         onUpdateSection={handleUpdateSection}
+                         onAddMeasure={handleAddMeasure}
+                         onMeasureClick={handleMeasureClick}
+                         selectedMeasureIndex={selectedMeasureIndex}
+                         selectedSectionId={selectedSection?.id}
+                         onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                         onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                         onMoveSectionUp={() => moveSectionUp(index + Math.ceil(sections.length / 2))}
+                         onMoveSectionDown={() => moveSectionDown(index + Math.ceil(sections.length / 2))}
+                       />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
