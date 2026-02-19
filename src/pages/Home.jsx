@@ -842,10 +842,10 @@ export default function Home() {
                         </span>
                       )}
                       </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-[#a0a0a0]">Key: <span className="text-white font-semibold">{chart.key}</span></span>
+                        <div className="flex items-center gap-3 text-sm font-sans">
+                          <span className="text-[#a0a0a0]">Key: <span className="text-white font-semibold font-mono">{chart.key}</span></span>
                           <span className="text-[#4a4a4a]">•</span>
-                          <span className="text-[#a0a0a0]">{chart.time_signature}</span>
+                          <span className="text-[#a0a0a0] font-mono">{chart.time_signature}</span>
                           {currentView === 'shared' && chart.created_by && (
                             <>
                               <span className="text-[#4a4a4a]">•</span>
@@ -892,13 +892,13 @@ export default function Home() {
                 <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-3 mb-4 min-h-[56px] flex items-center">
                   {chart.key && chart.time_signature ? (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-[#6b6b6b] uppercase tracking-wider">{chart.key}</span>
+                      <span className="text-xs font-bold text-[#6b6b6b] uppercase tracking-wider font-mono">{chart.key}</span>
                       <span className="text-[#3a3a3a]">·</span>
-                      <span className="text-xs text-[#6b6b6b]">{chart.time_signature}</span>
+                      <span className="text-xs text-[#6b6b6b] font-mono">{chart.time_signature}</span>
                       {chart.tempo && (
                         <>
                           <span className="text-[#3a3a3a]">·</span>
-                          <span className="text-xs text-[#6b6b6b]">{chart.tempo} BPM</span>
+                          <span className="text-xs text-[#6b6b6b] font-mono">{chart.tempo} BPM</span>
                         </>
                       )}
                       {chart.data_source && (
@@ -915,7 +915,7 @@ export default function Home() {
                   )}
                 </div>
                 
-                <div className="flex items-center justify-between text-xs text-[#6b6b6b]">
+                <div className="flex items-center justify-between text-xs text-[#6b6b6b] font-sans">
                   <span>Modified {getRelativeTime(chart.updated_date)}</span>
                   <button className="hover:text-white transition-colors p-1">
                     <Share2 className="w-3.5 h-3.5" />
