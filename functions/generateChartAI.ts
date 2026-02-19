@@ -195,63 +195,140 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are a professional chord transcriber. Generate a COMPLETE chord chart for "${title}" by ${artist || 'Unknown'}.
+  // Step 1: Get raw chord transcription
+  const transcriptionPrompt = `Transcribe the complete chord chart for "${title}" by ${artist || 'Unknown'}.
 
-CRITICAL REQUIREMENTS FOR A COMPLETE CHART:
-1. MUST include Verse section — at least 4-8 measures
-2. MUST include Chorus section — distinct from Verse
-3. Include Intro and Outro if appropriate for song style
-4. Include Bridge if the song structure calls for it
-5. Use ONLY these labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-6. Chart the FULL song progression, not abbreviated
+Provide the full song structure as it naturally occurs - include all sections (Intro, Verse, Chorus, Bridge, Outro, etc.). One chord per line.
 
-MEASURE & CHORD RULES:
-- Each measure = one chord lasting the full measure (usually 4 beats)
-- Chords must fit the key and be musically consistent
-- No placeholder chords or hallucinated progressions
+${referenceText ? `Reference material:\n${referenceText}\n` : ''}
 
-${referenceText ? `PROVIDED REFERENCE MATERIAL:\n${referenceText}\n` : ''}
+Format as plain text with section headers like [Verse], [Chorus], [Bridge], etc. List chords below each header, one per line.`;
 
-EXAMPLE OUTPUT (do not copy these actual chords):
+  let transcription;
+  try {
+    transcription = await base44.integrations.Core.InvokeLLM({
+      prompt: transcriptionPrompt,
+      add_context_from_internet: false,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined
+    });
+  } catch (error) {
+    console.error('Transcription step failed:', error.message);
+    throw new Error(`Failed to transcribe chart: ${error.message}`);
+  }
+
+  if (!transcription || transcription.trim().length === 0) {
+    throw new Error('LLM returned empty transcription');
+  }
+
+  // Step 2: Structure into JSON schema
+  const structurePrompt = `Convert this chord chart transcription into the exact JSON format below. 
+
+Transcription:
+${transcription}
+
+Rules:
+- key_tonic: infer from the chords, use single letter (C, D, E, F, G, A, B) or sharp/flat
+- key_mode: "major" or "minor"
+- time_signature: "4/4", "3/4", etc. Default to "4/4"
+- Each measure has ONE chord, 4 beats
+- Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+- Chords must match the key (no random substitutions)
+- Each chord/measure in the array
+
+Return ONLY this JSON, no text:
+
 {
-  "key_tonic": "G",
-  "key_mode": "major",
-  "time_signature": "4/4",
+  "key_tonic": "string",
+  "key_mode": "major|minor",
+  "time_signature": "string",
   "sections": [
     {
-      "label": "Intro",
-      "repeat_count": 1,
-      "arrangement_cue": "",
+      "label": "string",
+      "repeat_count": number,
+      "arrangement_cue": "string",
       "measures": [
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Verse",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "Em", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Chorus",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "string", "beats": 4}], "cue": ""}
       ]
     }
   ]
-}
+}`;
 
-Return ONLY valid JSON. No explanation. Transcribe "${title}" by ${artist || 'Unknown'}:`;
+  const schema = {
+    type: "object",
+    properties: {
+      key_tonic: { type: "string" },
+      key_mode: { type: "string", enum: ["major", "minor"] },
+      time_signature: { type: "string" },
+      sections: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+            repeat_count: { type: "number" },
+            arrangement_cue: { type: "string" },
+            measures: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  chords: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        chord: { type: "string" },
+                        beats: { type: "number" }
+                      },
+                      required: ["chord", "beats"]
+                    }
+                  },
+                  cue: { type: "string" }
+                },
+                required: ["chords"]
+              }
+            }
+          },
+          required: ["label", "measures"]
+        }
+      }
+    },
+    required: ["key_tonic", "key_mode", "time_signature", "sections"]
+  };
+
+  let response;
+  try {
+    response = await base44.integrations.Core.InvokeLLM({
+      prompt: structurePrompt,
+      add_context_from_internet: false,
+      response_json_schema: schema
+    });
+  } catch (error) {
+    console.error('JSON structuring step failed:', error.message);
+    throw new Error(`Failed to structure chart: ${error.message}`);
+  }
+
+  if (!response?.sections?.length) {
+    throw new Error('LLM returned no sections');
+  }
+
+  const completenessCheck = validateChartOutput(response.sections);
+  if (!completenessCheck.valid) {
+    throw new Error(`Chart validation failed: ${completenessCheck.reason}`);
+  }
+
+  const tonic = response.key_tonic || 'C';
+  const isMinor = response.key_mode === 'minor';
+  let key;
+  if (isMinor) {
+    const mk = Key.minorKey(tonic);
+    key = (mk.tonic || tonic) + 'm';
+  } else {
+    const mk = Key.majorKey(tonic);
+    key = mk.tonic || tonic;
+  }
+
+  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
 
   const schema = {
     type: "object",
