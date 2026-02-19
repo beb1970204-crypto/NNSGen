@@ -130,7 +130,6 @@ export default function Settings() {
         </div>
 
         {/* Preferences Section */}
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a2a2a]">
             <div className="w-9 h-9 rounded-lg bg-[#2a2a2a] flex items-center justify-center">
               <SlidersHorizontal className="w-4 h-4 text-[#a0a0a0]" />
