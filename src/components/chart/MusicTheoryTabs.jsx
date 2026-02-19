@@ -118,18 +118,23 @@ export default function MusicTheoryTabs({
   };
 
   const loadQuiz = async () => {
-    if (!sectionData) return;
+    if (!chartData) return;
     setQuizLoading(true);
+    setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('musicTheoryQuiz', {
-        chartData,
-        sectionData
+        chartData
       });
-      if (response.data?.success) {
+      if (response.data?.success && response.data?.questions) {
         setQuizData(response.data.questions);
+      } else {
+        setErrorMessage('Failed to load quiz');
+        toast.error('Failed to load quiz');
       }
     } catch (error) {
       console.error('Quiz error:', error);
+      setErrorMessage(error.message || 'Failed to load quiz');
+      toast.error('Failed to load quiz');
     } finally {
       setQuizLoading(false);
     }
@@ -187,13 +192,12 @@ export default function MusicTheoryTabs({
   };
 
   const loadEarTraining = async () => {
-    if (!sectionData) return;
+    if (!chartData) return;
     setEarTrainingLoading(true);
     setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('earTrainingGuide', {
-        chartData,
-        sectionData
+        chartData
       });
       if (response.data?.success) {
         const guide = response.data.guide;
@@ -254,38 +258,48 @@ export default function MusicTheoryTabs({
   };
 
   const loadAnalysis = async () => {
-    if (!sectionData) return;
+    if (!chartData) return;
     setAnalysisLoading(true);
+    setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('comparativeAnalysis', {
         chartData,
-        sectionData,
         genre: chartData.genres || 'general'
       });
-      if (response.data?.success) {
-        setAnalysisData(response.data.analysis);
+      if (response.data?.success && response.data?.comparisons) {
+        setAnalysisData(response.data);
+      } else {
+        setErrorMessage('Failed to load comparative analysis');
+        toast.error('Failed to load comparative analysis');
       }
     } catch (error) {
       console.error('Analysis error:', error);
+      setErrorMessage(error.message || 'Failed to load analysis');
+      toast.error('Failed to load analysis');
     } finally {
       setAnalysisLoading(false);
     }
   };
 
   const loadPractice = async () => {
-    if (!sectionData) return;
+    if (!chartData) return;
     setPracticeLoading(true);
+    setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('practiceRecommendations', {
         chartData,
-        sectionData,
         skillLevel: 'intermediate'
       });
-      if (response.data?.success) {
-        setPracticeData(response.data.practice);
+      if (response.data?.success && response.data?.exercises) {
+        setPracticeData(response.data);
+      } else {
+        setErrorMessage('Failed to load practice recommendations');
+        toast.error('Failed to load practice recommendations');
       }
     } catch (error) {
       console.error('Practice error:', error);
+      setErrorMessage(error.message || 'Failed to load practice recommendations');
+      toast.error('Failed to load practice recommendations');
     } finally {
       setPracticeLoading(false);
     }
@@ -337,10 +351,10 @@ export default function MusicTheoryTabs({
               <FeatureEmptyState
                 icon={Music}
                 title="Music Theory Quiz"
-                description="Test your understanding of this section's harmony and progressions"
-                expectedOutput="5-10 progressive questions focused on harmonic analysis"
+                description="Test your understanding of the entire song's harmony and progressions"
+                expectedOutput="5-10 progressive questions covering all sections"
                 requirements={[
-                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                  { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
                 isLoading={quizLoading}
                 onAction={loadQuiz}
@@ -508,10 +522,10 @@ export default function MusicTheoryTabs({
               <FeatureEmptyState
                 icon={Ear}
                 title="Ear Training Guide"
-                description="Learn to hear and recognize the harmonic movements in this section"
-                expectedOutput="5-7 targeted listening exercises and melodic patterns"
+                description="Learn to hear and recognize the harmonic movements in the entire song"
+                expectedOutput="8-12 targeted listening exercises covering all sections"
                 requirements={[
-                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                  { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
                 isLoading={earTrainingLoading}
                 onAction={loadEarTraining}
@@ -610,14 +624,20 @@ export default function MusicTheoryTabs({
       case 'compare':
         return (
           <div className="flex flex-col gap-4 h-full">
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500/50 rounded p-3 flex gap-2 items-start">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 mt-0.5" />
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              </div>
+            )}
             {!analysisData ? (
               <FeatureEmptyState
                 icon={Users}
                 title="Comparative Analysis"
-                description="See how famous songs use similar chord progressions"
-                expectedOutput="4-6 famous songs with harmonic similarities and lessons"
+                description="See how famous songs use similar chord progressions as your entire chart"
+                expectedOutput="5-8 famous songs with harmonic similarities and lessons"
                 requirements={[
-                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                  { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
                 isLoading={analysisLoading}
                 onAction={loadAnalysis}
@@ -645,14 +665,20 @@ export default function MusicTheoryTabs({
       case 'practice':
         return (
           <div className="flex flex-col gap-4 h-full">
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500/50 rounded p-3 flex gap-2 items-start">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 mt-0.5" />
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              </div>
+            )}
             {!practiceData ? (
               <FeatureEmptyState
                 icon={Music}
                 title="Practice Recommendations"
-                description="Get targeted exercises to master this section"
-                expectedOutput="4-6 progressive exercises building key skills"
+                description="Get targeted exercises to master the entire song"
+                expectedOutput="6-8 progressive exercises building complete mastery"
                 requirements={[
-                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                  { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
                 isLoading={practiceLoading}
                 onAction={loadPractice}
