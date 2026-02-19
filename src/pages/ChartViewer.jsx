@@ -31,7 +31,7 @@ export default function ChartViewer() {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [editMode, setEditMode] = useState(true);
+  const [editMode, setEditMode] = useState(false);
   const [displayMode, setDisplayMode] = useState('chords');
 
 
