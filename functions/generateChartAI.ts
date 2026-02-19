@@ -281,11 +281,10 @@ JSON STRUCTURE:
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  // Use internet context for factual transcription grounding
   try {
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
-      add_context_from_internet: true,
+      add_context_from_internet: false,
       file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: schema
     });
