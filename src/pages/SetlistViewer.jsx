@@ -153,9 +153,9 @@ export default function SetlistViewer() {
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className={`bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 flex items-center gap-4 ${
+                          className={`border border-[#2a2a2a] rounded-lg p-4 flex items-center gap-4 transition-colors ${
                             snapshot.isDragging ? 'opacity-50' : ''
-                          }`}
+                          } ${index % 2 === 0 ? 'bg-[#1a1a1a]' : 'bg-[#161616]'}`}
                         >
                           <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
                             <GripVertical className="w-5 h-5 text-[#6b6b6b]" />

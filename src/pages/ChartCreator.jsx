@@ -230,7 +230,7 @@ export default function ChartCreator() {
 
       {/* Centered form */}
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 space-y-6">
           <div className="text-center mb-8">
             <div className="text-5xl mb-4">🎵</div>
             <h2 className="text-2xl font-bold text-white font-sans">New Chart</h2>
