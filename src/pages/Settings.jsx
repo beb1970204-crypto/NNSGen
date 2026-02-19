@@ -172,7 +172,15 @@ export default function Settings() {
 
         {/* Danger Zone */}
         <div className="bg-[#1a1a1a] border border-red-600/20 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4 font-sans">Danger Zone</h2>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-red-600/20">
+            <div className="w-9 h-9 rounded-lg bg-red-600/10 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-sans">Danger Zone</h2>
+              <p className="text-xs text-[#6b6b6b] font-sans">Irreversible account actions</p>
+            </div>
+          </div>
           
           <div className="space-y-4">
             <div>
