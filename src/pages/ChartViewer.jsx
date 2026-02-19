@@ -576,31 +576,31 @@ export default function ChartViewer() {
                   {sections.slice(0, Math.ceil(sections.length / 2)).map((section, index) => (
                     <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
                       <ChartDisplay 
-                        sections={[section]}
-                        chartKey={chart.key}
-                        displayMode={chart.display_mode}
-                        editMode={false}
-                        onUpdateSection={handleUpdateSection}
-                        onAddMeasure={handleAddMeasure}
-                        onMeasureClick={handleMeasureClick}
-                        selectedMeasureIndex={selectedMeasureIndex}
-                        selectedSectionId={selectedSection?.id}
-                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                        onMoveSectionUp={() => moveSectionUp(index)}
-                        onMoveSectionDown={() => moveSectionDown(index)}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {/* Right Column */}
-                <div className="space-y-3">
-                  {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
-                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
-                      <ChartDisplay 
-                        sections={[section]}
-                        chartKey={chart.key}
-                        displayMode={chart.display_mode}
+                         sections={[section]}
+                         chartKey={chart.key}
+                         displayMode={displayMode}
+                         editMode={false}
+                         onUpdateSection={handleUpdateSection}
+                         onAddMeasure={handleAddMeasure}
+                         onMeasureClick={handleMeasureClick}
+                         selectedMeasureIndex={selectedMeasureIndex}
+                         selectedSectionId={selectedSection?.id}
+                         onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                         onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                         onMoveSectionUp={() => moveSectionUp(index)}
+                         onMoveSectionDown={() => moveSectionDown(index)}
+                       />
+                      </div>
+                      ))}
+                      </div>
+                      {/* Right Column */}
+                      <div className="space-y-3">
+                      {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
+                      <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
+                       <ChartDisplay 
+                         sections={[section]}
+                         chartKey={chart.key}
+                         displayMode={displayMode}
                         editMode={false}
                         onUpdateSection={handleUpdateSection}
                         onAddMeasure={handleAddMeasure}
