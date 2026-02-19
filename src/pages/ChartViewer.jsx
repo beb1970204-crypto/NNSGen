@@ -384,28 +384,24 @@ export default function ChartViewer() {
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
       {/* Top Bar */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-4">
-          <Link to={createPageUrl("Home")}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          </Link>
-          {/* Logo mark */}
-          <div className="flex items-center gap-1.5 pr-4 border-r border-[#2a2a2a]">
-            <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
-              <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
-              <span className="text-[#D0021B] font-black text-xs">1</span>
-            </div>
-            <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 flex items-center shadow-lg">
+        {/* Logo — left aligned */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
+            <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
+            <span className="text-[#D0021B] font-black text-xs">1</span>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-white font-sans">{chart.title}</h1>
-            {chart.artist && <p className="text-xs text-[#6b6b6b] font-sans">{chart.artist}</p>}
-          </div>
+          <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Song title + artist — centered */}
+        <div className="flex-1 flex flex-col items-center">
+          <h1 className="text-base font-bold text-white font-sans leading-tight">{chart.title}</h1>
+          {chart.artist && <p className="text-xs text-[#6b6b6b] font-sans">{chart.artist}</p>}
+        </div>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <Button 
             size="sm" 
             variant="outline"
