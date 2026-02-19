@@ -6,6 +6,10 @@
 
 @layer base {
   :root {
+    /* Font overrides — map Tailwind's font utilities to our custom fonts */
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
+
     /* Dark Theme - NNSGen Design */
     --bg-primary: #0a0a0a;
     --bg-secondary: #1a1a1a;
