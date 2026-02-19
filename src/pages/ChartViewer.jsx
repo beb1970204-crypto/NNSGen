@@ -32,14 +32,14 @@ export default function ChartViewer() {
   const [exportingPDF, setExportingPDF] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(true);
-  const [displayMode, setDisplayMode] = useState(chart?.display_mode || 'chords');
-
 
   const { data: chart, isLoading, error } = useQuery({
     queryKey: ['chart', chartId],
     queryFn: () => base44.entities.Chart.get(chartId),
     enabled: !!chartId
   });
+
+  const [displayMode, setDisplayMode] = useState('chords');
 
   const { data: rawSections = [] } = useQuery({
     queryKey: ['sections', chartId],
