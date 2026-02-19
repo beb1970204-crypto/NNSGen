@@ -195,63 +195,56 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  // Step 1: Get raw chord transcription
-  const transcriptionPrompt = `Transcribe the complete chord chart for "${title}" by ${artist || 'Unknown'}.
+  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with complete song structure.
 
-Provide the full song structure as it naturally occurs - include all sections (Intro, Verse, Chorus, Bridge, Outro, etc.). One chord per line.
+${referenceText ? `Reference material:\n${referenceText}\n\n` : ''}
 
-${referenceText ? `Reference material:\n${referenceText}\n` : ''}
+REQUIREMENTS:
+1. Chart the ENTIRE song: Intro, Verse, Chorus, Bridge, Outro — whatever the song naturally contains
+2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+3. Be musically accurate — infer a reasonable key and maintain harmonic coherence
+4. Return ONLY valid JSON, no explanation
 
-Format as plain text with section headers like [Verse], [Chorus], [Bridge], etc. List chords below each header, one per line.`;
-
-  let transcription;
-  try {
-    transcription = await base44.integrations.Core.InvokeLLM({
-      prompt: transcriptionPrompt,
-      add_context_from_internet: false,
-      file_urls: fileUrls.length > 0 ? fileUrls : undefined
-    });
-  } catch (error) {
-    console.error('Transcription step failed:', error.message);
-    throw new Error(`Failed to transcribe chart: ${error.message}`);
-  }
-
-  if (!transcription || transcription.trim().length === 0) {
-    throw new Error('LLM returned empty transcription');
-  }
-
-  // Step 2: Structure into JSON schema
-  const structurePrompt = `Convert this chord chart transcription into the exact JSON format below. 
-
-Transcription:
-${transcription}
-
-Rules:
-- key_tonic: infer from the chords, use single letter (C, D, E, F, G, A, B) or sharp/flat
-- key_mode: "major" or "minor"
-- time_signature: "4/4", "3/4", etc. Default to "4/4"
-- Each measure has ONE chord, 4 beats
-- Valid section labels only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-- Chords must match the key (no random substitutions)
-- Each chord/measure in the array
-
-Return ONLY this JSON, no text:
-
+EXAMPLE OUTPUT FORMAT (do not copy these chords):
 {
-  "key_tonic": "string",
-  "key_mode": "major|minor",
-  "time_signature": "string",
+  "key_tonic": "G",
+  "key_mode": "major",
+  "time_signature": "4/4",
   "sections": [
     {
-      "label": "string",
-      "repeat_count": number,
-      "arrangement_cue": "string",
+      "label": "Intro",
+      "repeat_count": 1,
+      "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "string", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+      ]
+    },
+    {
+      "label": "Verse",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "Em", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+      ]
+    },
+    {
+      "label": "Chorus",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
       ]
     }
   ]
-}`;
+}
+
+Transcribe "${title}" by ${artist || 'Unknown'}:`;
 
   const schema = {
     type: "object",
@@ -299,13 +292,14 @@ Return ONLY this JSON, no text:
   let response;
   try {
     response = await base44.integrations.Core.InvokeLLM({
-      prompt: structurePrompt,
+      prompt,
       add_context_from_internet: false,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: schema
     });
   } catch (error) {
-    console.error('JSON structuring step failed:', error.message);
-    throw new Error(`Failed to structure chart: ${error.message}`);
+    console.error('LLM generation error:', error.message);
+    throw new Error(`Failed to generate chart: ${error.message}`);
   }
 
   if (!response?.sections?.length) {
