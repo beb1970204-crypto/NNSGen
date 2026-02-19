@@ -71,6 +71,7 @@ export default function ChartViewer() {
   });
 
   const toggleDisplayMode = async (mode) => {
+    setDisplayMode(mode);
     await base44.entities.Chart.update(chartId, { display_mode: mode });
     queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
