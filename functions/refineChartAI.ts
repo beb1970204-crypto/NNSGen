@@ -69,6 +69,8 @@ Deno.serve(async (req) => {
     // ── Step 1: Generate a fresh complete chart using the exact same prompt as generateChartAI ──
     const generationPrompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
 
+The user's feedback about the current chart: "${userFeedback}"
+
 CRITICAL REQUIREMENTS:
 1. Return a COMPLETE chart: Verse + Chorus are MANDATORY. Include Intro/Outro/Bridge as appropriate for the song.
 2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
@@ -77,7 +79,7 @@ CRITICAL REQUIREMENTS:
 5. All chords must be musically coherent and diatonic where possible
 6. Return ONLY valid JSON, no explanation
 
-JSON STRUCTURE:
+EXAMPLE OUTPUT FORMAT (do not copy these chords — transcribe the actual song):
 {
   "key_tonic": "A",
   "key_mode": "major",
@@ -89,7 +91,7 @@ JSON STRUCTURE:
       "arrangement_cue": "",
       "measures": [
         {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""}
+        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
       ]
     },
     {
@@ -101,33 +103,9 @@ JSON STRUCTURE:
       ]
     }
   ]
-}`;
+}
 
-RESPONSE FORMAT:
-{
-  "key_tonic": "C",
-  "key_mode": "major",
-  "time_signature": "4/4",
-  "sections": [
-    {
-      "label": "Verse",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "F", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Chorus",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
-      ]
-    }
-  ]
-}`;
+Now transcribe "${title}" by ${artist || 'Unknown'} addressing the user's feedback, using the exact same JSON structure above:`;
 
     const schema = {
       type: "object",
