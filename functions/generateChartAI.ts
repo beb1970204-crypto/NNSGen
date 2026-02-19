@@ -462,13 +462,6 @@ Deno.serve(async (req) => {
       const llm = await generateWithLLM(base44, title, artist, reference_file_url);
       if (!llm.sections?.length) return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
 
-      // Validate LLM output
-      const validation = validateChartOutput(llm.sections);
-      if (!validation.valid) {
-        console.log('LLM output validation failed:', validation.reason);
-        return Response.json({ error: `Chart validation failed: ${validation.reason}. Please try again or provide a reference.` }, { status: 400 });
-      }
-
       chartData = {
         title,
         artist: artist || 'Unknown',
