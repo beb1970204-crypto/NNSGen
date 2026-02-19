@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Trash2, GripVertical, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, Calendar, MapPin, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -106,10 +106,18 @@ export default function SetlistViewer() {
                 Back to Setlists
               </Button>
             </Link>
-            <Button onClick={() => setAddChartDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Chart
-            </Button>
+            <div className="flex gap-2">
+              <Link to={`${createPageUrl("SetlistLearningPath")}?id=${setlistId}`}>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Learning Path
+                </Button>
+              </Link>
+              <Button onClick={() => setAddChartDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Chart
+              </Button>
+            </div>
           </div>
           <h1 className="text-3xl font-bold font-sans">{setlist?.name}</h1>
           {setlist?.description && (
