@@ -80,10 +80,15 @@ export default function Settings() {
       <div className="max-w-2xl">
         {/* Profile Section */}
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 font-sans">
-            <Lock className="w-5 h-5" />
-            Profile
-          </h2>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a2a2a]">
+            <div className="w-9 h-9 rounded-lg bg-[#2a2a2a] flex items-center justify-center">
+              <User className="w-4 h-4 text-[#a0a0a0]" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-sans">Profile</h2>
+              <p className="text-xs text-[#6b6b6b] font-sans">Your account information</p>
+            </div>
+          </div>
           
           <div className="space-y-4">
             <div>
