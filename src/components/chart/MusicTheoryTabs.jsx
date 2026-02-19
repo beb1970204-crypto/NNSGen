@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import FeatureEmptyState from './FeatureEmptyState';
 import ResultCard from './ResultCard';
+import ChordDiagram from './ChordDiagram';
 
 const FEATURE_GROUPS = {
   learning: {
