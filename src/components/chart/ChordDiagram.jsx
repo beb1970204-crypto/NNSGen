@@ -3,12 +3,19 @@ import { base44 } from '@/api/base44Client';
 
 const STANDARD_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
 
-export default function ChordDiagram({ chord, size = 'sm' }) {
+export default function ChordDiagram({ chord, frets: initialFrets, size = 'sm' }) {
   const [voicing, setVoicing] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // If frets are directly provided (e.g., from AI voicing suggestions), use them immediately
+    if (initialFrets && Array.isArray(initialFrets) && initialFrets.length === 6) {
+      setVoicing(initialFrets);
+      setLoading(false);
+      return;
+    }
+
     if (!chord) return;
 
     const fetchChordDiagram = async () => {
@@ -31,9 +38,9 @@ export default function ChordDiagram({ chord, size = 'sm' }) {
     };
 
     fetchChordDiagram();
-  }, [chord]);
+  }, [chord, initialFrets]);
 
-  if (!chord) return null;
+  if (!chord && !initialFrets) return null;
   if (loading) return <div className="text-xs text-[#6b6b6b]">Loading...</div>;
   if (error || !voicing) return null;
 
