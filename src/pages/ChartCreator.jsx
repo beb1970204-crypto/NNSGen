@@ -225,6 +225,14 @@ export default function ChartCreator() {
             Back
           </Button>
         </Link>
+        {/* Logo mark */}
+        <div className="flex items-center gap-1.5 pr-4 border-r border-[#2a2a2a]">
+          <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
+            <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
+            <span className="text-[#D0021B] font-black text-xs">1</span>
+          </div>
+          <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
+        </div>
         <h1 className="text-lg font-bold text-white font-sans">Create New Chart</h1>
       </div>
 
