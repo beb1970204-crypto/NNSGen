@@ -361,7 +361,7 @@ export default function ChartViewer() {
       <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white text-xl">Loading chart...</div>
+          <div className="text-white text-xl font-sans">Loading chart...</div>
         </div>
       </div>
     );
@@ -371,8 +371,8 @@ export default function ChartViewer() {
     return (
       <div className="h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
         <div className="max-w-md text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Chart not found</h2>
-          <p className="text-[#a0a0a0] mb-6">This chart may have been deleted or you don't have access to it.</p>
+          <h2 className="text-2xl font-bold text-white mb-4 font-sans">Chart not found</h2>
+          <p className="text-[#a0a0a0] mb-6 font-sans">This chart may have been deleted or you don't have access to it.</p>
           <Link to={createPageUrl("Home")}>
             <Button>Back to Charts</Button>
           </Link>
@@ -393,8 +393,8 @@ export default function ChartViewer() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-white">{chart.title}</h1>
-            {chart.artist && <p className="text-xs text-[#6b6b6b]">{chart.artist}</p>}
+            <h1 className="text-lg font-bold text-white font-sans">{chart.title}</h1>
+            {chart.artist && <p className="text-xs text-[#6b6b6b] font-sans">{chart.artist}</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -421,7 +421,7 @@ export default function ChartViewer() {
             <Download className="w-4 h-4" />
             Export PDF
           </Button>
-          <div className="text-xs text-[#4a4a4a] italic">Auto-saved</div>
+          <div className="text-xs text-[#4a4a4a] italic font-sans">Auto-saved</div>
           <div className="w-8 h-8 bg-[#2a2a2a] rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-[#a0a0a0]" />
           </div>
