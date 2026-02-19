@@ -15,7 +15,7 @@ const FEATURE_GROUPS = {
     color: 'text-blue-400',
     features: [
       { id: 'chat', label: 'Chat', icon: BookOpen, desc: 'Ask the professor questions' },
-      { id: 'quiz', label: 'Quiz', icon: Music, desc: 'Test your knowledge' },
+      { id: 'lesson', label: 'Lesson', icon: BookOpen, desc: 'Complete song lesson' },
       { id: 'practice', label: 'Practice', icon: Music, desc: 'Targeted exercises' }
     ]
   },
@@ -64,8 +64,8 @@ export default function MusicTheoryTabs({
   const [chatLoading, setChatLoading] = useState(false);
 
   // State for all features
-  const [quizData, setQuizData] = useState(null);
-  const [quizLoading, setQuizLoading] = useState(false);
+  const [lessonData, setLessonData] = useState(null);
+  const [lessonLoading, setLessonLoading] = useState(false);
   const [suggestData, setSuggestData] = useState(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [voicingData, setVoicingData] = useState(null);
@@ -80,7 +80,7 @@ export default function MusicTheoryTabs({
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [practiceData, setPracticeData] = useState(null);
   const [practiceLoading, setPracticeLoading] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState({});
+
   const [errorMessage, setErrorMessage] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(isFullscreen);
 
@@ -117,26 +117,26 @@ export default function MusicTheoryTabs({
     }
   };
 
-  const loadQuiz = async () => {
+  const loadLesson = async () => {
     if (!chartData) return;
-    setQuizLoading(true);
+    setLessonLoading(true);
     setErrorMessage(null);
     try {
-      const response = await base44.functions.invoke('musicTheoryQuiz', {
+      const response = await base44.functions.invoke('generateLessonAI', {
         chartData
       });
-      if (response.data?.success && response.data?.questions) {
-        setQuizData(response.data.questions);
+      if (response.data?.success && response.data?.lesson) {
+        setLessonData(response.data.lesson);
       } else {
-        setErrorMessage('Failed to load quiz');
-        toast.error('Failed to load quiz');
+        setErrorMessage('Failed to generate lesson');
+        toast.error('Failed to generate lesson');
       }
     } catch (error) {
-      console.error('Quiz error:', error);
-      setErrorMessage(error.message || 'Failed to load quiz');
-      toast.error('Failed to load quiz');
+      console.error('Lesson error:', error);
+      setErrorMessage(error.message || 'Failed to generate lesson');
+      toast.error('Failed to generate lesson');
     } finally {
-      setQuizLoading(false);
+      setLessonLoading(false);
     }
   };
 
@@ -347,76 +347,26 @@ export default function MusicTheoryTabs({
           </div>
         );
 
-      case 'quiz':
+      case 'lesson':
         return (
           <div className="flex flex-col gap-4 h-full">
-            {!quizData ? (
+            {!lessonData ? (
               <FeatureEmptyState
-                icon={Music}
-                title="Music Theory Quiz"
-                description="Test your understanding of the entire song's harmony and progressions"
-                expectedOutput="5-10 progressive questions covering all sections"
+                icon={BookOpen}
+                title="Song Lesson"
+                description="A comprehensive music theory lesson about this song"
+                expectedOutput="Complete analysis covering harmony, structure, and techniques"
                 requirements={[
                   { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
-                isLoading={quizLoading}
-                onAction={loadQuiz}
+                isLoading={lessonLoading}
+                onAction={loadLesson}
               />
             ) : (
-              <div className="space-y-3 overflow-y-auto pb-4">
-                {quizData.map((q, idx) => (
-                  <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-bold text-[#6b6b6b] uppercase">Q{idx + 1}</span>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                          q.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
-                          q.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-red-500/20 text-red-400'
-                        }`}>
-                          {q.difficulty}
-                        </span>
-                      </div>
-                      <p className="text-sm text-white font-medium">{q.question}</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {q.hints?.map((hint, hIdx) => (
-                        <div key={hIdx} className="text-xs text-[#a0a0a0] bg-[#0a0a0a] p-2 rounded border-l-2 border-[#D0021B]">
-                          💡 {hint}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="space-y-2">
-                      {['A', 'B', 'C', 'D'].map((letter, optIdx) => (
-                        <button
-                          key={letter}
-                          onClick={() => setQuizAnswers(prev => ({ ...prev, [idx]: letter }))}
-                          className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                            quizAnswers[idx] === letter
-                              ? 'bg-[#D0021B] text-white font-medium'
-                              : 'bg-[#252525] text-[#a0a0a0] hover:bg-[#2a2a2a]'
-                          }`}
-                        >
-                          <span className="font-bold">{letter})</span> {q.options?.[optIdx] || `Option ${letter}`}
-                        </button>
-                      ))}
-                    </div>
-
-                    {quizAnswers[idx] && (
-                      <div className="bg-green-500/20 border border-green-500/50 rounded p-3 text-xs text-green-400">
-                        <p className="font-semibold mb-1">Your Answer: {quizAnswers[idx]}</p>
-                        <p className="text-green-300">{q.answer}</p>
-                        <p className="text-green-300/80 mt-2 italic">💡 {q.teachingPoint}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-xs text-[#a0a0a0]">
-                  <span className="font-semibold text-white">{Object.keys(quizAnswers).length}/{quizData.length}</span> answered
-                </div>
+              <div className="text-sm text-[#a0a0a0] overflow-y-auto space-y-3">
+                <ReactMarkdown className="prose prose-sm prose-invert max-w-none [&>*]:mb-3 [&>h2]:text-base [&>h2]:font-bold [&>h2]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:text-[#D0021B] [&>ul]:list-disc [&>ul]:ml-4 [&>ol]:list-decimal [&>ol]:ml-4 [&>strong]:text-white [&>code]:bg-[#0a0a0a] [&>code]:px-2 [&>code]:py-1 [&>code]:rounded [&>code]:text-[#D0021B]">
+                  {lessonData}
+                </ReactMarkdown>
               </div>
             )}
           </div>
