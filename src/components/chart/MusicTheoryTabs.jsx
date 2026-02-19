@@ -782,8 +782,9 @@ export default function MusicTheoryTabs({
         ) : (
           /* Compact View with Category Tabs */
           <>
-            <div className="border-b border-[#2a2a2a] px-3 py-2 flex-shrink-0">
-              <div className="flex gap-3 items-center min-w-max overflow-x-auto">
+            <div className="border-b border-[#2a2a2a] px-3 py-2 flex-shrink-0 space-y-2">
+              {/* Main Category Nav */}
+              <div className="flex gap-2 items-center min-w-max overflow-x-auto">
                 {Object.entries(FEATURE_GROUPS).map(([groupId, group]) => (
                   <button
                     key={groupId}
@@ -804,40 +805,35 @@ export default function MusicTheoryTabs({
                     {group.label}
                   </button>
                 ))}
-                
-                {(() => {
-                  const currentGroupId = Object.keys(FEATURE_GROUPS).find(g => 
-                    FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
-                  );
-                  const currentGroup = FEATURE_GROUPS[currentGroupId];
-                  
-                  return currentGroup ? (
-                    <>
-                      <div className="flex items-center gap-1 px-2">
-                        <div className="w-px h-4 bg-[#2a2a2a]" />
-                        <span className="text-[0.65rem] font-semibold text-[#6b6b6b] uppercase tracking-widest">{currentGroup.label}</span>
-                      </div>
-                      <div className="flex gap-1.5">
-                        {currentGroup.features.map(feat => (
-                          <button
-                            key={feat.id}
-                            onClick={() => setActiveFeature(feat.id)}
-                            className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 ${
-                              activeFeature === feat.id
-                                ? 'bg-[#D0021B] text-white'
-                                : 'text-[#6b6b6b] hover:bg-[#252525] hover:text-white'
-                            }`}
-                            title={feat.desc}
-                          >
-                            <feat.icon className="w-3 h-3" />
-                            <span className="hidden sm:inline">{feat.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  ) : null;
-                })()}
               </div>
+
+              {/* Submenu Features */}
+              {(() => {
+                const currentGroupId = Object.keys(FEATURE_GROUPS).find(g => 
+                  FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
+                );
+                const currentGroup = FEATURE_GROUPS[currentGroupId];
+                
+                return currentGroup ? (
+                  <div className="flex gap-1.5 pl-1 border-l-2 border-[#D0021B]">
+                    {currentGroup.features.map(feat => (
+                      <button
+                        key={feat.id}
+                        onClick={() => setActiveFeature(feat.id)}
+                        className={`px-2 py-1 rounded text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${
+                          activeFeature === feat.id
+                            ? 'bg-[#D0021B]/20 text-[#D0021B]'
+                            : 'text-[#6b6b6b] hover:text-white'
+                        }`}
+                        title={feat.desc}
+                      >
+                        <feat.icon className="w-3 h-3" />
+                        <span className="hidden sm:inline">{feat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Full Content */}
