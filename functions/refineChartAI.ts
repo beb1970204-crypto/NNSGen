@@ -66,22 +66,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // ── Step 1: Generate a fresh complete chart using the exact same prompt as generateChartAI ──
-    const generationPrompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
+    // ── Step 1: Generate a fresh complete chart ──
+    const generationPrompt = `Transcribe "${title}" by ${artist || 'Unknown'} addressing this feedback: "${userFeedback}"
 
-The user's feedback about the current chart: "${userFeedback}"
+Chart the complete song as it naturally occurs.
 
-CRITICAL REQUIREMENTS:
-1. Return a COMPLETE chart: Verse + Chorus are MANDATORY. Include Intro/Outro/Bridge as appropriate for the song.
+REQUIREMENTS:
+1. Chart the ENTIRE song as it naturally occurs
 2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-3. Chart the ENTIRE song structure naturally — do not truncate or summarize
-4. Measures may contain 1 or more chords; beats must sum to the time signature
-5. All chords must be musically coherent and diatonic where possible
-6. Return ONLY valid JSON, no explanation
+3. Be musically coherent — infer a reasonable key and maintain consistency
+4. Return ONLY valid JSON, no explanation
 
-EXAMPLE OUTPUT FORMAT (do not copy these chords — transcribe the actual song):
+EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple chords per measure):
 {
-  "key_tonic": "A",
+  "key_tonic": "D",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
@@ -90,8 +88,9 @@ EXAMPLE OUTPUT FORMAT (do not copy these chords — transcribe the actual song):
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "D", "beats": 2}, {"chord": "A", "beats": 2}], "cue": ""},
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
       ]
     },
     {
@@ -99,13 +98,14 @@ EXAMPLE OUTPUT FORMAT (do not copy these chords — transcribe the actual song):
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
       ]
     }
   ]
 }
 
-Now transcribe "${title}" by ${artist || 'Unknown'} addressing the user's feedback, using the exact same JSON structure above:`;
+Transcribe "${title}" by ${artist || 'Unknown'}:`;
 
     const schema = {
       type: "object",
