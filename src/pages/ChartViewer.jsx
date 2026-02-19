@@ -384,9 +384,9 @@ export default function ChartViewer() {
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
       {/* Top Bar */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 flex items-center shadow-lg relative">
-        {/* Logo — left aligned */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 shadow-lg grid grid-cols-3 items-center">
+        {/* Left — Logo */}
+        <div className="flex items-center gap-1.5">
           <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
             <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
             <span className="text-[#D0021B] font-black text-xs">1</span>
@@ -394,14 +394,14 @@ export default function ChartViewer() {
           <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
         </div>
 
-        {/* Song title + artist — truly centered */}
-        <div className="absolute left-0 right-0 flex flex-col items-center pointer-events-none">
+        {/* Center — Song title + artist */}
+        <div className="flex flex-col items-center">
           <h1 className="text-base font-bold text-white font-sans leading-tight">{chart.title}</h1>
           {chart.artist && <p className="text-xs text-[#6b6b6b] font-sans">{chart.artist}</p>}
         </div>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        {/* Right — Actions */}
+        <div className="flex items-center gap-3 justify-end">
           <Button 
             size="sm" 
             variant="outline"
