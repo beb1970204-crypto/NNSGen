@@ -176,7 +176,7 @@ RESPONSE FORMAT:
     try {
       freshChart = await base44.integrations.Core.InvokeLLM({
         prompt: generationPrompt,
-        add_context_from_internet: true,
+        add_context_from_internet: false,
         response_json_schema: schema
       });
     } catch (llmError) {
