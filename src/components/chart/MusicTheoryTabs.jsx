@@ -603,6 +603,149 @@ export default function MusicTheoryTabs({
             )}
           </div>
         </TabsContent>
+
+        {/* Arrangement Tab */}
+        <TabsContent value="arrange" className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4">
+            {!arrangementData ? (
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <p className="text-sm text-[#6b6b6b] text-center">Get arrangement ideas for each instrument</p>
+                <Button
+                  onClick={loadArrangement}
+                  disabled={arrangementLoading || !sectionData}
+                  className="bg-[#D0021B] hover:bg-[#A0011B] text-white"
+                >
+                  {arrangementLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
+                  Arrange Section
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {['drums', 'bass', 'keys', 'guitar'].map(instrument => (
+                  <div key={instrument} className="bg-[#252525] rounded-lg p-3 space-y-2">
+                    <p className="text-sm font-semibold text-white capitalize">{instrument}</p>
+                    <p className="text-xs text-[#a0a0a0]"><strong>Pattern:</strong> {arrangementData[instrument]?.pattern}</p>
+                    {instrument === 'drums' && <p className="text-xs text-[#a0a0a0]"><strong>Intensity:</strong> {arrangementData[instrument]?.intensity}</p>}
+                    <p className="text-xs text-[#6b6b6b]">{arrangementData[instrument]?.tips}</p>
+                  </div>
+                ))}
+                <div className="bg-[#1a1a1a] rounded-lg p-3 border-l-2 border-[#D0021B]">
+                  <p className="text-xs text-[#a0a0a0]"><strong>Together:</strong> {arrangementData.overall}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Modulation Tab */}
+        <TabsContent value="modulate" className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-[#6b6b6b] mb-2 block">Target Key</label>
+                <Input
+                  value={modulationTargetKey}
+                  onChange={(e) => setModulationTargetKey(e.target.value)}
+                  placeholder="e.g., G, Am, F#m"
+                  className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-[#6b6b6b] focus:border-red-600"
+                />
+              </div>
+
+              {!modulationData ? (
+                <Button
+                  onClick={loadModulation}
+                  disabled={modulationLoading || !modulationTargetKey}
+                  className="w-full bg-[#D0021B] hover:bg-[#A0011B] text-white"
+                  size="sm"
+                >
+                  {modulationLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <TrendingUp className="w-4 h-4 mr-2" />}
+                  Plan Modulation
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-[#1a1a1a] rounded-lg p-3 border-l-2 border-[#D0021B]">
+                    <p className="text-xs text-[#6b6b6b]"><strong>Recommended:</strong> {modulationData.recommendedStrategy}</p>
+                    <p className="text-xs text-[#6b6b6b] mt-2"><strong>Placement:</strong> {modulationData.placement}</p>
+                  </div>
+                  {modulationData.modulationStrategies?.map((strat, idx) => (
+                    <div key={idx} className="bg-[#252525] rounded-lg p-3 space-y-2">
+                      <p className="text-sm font-semibold text-white">{strat.approach}</p>
+                      <p className="text-xs text-[#a0a0a0]">{strat.description}</p>
+                      {strat.pivotChord && <p className="text-xs text-[#D0021B] font-mono">Pivot: {strat.pivotChord}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Comparative Analysis Tab */}
+        <TabsContent value="compare" className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4">
+            {!analysisData ? (
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <p className="text-sm text-[#6b6b6b] text-center">See how famous songs use similar progressions</p>
+                <Button
+                  onClick={loadAnalysis}
+                  disabled={analysisLoading || !sectionData}
+                  className="bg-[#D0021B] hover:bg-[#A0011B] text-white"
+                >
+                  {analysisLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Users className="w-4 h-4 mr-2" />}
+                  Analyze Comparisons
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-[#1a1a1a] rounded-lg p-3 border-l-2 border-[#D0021B]">
+                  <p className="text-xs text-[#a0a0a0]">{analysisData.patterns}</p>
+                </div>
+                {analysisData.comparisons?.map((comp, idx) => (
+                  <div key={idx} className="bg-[#252525] rounded-lg p-3 space-y-2">
+                    <p className="text-sm font-semibold text-white">{comp.songTitle}</p>
+                    <p className="text-xs text-[#6b6b6b]">{comp.artist} • {comp.genre}</p>
+                    <p className="text-xs text-[#a0a0a0]"><strong>Similarity:</strong> {comp.similarity}</p>
+                    <p className="text-xs text-[#6b6b6b] italic">{comp.lessonsLearned}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Practice Tab */}
+        <TabsContent value="practice" className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4">
+            {!practiceData ? (
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <p className="text-sm text-[#6b6b6b] text-center">Get targeted practice exercises</p>
+                <Button
+                  onClick={loadPractice}
+                  disabled={practiceLoading || !sectionData}
+                  className="bg-[#D0021B] hover:bg-[#A0011B] text-white"
+                >
+                  {practiceLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Music className="w-4 h-4 mr-2" />}
+                  Generate Exercises
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-[#1a1a1a] rounded-lg p-3">
+                  <p className="text-xs font-semibold text-white mb-2">Practice Sequence</p>
+                  <p className="text-xs text-[#a0a0a0]">{practiceData.practiceSequence}</p>
+                </div>
+                {practiceData.exercises?.map((ex, idx) => (
+                  <div key={idx} className="bg-[#252525] rounded-lg p-3 space-y-2">
+                    <p className="text-sm font-semibold text-white">{ex.title}</p>
+                    <p className="text-xs text-[#a0a0a0]">{ex.description}</p>
+                    <p className="text-xs text-[#6b6b6b]"><strong>Duration:</strong> {ex.duration}</p>
+                    <p className="text-xs text-[#D0021B] font-mono">{ex.progression}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
