@@ -249,18 +249,19 @@ JSON STRUCTURE:
   ]
 }`;
 
+  // Simplified schema — avoids JSON parse failures with the search/vision model
   const schema = {
     type: "object",
     properties: {
       key_tonic: { type: "string" },
-      key_mode: { type: "string", enum: ["major", "minor"] },
+      key_mode: { type: "string" },
       time_signature: { type: "string" },
       sections: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+            label: { type: "string" },
             repeat_count: { type: "number" },
             arrangement_cue: { type: "string" },
             measures: {
@@ -268,24 +269,12 @@ JSON STRUCTURE:
               items: {
                 type: "object",
                 properties: {
-                  chords: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        chord: { type: "string" },
-                        beats: { type: "number" }
-                      },
-                      required: ["chord", "beats"]
-                    }
-                  },
+                  chords: { type: "array", items: { type: "object" } },
                   cue: { type: "string" }
-                },
-                required: ["chords"]
+                }
               }
             }
-          },
-          required: ["label", "measures"]
+          }
         }
       }
     },
