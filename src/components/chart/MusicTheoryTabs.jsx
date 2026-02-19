@@ -753,18 +753,12 @@ export default function MusicTheoryTabs({
   const panelContent = (
     <div className="flex flex-col h-full bg-[#0a0a0a] rounded-lg overflow-hidden border border-[#2a2a2a]">
       {/* Header */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0 relative">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="flex items-center gap-2 flex-1 min-w-0 hover:text-[#D0021B] transition-colors"
-        >
-          <Music className="w-4 h-4 text-[#D0021B] flex-shrink-0" />
-          <span className="text-sm font-bold text-white truncate">{FEATURE_GROUPS[Object.keys(FEATURE_GROUPS).find(g => 
-            FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
-          )]?.label || 'Tools'}</span>
-          <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${sidebarOpen ? 'rotate-180' : ''}`} />
-        </button>
-        <div className="flex gap-2 flex-shrink-0">
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Music className="w-4 h-4 text-[#D0021B]" />
+          <h2 className="text-sm font-bold text-white">Music Theory</h2>
+        </div>
+        <div className="flex gap-2">
           <button onClick={() => setIsFullscreen(!isFullscreen)} className="text-[#6b6b6b] hover:text-white p-1" title="Fullscreen">
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -774,25 +768,78 @@ export default function MusicTheoryTabs({
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden flex-col">
         {/* Desktop Sidebar - only show on fullscreen */}
-        {isFullscreen && (
-          <div className="w-48 bg-[#0a0a0a] border-r border-[#2a2a2a] overflow-y-auto flex-shrink-0">
-            <SidebarContent />
+        {isFullscreen ? (
+          <div className="flex flex-1 overflow-hidden">
+            <div className="w-48 bg-[#0a0a0a] border-r border-[#2a2a2a] overflow-y-auto flex-shrink-0">
+              <SidebarContent />
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-3">
+              {renderFeatureContent()}
+            </div>
           </div>
-        )}
+        ) : (
+          /* Compact View with Category Tabs */
+          <>
+            <div className="border-b border-[#2a2a2a] px-3 py-2 overflow-x-auto flex-shrink-0">
+              <div className="flex gap-1 min-w-max">
+                {Object.entries(FEATURE_GROUPS).map(([groupId, group]) => (
+                  <button
+                    key={groupId}
+                    onClick={() => {
+                      setExpandedGroups(prev => ({ ...prev, [groupId]: true }));
+                      const firstFeature = group.features[0];
+                      if (firstFeature) setActiveFeature(firstFeature.id);
+                    }}
+                    className={`px-3 py-1.5 rounded text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                      Object.keys(FEATURE_GROUPS).find(g => 
+                        FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
+                      ) === groupId
+                        ? 'bg-[#D0021B] text-white'
+                        : 'text-[#a0a0a0] hover:bg-[#252525] hover:text-white'
+                    }`}
+                  >
+                    <group.icon className="w-3.5 h-3.5" />
+                    {group.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {/* Mobile/Floating Sidebar Dropdown */}
-        {sidebarOpen && (
-          <div className="absolute left-0 top-full w-40 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl z-20 max-h-96 overflow-y-auto mt-1">
-            <SidebarContent />
-          </div>
-        )}
+            {/* Features Grid */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                {(() => {
+                  const currentGroup = Object.entries(FEATURE_GROUPS).find(([, g]) => 
+                    g.features.some(f => f.id === activeFeature)
+                  )?.[1];
+                  
+                  return currentGroup?.features.map(feat => (
+                    <button
+                      key={feat.id}
+                      onClick={() => setActiveFeature(feat.id)}
+                      className={`p-3 rounded-lg text-xs transition-all text-left ${
+                        activeFeature === feat.id
+                          ? 'bg-[#D0021B] text-white'
+                          : 'bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#252525] hover:text-white border border-[#2a2a2a]'
+                      }`}
+                    >
+                      <feat.icon className="w-3.5 h-3.5 mb-1" />
+                      <div className="font-semibold">{feat.label}</div>
+                      <div className="text-[0.65rem] opacity-75">{feat.desc}</div>
+                    </button>
+                  ));
+                })()}
+              </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-3">
-          {renderFeatureContent()}
-        </div>
+              {/* Content */}
+              <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
+                {renderFeatureContent()}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
