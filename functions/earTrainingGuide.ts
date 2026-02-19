@@ -6,19 +6,22 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { chartData, sectionData } = await req.json();
-    if (!chartData || !sectionData) {
-      return Response.json({ error: 'Chart and section data required' }, { status: 400 });
+    const { chartData } = await req.json();
+    if (!chartData) {
+      return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
 
-    const chordProgression = sectionData.measures?.map(m => m.chords?.[0]?.chord).join('-') || '';
+    const allChords = chartData.sections?.flatMap(sectionId => {
+      const section = chartData._sections?.find(s => s.id === sectionId);
+      return section?.measures?.flatMap(m => m.chords?.map(c => c.chord)) || [];
+    }).join(' ') || '';
 
     const prompt = `You are an ear training coach preparing someone to recognize chord progressions by ear.
 
-Section: ${sectionData.label} in ${chartData.key}
-Progression: ${chordProgression}
+Song: "${chartData.title}" by ${chartData.artist} in ${chartData.key}
+Full Chord Progression: ${allChords}
 
-Create ear training guidance that helps someone recognize this progression by ear:
+Create comprehensive ear training guidance that helps someone recognize the entire song by ear:
 1. The emotional/sonic character to listen for
 2. Specific moments and what makes them distinctive
 3. Practice tips and what to focus on
