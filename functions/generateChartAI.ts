@@ -399,27 +399,33 @@ Deno.serve(async (req) => {
     const { title, artist, key, time_signature, reference_file_url } = await req.json();
     if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
 
-    // ── Step 1: Try Chordonomicon (via Spotify ID, then title+artist) ──────────
+    // ── Step 1: Try Chordonomicon — run Spotify + title/artist lookups in parallel ──
     let chordonomiconData = null;
     let spotifyMatch = null;
 
     try {
-      const tracks = await searchSpotify(title, artist);
-      console.log(`Spotify found ${tracks.length} tracks`);
-      for (const track of tracks) {
-        const result = await fetchChordonomicon({ spotify_song_id: track.spotify_song_id, spotify_artist_id: track.spotify_artist_id });
-        if (result) { chordonomiconData = result; spotifyMatch = track; break; }
+      // Run Spotify search and direct title+artist lookup concurrently
+      const [tracks, directResult] = await Promise.all([
+        searchSpotify(title, artist).catch(e => { console.log('Spotify failed:', e.message); return []; }),
+        fetchChordonomicon({ title, artist }).catch(() => null)
+      ]);
+
+      // Check Spotify best match only (first/top result)
+      const topTrack = tracks[0];
+      const spotifyResult = topTrack
+        ? await fetchChordonomicon({ spotify_song_id: topTrack.spotify_song_id, spotify_artist_id: topTrack.spotify_artist_id }).catch(() => null)
+        : null;
+
+      if (spotifyResult) {
+        chordonomiconData = spotifyResult;
+        spotifyMatch = topTrack;
+        console.log('Chordonomicon hit via Spotify');
+      } else if (directResult) {
+        chordonomiconData = directResult;
+        console.log('Chordonomicon hit via title+artist');
       }
     } catch (e) {
-      console.log('Spotify/Chordonomicon lookup failed:', e.message);
-    }
-
-    if (!chordonomiconData) {
-      try {
-        chordonomiconData = await fetchChordonomicon({ title, artist });
-      } catch (e) {
-        console.log('Title+artist lookup failed:', e.message);
-      }
+      console.log('Chordonomicon lookup failed:', e.message);
     }
 
     // ── Step 2a: Chordonomicon hit — parse chords, infer key, no LLM needed ───
