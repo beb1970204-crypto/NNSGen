@@ -195,37 +195,47 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `Transcribe the complete chord chart for "${title}" by ${artist || 'Unknown'}.
+  const prompt = `You are a professional chord transcriber. Generate a COMPLETE chord chart for "${title}" by ${artist || 'Unknown'}.
 
-REQUIRED:
-- Verse section (mandatory)
-- Chorus section (mandatory)  
-- Intro, Bridge, Outro as needed
-- Complete song structure — do not abbreviate
+CRITICAL REQUIREMENTS FOR A COMPLETE CHART:
+1. MUST include Verse section — at least 4-8 measures
+2. MUST include Chorus section — distinct from Verse
+3. Include Intro and Outro if appropriate for song style
+4. Include Bridge if the song structure calls for it
+5. Use ONLY these labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+6. Chart the FULL song progression, not abbreviated
 
-RULES:
-- One chord per measure (split multi-chord measures into separate measures)
-- Each measure: exactly 4 beats (for 4/4 time)
-- Chords must be diatonic and musically coherent
-- Use only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+MEASURE & CHORD RULES:
+- Each measure = one chord lasting the full measure (usually 4 beats)
+- Chords must fit the key and be musically consistent
+- No placeholder chords or hallucinated progressions
 
-OUTPUT: Valid JSON only, no text.
+${referenceText ? `PROVIDED REFERENCE MATERIAL:\n${referenceText}\n` : ''}
 
-${referenceText ? `REFERENCE:\n${referenceText}\n` : ''}
-
-JSON Schema:
+EXAMPLE OUTPUT (do not copy these actual chords):
 {
-  "key_tonic": "C",
+  "key_tonic": "G",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
+    {
+      "label": "Intro",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "measures": [
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+      ]
+    },
     {
       "label": "Verse",
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "Em", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
       ]
     },
     {
@@ -233,13 +243,15 @@ JSON Schema:
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "Am", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
       ]
     }
   ]
 }
 
-Transcribe "${title}" by ${artist || 'Unknown'}:`;
+Return ONLY valid JSON. No explanation. Transcribe "${title}" by ${artist || 'Unknown'}:`;
 
   const schema = {
     type: "object",
