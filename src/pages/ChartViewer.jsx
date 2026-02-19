@@ -408,7 +408,7 @@ export default function ChartViewer() {
             onClick={() => setShareDialogOpen(true)}
             className="gap-2 transition-all"
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(208, 2, 27, 0.1)'; e.currentTarget.style.borderColor = 'rgba(208, 2, 27, 0.5)'; e.currentTarget.style.color = '#D0021B'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = 'inherit'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = '#ffffff'; }}
           >
             <Share2 className="w-4 h-4" />
             Share
@@ -420,7 +420,7 @@ export default function ChartViewer() {
             disabled={exportingPDF}
             className="gap-2 transition-all"
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(208, 2, 27, 0.1)'; e.currentTarget.style.borderColor = 'rgba(208, 2, 27, 0.5)'; e.currentTarget.style.color = '#D0021B'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = 'inherit'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = '#ffffff'; }}
           >
             <Download className="w-4 h-4" />
             Export PDF
