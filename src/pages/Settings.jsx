@@ -74,20 +74,20 @@ export default function Settings() {
             Back
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold text-white">Settings</h1>
+        <h1 className="text-3xl font-bold text-white font-sans">Settings</h1>
       </div>
 
       <div className="max-w-2xl">
         {/* Profile Section */}
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 font-sans">
             <Lock className="w-5 h-5" />
             Profile
           </h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#a0a0a0] mb-2">
+              <label className="block text-sm font-medium text-[#a0a0a0] mb-2 font-sans">
                 Full Name
               </label>
               <Input
@@ -95,11 +95,11 @@ export default function Settings() {
                 disabled
                 className="bg-[#0a0a0a] border-[#2a2a2a] text-white"
               />
-              <p className="text-xs text-[#6b6b6b] mt-1">Managed by Base44 account</p>
+              <p className="text-xs text-[#6b6b6b] mt-1 font-sans">Managed by Base44 account</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#a0a0a0] mb-2">
+              <label className="block text-sm font-medium text-[#a0a0a0] mb-2 font-sans">
                 Email
               </label>
               <Input
@@ -107,11 +107,11 @@ export default function Settings() {
                 disabled
                 className="bg-[#0a0a0a] border-[#2a2a2a] text-white"
               />
-              <p className="text-xs text-[#6b6b6b] mt-1">Verified email address</p>
+              <p className="text-xs text-[#6b6b6b] mt-1 font-sans">Verified email address</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#a0a0a0] mb-2">
+              <label className="block text-sm font-medium text-[#a0a0a0] mb-2 font-sans">
                 Account Role
               </label>
               <Input
@@ -119,18 +119,18 @@ export default function Settings() {
                 disabled
                 className="bg-[#0a0a0a] border-[#2a2a2a] text-white"
               />
-              <p className="text-xs text-[#6b6b6b] mt-1">Your permission level in NNSGen</p>
+              <p className="text-xs text-[#6b6b6b] mt-1 font-sans">Your permission level in NNSGen</p>
             </div>
           </div>
         </div>
 
         {/* Preferences Section */}
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">Preferences</h2>
+          <h2 className="text-xl font-bold text-white mb-4 font-sans">Preferences</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#a0a0a0] mb-2">
+              <label className="block text-sm font-medium text-[#a0a0a0] mb-2 font-sans">
                 Default Key for New Charts
               </label>
               <select
@@ -143,7 +143,7 @@ export default function Settings() {
                   <option key={key} value={key}>{key}</option>
                 ))}
               </select>
-              <p className="text-xs text-[#6b6b6b] mt-1">Suggested key when creating new charts</p>
+              <p className="text-xs text-[#6b6b6b] mt-1 font-sans">Suggested key when creating new charts</p>
             </div>
 
             <Button
@@ -159,11 +159,11 @@ export default function Settings() {
 
         {/* Danger Zone */}
         <div className="bg-[#1a1a1a] border border-red-600/20 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Danger Zone</h2>
+          <h2 className="text-xl font-bold text-white mb-4 font-sans">Danger Zone</h2>
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-[#a0a0a0] mb-4">
+              <p className="text-sm text-[#a0a0a0] mb-4 font-sans">
                 Delete your account and all associated charts. This action cannot be undone.
               </p>
               <Button
