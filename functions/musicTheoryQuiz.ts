@@ -6,24 +6,27 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { chartData, sectionData } = await req.json();
-    if (!chartData || !sectionData) {
-      return Response.json({ error: 'Chart and section data required' }, { status: 400 });
+    const { chartData } = await req.json();
+    if (!chartData) {
+      return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
+
+    const allChords = chartData.sections?.flatMap(sectionId => {
+      const section = chartData._sections?.find(s => s.id === sectionId);
+      return section?.measures?.flatMap(m => m.chords?.map(c => c.chord)) || [];
+    }).join(' ') || '';
 
     const prompt = `You are a music theory professor creating educational quiz questions.
 
-Given this chart:
-- Title: ${chartData.title}
-- Artist: ${chartData.artist}
-- Key: ${chartData.key}
-- Section: ${sectionData.label}
-- Chords: ${sectionData.measures?.map(m => m.chords?.map(c => c.chord).join(' ')).join(' | ')}
+Song: "${chartData.title}" by ${chartData.artist}
+Key: ${chartData.key}
+Time Signature: ${chartData.time_signature}
+Full Chord Progression: ${allChords}
 
-Generate 3 progressively harder harmonic analysis questions for this section. Focus on:
+Generate 5-8 progressively harder harmonic analysis questions covering the entire song. Focus on:
 1. Easy: Chord identification and function
 2. Medium: Cadences, chord movement, voice leading
-3. Hard: Advanced concepts (borrowed chords, secondary dominants, etc.)
+3. Hard: Advanced concepts (borrowed chords, secondary dominants, modulations, etc.)
 
 Return ONLY valid JSON with no explanation:
 {
@@ -50,6 +53,7 @@ Return ONLY valid JSON with no explanation:
               properties: {
                 difficulty: { type: "string" },
                 question: { type: "string" },
+                options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
                 hints: { type: "array", items: { type: "string" } },
                 answer: { type: "string" },
                 teachingPoint: { type: "string" }
