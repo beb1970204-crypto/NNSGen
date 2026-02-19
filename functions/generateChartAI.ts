@@ -320,12 +320,6 @@ JSON STRUCTURE:
     throw new Error(`Chart generation failed: ${msg}`);
   }
 
-  // Validate for completeness BEFORE resolving key
-  const completenessCheck = validateChartOutput(response.sections);
-  if (!completenessCheck.valid) {
-    throw new Error(`Completeness check failed: ${completenessCheck.reason}`);
-  }
-
   // Resolve key with TonalJS
   const tonic = response.key_tonic || 'C';
   const isMinor = response.key_mode === 'minor';
