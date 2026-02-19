@@ -70,12 +70,19 @@ export default function ChartViewer() {
   });
 
   const toggleDisplayMode = async (mode) => {
-    // Optimistically update local state
+    // Optimistically update local state first
     queryClient.setQueryData(['chart', chartId], (old) => 
       old ? { ...old, display_mode: mode } : old
     );
-    // Persist to database
-    await base44.entities.Chart.update(chartId, { display_mode: mode });
+    // Persist to database AND refetch to confirm
+    try {
+      await base44.entities.Chart.update(chartId, { display_mode: mode });
+      // Don't refetch — keep the optimistic update
+    } catch (error) {
+      // If update fails, revert the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
+      toast.error('Failed to update notation mode');
+    }
   };
 
   const transposeChart = useMutation({
