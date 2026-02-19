@@ -35,7 +35,7 @@ const FEATURE_GROUPS = {
     color: 'text-purple-400',
     features: [
       { id: 'arrange', label: 'Arrange', icon: Zap, desc: 'Arrangement guidance' },
-      { id: 'modulate', label: 'Modulate', icon: TrendingUp, desc: 'Key changes' },
+      { id: 'scales', label: 'Scales', icon: Music, desc: 'Scale & mode suggestions' },
       { id: 'compare', label: 'Compare', icon: Users, desc: 'Famous songs' }
     ]
   }
@@ -73,9 +73,8 @@ export default function MusicTheoryTabs({
   const [earTrainingLoading, setEarTrainingLoading] = useState(false);
   const [arrangementData, setArrangementData] = useState(null);
   const [arrangementLoading, setArrangementLoading] = useState(false);
-  const [modulationData, setModulationData] = useState(null);
-  const [modulationLoading, setModulationLoading] = useState(false);
-  const [modulationTargetKey, setModulationTargetKey] = useState('');
+  const [scalesData, setScalesData] = useState(null);
+  const [scalesLoading, setScalesLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [practiceData, setPracticeData] = useState(null);
@@ -237,23 +236,26 @@ export default function MusicTheoryTabs({
     }
   };
 
-  const loadModulation = async () => {
-    if (!modulationTargetKey) return;
-    setModulationLoading(true);
+  const loadScales = async () => {
+    if (!chartData) return;
+    setScalesLoading(true);
+    setErrorMessage(null);
     try {
-      const response = await base44.functions.invoke('modulationPlanning', {
-        chartData,
-        currentKey: chartData.key,
-        targetKey: modulationTargetKey,
-        context: sectionData?.label || 'general'
+      const response = await base44.functions.invoke('scaleSuggestions', {
+        chartData
       });
-      if (response.data?.success) {
-        setModulationData(response.data.modulation);
+      if (response.data?.success && response.data?.scales) {
+        setScalesData(response.data.scales);
+      } else {
+        setErrorMessage('Failed to load scale suggestions');
+        toast.error('Failed to load scale suggestions');
       }
     } catch (error) {
-      console.error('Modulation error:', error);
+      console.error('Scales error:', error);
+      setErrorMessage(error.message || 'Failed to load scale suggestions');
+      toast.error('Failed to load scale suggestions');
     } finally {
-      setModulationLoading(false);
+      setScalesLoading(false);
     }
   };
 
@@ -574,48 +576,61 @@ export default function MusicTheoryTabs({
           </div>
         );
 
-      case 'modulate':
+      case 'scales':
         return (
-          <div className="flex flex-col gap-3 h-full">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#6b6b6b]">Target Key</label>
-              <Input
-                value={modulationTargetKey}
-                onChange={(e) => setModulationTargetKey(e.target.value)}
-                placeholder="e.g., G, Am, F#m"
-                className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-[#6b6b6b] text-sm"
-              />
-            </div>
-            {!modulationData ? (
+          <div className="flex flex-col gap-4 h-full">
+            {errorMessage && (
+              <div className="bg-red-500/20 border border-red-500/50 rounded p-3 flex gap-2 items-start">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 mt-0.5" />
+                <div className="text-xs text-red-400">{errorMessage}</div>
+              </div>
+            )}
+            {!scalesData ? (
               <FeatureEmptyState
-                icon={TrendingUp}
-                title="Modulation Planning"
-                description="Find smooth key change strategies"
-                expectedOutput="3-4 modulation approaches with pivot chords and placement"
+                icon={Music}
+                title="Scale & Mode Suggestions"
+                description="Discover scales and modes for improvising over the entire song"
+                expectedOutput="Primary scales, modes, and improvisation strategies"
                 requirements={[
-                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' },
-                  { label: 'Target key entered', unmet: !modulationTargetKey, hint: 'Enter the key to modulate to' }
+                  { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
-                isLoading={modulationLoading}
-                onAction={loadModulation}
+                isLoading={scalesLoading}
+                onAction={loadScales}
               />
             ) : (
               <div className="space-y-3 overflow-y-auto">
-                <ResultCard
-                  title={`${chartData.key} → ${modulationTargetKey}`}
-                  content={modulationData.recommendedStrategy}
-                  badge="Recommended"
-                />
-                {modulationData.modulationStrategies?.map((s, i) => (
+                {scalesData.primaryScales?.map((s, idx) => (
                   <ResultCard
-                    key={i}
-                    title={s.approach}
-                    content={s.pivotChord || 'N/A'}
-                    copyText={s.pivotChord || ''}
-                    details={[s.description, `Placement: ${s.placement || 'Bridge/Chorus'}`]}
-                    color="text-[#D0021B] font-mono font-bold"
+                    key={idx}
+                    title={s.scale}
+                    content={s.reason}
+                    details={[`Use: ${s.bestFor}`, s.avoidNotes?.length > 0 ? `Avoid: ${s.avoidNotes.join(', ')}` : null].filter(Boolean)}
+                    badge={idx === 0 ? 'Primary' : undefined}
+                    color="text-[#D0021B] font-bold"
                   />
                 ))}
+                {scalesData.modesSuggestions?.map((m, idx) => (
+                  <ResultCard
+                    key={`mode-${idx}`}
+                    title={m.mode}
+                    content={m.application}
+                    details={[`Sound: ${m.soundCharacter}`]}
+                    badge="Mode"
+                  />
+                ))}
+                {scalesData.improvisationTips?.length > 0 && (
+                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 space-y-2">
+                    <div className="text-xs font-semibold text-[#D0021B]">Improvisation Tips</div>
+                    <div className="text-xs text-[#a0a0a0] space-y-1">
+                      {scalesData.improvisationTips.map((tip, i) => (
+                        <div key={i} className="flex gap-2">
+                          <span className="text-[#D0021B] flex-shrink-0">•</span>
+                          <span>{tip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
