@@ -467,17 +467,17 @@ export default function ChartViewer() {
         {/* Center Canvas */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <ChartToolbar
-            hasSelection={!!selectedMeasure}
-            zoomLevel={zoomLevel}
-            onZoomIn={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
-            onZoomOut={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
-            onDelete={handleDeleteSelectedMeasure}
-            onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
-            editMode={editMode}
-            onToggleEditMode={() => setEditMode(!editMode)}
-            displayMode={chart.display_mode}
-            onToggleDisplayMode={toggleDisplayMode}
-          />
+             hasSelection={!!selectedMeasure}
+             zoomLevel={zoomLevel}
+             onZoomIn={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
+             onZoomOut={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
+             onDelete={handleDeleteSelectedMeasure}
+             onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
+             editMode={editMode}
+             onToggleEditMode={() => setEditMode(!editMode)}
+             displayMode={chart.display_mode || 'chords'}
+             onToggleDisplayMode={toggleDisplayMode}
+           />
           
           <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
             {sections.length === 0 ? (
