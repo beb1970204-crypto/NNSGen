@@ -148,12 +148,12 @@ export default function ChartCreator() {
             </Button>
             <div>
               <h1 className="text-lg font-bold text-white">{draftChart.title}</h1>
-              <div className="flex items-center gap-2 text-xs text-[#6b6b6b]">
+              <div className="flex items-center gap-2 text-xs text-[#6b6b6b] font-sans">
                 {draftChart.artist && <span>{draftChart.artist}</span>}
                 <span>·</span>
-                <span>Key: {draftChart.key}</span>
+                <span>Key: <span className="font-mono">{draftChart.key}</span></span>
                 <span>·</span>
-                <span>{draftChart.time_signature}</span>
+                <span className="font-mono">{draftChart.time_signature}</span>
                 <span>·</span>
                 <span className={`font-semibold ${sourceBadgeColor}`}>{sourceLabel}</span>
               </div>
@@ -225,7 +225,7 @@ export default function ChartCreator() {
             Back
           </Button>
         </Link>
-        <h1 className="text-lg font-bold text-white">Create New Chart</h1>
+        <h1 className="text-lg font-bold text-white font-sans">Create New Chart</h1>
       </div>
 
       {/* Centered form */}
@@ -233,13 +233,13 @@ export default function ChartCreator() {
         <div className="w-full max-w-md space-y-6">
           <div className="text-center mb-8">
             <div className="text-5xl mb-4">🎵</div>
-            <h2 className="text-2xl font-bold text-white">New Chart</h2>
-            <p className="text-[#6b6b6b] mt-2">Enter a song title to generate a chart with AI</p>
+            <h2 className="text-2xl font-bold text-white font-sans">New Chart</h2>
+            <p className="text-[#6b6b6b] mt-2 font-sans">Enter a song title to generate a chart with AI</p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium">Song Title *</Label>
+              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium font-sans">Song Title *</Label>
               <Input
                 placeholder="e.g., Franklin's Tower"
                 value={title}
@@ -250,7 +250,7 @@ export default function ChartCreator() {
             </div>
 
             <div>
-              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium">Artist</Label>
+              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium font-sans">Artist</Label>
               <Input
                 placeholder="e.g., Grateful Dead"
                 value={artist}
@@ -261,7 +261,7 @@ export default function ChartCreator() {
             </div>
 
             <div>
-              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium">Reference Chart (Optional)</Label>
+              <Label className="text-sm text-[#a0a0a0] mb-2 block font-medium font-sans">Reference Chart (Optional)</Label>
               <div className="border-2 border-dashed border-[#2a2a2a] rounded-lg p-6 text-center hover:border-red-600/50 transition-all">
                 {uploadingFile ? (
                   <div className="flex flex-col items-center gap-2">
@@ -288,8 +288,8 @@ export default function ChartCreator() {
                     />
                     <div className="text-[#6b6b6b]">
                       <div className="text-3xl mb-2">📄</div>
-                      <p className="text-sm text-white">Click to upload reference</p>
-                      <p className="text-xs mt-1">PDF, DOC, TXT, JPG, PNG</p>
+                      <p className="text-sm text-white font-sans">Click to upload reference</p>
+                      <p className="text-xs mt-1 font-sans">PDF, DOC, TXT, JPG, PNG</p>
                     </div>
                   </label>
                 )}
