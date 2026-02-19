@@ -71,7 +71,7 @@ export default function ChartViewer() {
 
   const toggleDisplayMode = async (mode) => {
     await base44.entities.Chart.update(chartId, { display_mode: mode });
-    queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
+    await queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
 
   const transposeChart = useMutation({
