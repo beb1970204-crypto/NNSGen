@@ -48,21 +48,21 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import ChartCreator from './pages/ChartCreator';
+import ChartViewer from './pages/ChartViewer';
 import Home from './pages/Home';
+import SetlistLearningPath from './pages/SetlistLearningPath';
 import SetlistViewer from './pages/SetlistViewer';
 import Settings from './pages/Settings';
-import ChartViewer from './pages/ChartViewer';
-import SetlistLearningPath from './pages/SetlistLearningPath';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "ChartCreator": ChartCreator,
+    "ChartViewer": ChartViewer,
     "Home": Home,
+    "SetlistLearningPath": SetlistLearningPath,
     "SetlistViewer": SetlistViewer,
     "Settings": Settings,
-    "ChartViewer": ChartViewer,
-    "SetlistLearningPath": SetlistLearningPath,
 }
 
 export const pagesConfig = {
