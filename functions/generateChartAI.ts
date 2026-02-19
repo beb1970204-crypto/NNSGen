@@ -292,11 +292,11 @@ JSON STRUCTURE:
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  const attemptLLM = async (useInternet) => {
-    console.log(`LLM attempt with add_context_from_internet=${useInternet}`);
+  // Use internet=false: the search model consistently returns malformed JSON with complex schemas
+  try {
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
-      add_context_from_internet: useInternet,
+      add_context_from_internet: false,
       file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: schema
     });
@@ -322,19 +322,9 @@ JSON STRUCTURE:
     }
 
     return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
-  };
-
-  // Try with internet context first, fall back to without if it fails (search models can return malformed JSON)
-  try {
-    return await attemptLLM(true);
-  } catch (internetError) {
-    console.error(`LLM attempt failed (internet=true): ${internetError.message}`);
-    try {
-      return await attemptLLM(false);
-    } catch (error) {
-      console.error('LLM generation error (both attempts failed):', error.message);
-      throw new Error(`Chart generation failed: ${error.message}`);
-    }
+  } catch (error) {
+    console.error('LLM generation error:', error.message);
+    throw new Error(`Chart generation failed: ${error.message}`);
   }
 }
 
