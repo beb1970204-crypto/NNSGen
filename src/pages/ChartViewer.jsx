@@ -70,8 +70,12 @@ export default function ChartViewer() {
   });
 
   const toggleDisplayMode = async (mode) => {
+    // Optimistically update local state
+    queryClient.setQueryData(['chart', chartId], (old) => 
+      old ? { ...old, display_mode: mode } : old
+    );
+    // Persist to database
     await base44.entities.Chart.update(chartId, { display_mode: mode });
-    await queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
 
   const transposeChart = useMutation({
