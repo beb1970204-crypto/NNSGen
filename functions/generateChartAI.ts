@@ -195,39 +195,29 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with complete song structure.
+  const prompt = `Transcribe "${title}" by ${artist || 'Unknown'} with complete song structure.
 
 ${referenceText ? `Reference material:\n${referenceText}\n\n` : ''}
 
 REQUIREMENTS:
-1. Chart the ENTIRE song: Intro, Verse, Chorus, Bridge, Outro — whatever the song naturally contains
+1. Chart the ENTIRE song as it naturally occurs
 2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-3. Be musically accurate — infer a reasonable key and maintain harmonic coherence
+3. Be musically coherent — infer a reasonable key and maintain consistency
 4. Return ONLY valid JSON, no explanation
 
-EXAMPLE OUTPUT FORMAT (do not copy these chords):
+EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple chords per measure):
 {
-  "key_tonic": "G",
+  "key_tonic": "D",
   "key_mode": "major",
   "time_signature": "4/4",
   "sections": [
-    {
-      "label": "Intro",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
-      ]
-    },
     {
       "label": "Verse",
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
+        {"chords": [{"chord": "D", "beats": 2}, {"chord": "A", "beats": 2}], "cue": ""},
         {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "Em", "beats": 4}], "cue": ""},
         {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
       ]
     },
@@ -236,9 +226,8 @@ EXAMPLE OUTPUT FORMAT (do not copy these chords):
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "C", "beats": 4}], "cue": ""},
         {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
       ]
     }
   ]
