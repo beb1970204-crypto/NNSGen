@@ -6,21 +6,24 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { chartData, sectionData, skillLevel = 'intermediate' } = await req.json();
-    if (!chartData || !sectionData) {
-      return Response.json({ error: 'Chart and section data required' }, { status: 400 });
+    const { chartData, skillLevel = 'intermediate' } = await req.json();
+    if (!chartData) {
+      return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
 
-    const chords = sectionData.measures?.map(m => m.chords?.[0]?.chord).join('-') || '';
+    const allChords = chartData.sections?.flatMap(sectionId => {
+      const section = chartData._sections?.find(s => s.id === sectionId);
+      return section?.measures?.flatMap(m => m.chords?.map(c => c.chord)) || [];
+    }).join(' ') || '';
 
     const prompt = `You are a practice coach creating targeted exercises for musicians.
 
-Progression: ${chords}
-Section: ${sectionData.label}
+Song: "${chartData.title}" by ${chartData.artist}
+Full Progression: ${allChords}
 Key: ${chartData.key}
 Skill Level: ${skillLevel}
 
-Create 3-4 specific practice exercises focused on mastering different aspects of this progression. Include voice leading exercises, rhythm patterns, and listening exercises.
+Create 5-7 progressive practice exercises focused on mastering the entire song. Include voice leading exercises, rhythm patterns, listening exercises, and song-specific challenges.
 
 Return ONLY valid JSON:
 {
