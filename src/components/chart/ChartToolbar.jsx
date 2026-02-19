@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, Plus, Trash2, ZoomIn, ZoomOut, ArrowLeft } from "lucide-react";
+import { ArrowUp, ArrowDown, Plus, Trash2, ZoomIn, ZoomOut, ArrowLeft, BookOpen } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,7 +17,8 @@ export default function ChartToolbar({
   editMode = true,
   onToggleEditMode,
   displayMode = 'chords',
-  onToggleDisplayMode
+  onToggleDisplayMode,
+  onToggleMusicTheory
 }) {
   return (
     <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between transition-all">
