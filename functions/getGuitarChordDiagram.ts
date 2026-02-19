@@ -25,29 +25,41 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { chord } = await req.json();
+    const { chord, frets: directFrets } = await req.json();
 
-    if (!chord) {
-      return Response.json({ error: 'Chord name required' }, { status: 400 });
-    }
+    let voicing;
 
-    // Try exact match first
-    let voicing = GUITAR_CHORDS[chord];
+    if (directFrets) {
+      // If direct fret data is provided, use it
+      if (!Array.isArray(directFrets) || directFrets.length !== 6) {
+        return Response.json({ 
+          error: 'Invalid frets array - must be exactly 6 elements',
+          frets: [null, null, null, null, null, null],
+          found: false
+        }, { status: 400 });
+      }
+      voicing = directFrets;
+    } else if (chord) {
+      // Try exact match first
+      voicing = GUITAR_CHORDS[chord];
 
-    // If no exact match, try to simplify the chord name (remove extensions, match base chord)
-    if (!voicing) {
-      const baseChordMatch = chord.match(/^[A-G]#?b?m?/);
-      const baseChord = baseChordMatch ? baseChordMatch[0] : chord;
-      voicing = GUITAR_CHORDS[baseChord];
-    }
+      // If no exact match, try to simplify the chord name (remove extensions, match base chord)
+      if (!voicing) {
+        const baseChordMatch = chord.match(/^[A-G]#?b?m?/);
+        const baseChord = baseChordMatch ? baseChordMatch[0] : chord;
+        voicing = GUITAR_CHORDS[baseChord];
+      }
 
-    // If still no match, return error
-    if (!voicing) {
-      return Response.json({ 
-        error: `Chord "${chord}" not found in database`,
-        frets: [null, null, null, null, null, null],
-        found: false
-      }, { status: 200 });
+      // If still no match, return error
+      if (!voicing) {
+        return Response.json({ 
+          error: `Chord "${chord}" not found in database`,
+          frets: [null, null, null, null, null, null],
+          found: false
+        }, { status: 200 });
+      }
+    } else {
+      return Response.json({ error: 'Chord name or frets required' }, { status: 400 });
     }
 
     return Response.json({ 

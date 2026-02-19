@@ -24,6 +24,8 @@ Provide 2-3 practical voicing suggestions for this chord on a ${instrument}. Con
 - Harmonic function in the key
 - Contemporary vs. traditional approaches
 
+CRITICAL for guitar: Include the specific fret positions as an array of 6 numbers for strings [E,A,D,G,B,e]. Use null for muted strings.
+
 Return ONLY valid JSON:
 {
   "voicings": [
@@ -31,6 +33,7 @@ Return ONLY valid JSON:
       "chord": "${chord}",
       "name": "Shell Voicing",
       "notes": "Root-3rd-7th",
+      "frets": [null, 3, 5, 3, 4, 3],
       "description": "A minimal, clean voicing...",
       "technique": "How to play it on ${instrument}",
       "context": "When to use this voicing",
@@ -52,6 +55,7 @@ Return ONLY valid JSON:
                 chord: { type: "string" },
                 name: { type: "string" },
                 notes: { type: "string" },
+                frets: { type: "array", items: { type: ["number", "null"] }, minItems: 6, maxItems: 6 },
                 description: { type: "string" },
                 technique: { type: "string" },
                 context: { type: "string" },

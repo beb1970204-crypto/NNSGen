@@ -440,7 +440,7 @@ export default function MusicTheoryTabs({
                    voicingData.map((v, idx) => (
                      <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
                        <div className="flex justify-center">
-                         <ChordDiagram chord={v.chord || selectedMeasure?.chords?.[0]?.chord} size="sm" />
+                         <ChordDiagram chord={v.chord || selectedMeasure?.chords?.[0]?.chord} frets={v.frets} size="sm" />
                        </div>
                       <div>
                         <p className="text-xs font-bold text-[#6b6b6b] uppercase mb-1">{v.name}</p>
@@ -456,7 +456,7 @@ export default function MusicTheoryTabs({
                 ) : (
                    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
                      <div className="flex justify-center">
-                       <ChordDiagram chord={voicingData.chord || selectedMeasure?.chords?.[0]?.chord} size="sm" />
+                       <ChordDiagram chord={voicingData.chord || selectedMeasure?.chords?.[0]?.chord} frets={voicingData.frets} size="sm" />
                      </div>
                     <div>
                       <p className="text-xs font-bold text-[#6b6b6b] uppercase mb-1">{voicingData.name || 'Suggested Voicing'}</p>
