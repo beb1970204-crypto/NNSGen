@@ -476,7 +476,7 @@ export default function ChartViewer() {
             onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
             editMode={editMode}
             onToggleEditMode={() => setEditMode(!editMode)}
-            displayMode={chart.display_mode}
+            displayMode={displayMode}
             onToggleDisplayMode={toggleDisplayMode}
           />
           
