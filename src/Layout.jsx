@@ -104,7 +104,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={item.label}
                 to={`${createPageUrl(item.path)}?view=${item.view}`}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer font-sans ${
                   item.active 
                     ? 'bg-[#D0021B] text-white shadow-lg shadow-[#D0021B]/20' 
                     : 'text-[#a0a0a0] hover:bg-[#252525] hover:text-white'
