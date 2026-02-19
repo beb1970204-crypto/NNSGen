@@ -394,8 +394,8 @@ export default function ChartViewer() {
           <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
         </div>
 
-        {/* Song title + artist — centered */}
-        <div className="flex-1 flex flex-col items-center">
+        {/* Song title + artist — truly centered */}
+        <div className="absolute left-0 right-0 flex flex-col items-center pointer-events-none">
           <h1 className="text-base font-bold text-white font-sans leading-tight">{chart.title}</h1>
           {chart.artist && <p className="text-xs text-[#6b6b6b] font-sans">{chart.artist}</p>}
         </div>
