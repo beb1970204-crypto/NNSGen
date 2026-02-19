@@ -129,46 +129,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Preferences Section */}
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a2a2a]">
-            <div className="w-9 h-9 rounded-lg bg-[#2a2a2a] flex items-center justify-center">
-              <SlidersHorizontal className="w-4 h-4 text-[#a0a0a0]" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white font-sans">Preferences</h2>
-              <p className="text-xs text-[#6b6b6b] font-sans">Default chart settings</p>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#a0a0a0] mb-2 font-sans">
-                Default Key for New Charts
-              </label>
-              <select
-                value={defaultKey}
-                onChange={(e) => setDefaultKey(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-white rounded-md px-4 py-2.5 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
-              >
-                {['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
-                  'Cm', 'C#m', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bbm', 'Bm'].map(key => (
-                  <option key={key} value={key}>{key}</option>
-                ))}
-              </select>
-              <p className="text-xs text-[#6b6b6b] mt-1 font-sans">Suggested key when creating new charts</p>
-            </div>
-
-            <Button
-              onClick={handleSaveSettings}
-              disabled={updateSettings.isPending}
-              className="gap-2 shadow-lg shadow-red-600/20 w-full"
-            >
-              <Save className="w-4 h-4" />
-              {updateSettings.isPending ? 'Saving...' : 'Save Preferences'}
-            </Button>
-          </div>
-        </div>
 
         {/* Danger Zone */}
         <div className="bg-[#1a1a1a] border border-red-600/20 rounded-xl p-6">
