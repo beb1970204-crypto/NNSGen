@@ -753,23 +753,17 @@ export default function MusicTheoryTabs({
   const panelContent = (
     <div className="flex flex-col h-full bg-[#0a0a0a] rounded-lg overflow-hidden border border-[#2a2a2a]">
       {/* Header */}
-      <div className="bg-[#141414] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="bg-[#141414] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0 relative">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="flex items-center gap-2 flex-1 min-w-0 hover:text-[#D0021B] transition-colors"
+        >
           <Music className="w-4 h-4 text-[#D0021B] flex-shrink-0" />
-          {isFullscreen && <h2 className="text-sm font-bold text-white truncate">Music Theory</h2>}
-          {!isFullscreen && (
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden flex items-center gap-1.5 text-[#6b6b6b] hover:text-white transition-colors text-xs font-medium flex-1 min-w-0"
-            >
-              <span className="truncate">{FEATURE_GROUPS[Object.keys(FEATURE_GROUPS).find(g => 
-                FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
-              )]?.label || 'Tools'}</span>
-              <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${sidebarOpen ? 'rotate-180' : ''}`} />
-            </button>
-          )}
-          {isFullscreen && <h2 className="hidden lg:block text-sm font-bold text-white">Music Theory</h2>}
-        </div>
+          <span className="text-sm font-bold text-white truncate">{FEATURE_GROUPS[Object.keys(FEATURE_GROUPS).find(g => 
+            FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
+          )]?.label || 'Tools'}</span>
+          <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${sidebarOpen ? 'rotate-180' : ''}`} />
+        </button>
         <div className="flex gap-2 flex-shrink-0">
           <button onClick={() => setIsFullscreen(!isFullscreen)} className="text-[#6b6b6b] hover:text-white p-1" title="Fullscreen">
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
