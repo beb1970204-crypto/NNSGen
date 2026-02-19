@@ -1,7 +1,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, Plus, Trash2, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowUp, ArrowDown, Plus, Trash2, ZoomIn, ZoomOut, ArrowLeft } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function ChartToolbar({ 
   onUp,
