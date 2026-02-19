@@ -387,9 +387,19 @@ export default function ChartViewer() {
       <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 shadow-lg grid grid-cols-3 items-center">
         {/* Left — Logo */}
         <Link to={createPageUrl("Home")} className="flex items-center gap-1.5">
-          <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
-            <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
-            <span className="text-[#D0021B] font-black text-xs">1</span>
+          <div className="grid grid-cols-2 gap-0.5 w-7 h-7 flex-shrink-0">
+            <div className="bg-white rounded-[2px] flex items-center justify-center">
+              <span className="text-black font-black text-[7px] leading-none">1</span>
+            </div>
+            <div className="rounded-[2px] flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 4px #D0021B' }}>
+              <span className="text-[#D0021B] font-black text-[7px] leading-none">4</span>
+            </div>
+            <div className="rounded-[2px] flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 4px #D0021B' }}>
+              <span className="text-[#D0021B] font-black text-[7px] leading-none">5</span>
+            </div>
+            <div className="rounded-[2px] flex items-center justify-center border border-[#c17f00]" style={{ background: '#0a0a0a', boxShadow: '0 0 4px #c17f00' }}>
+              <span className="text-[#e09a00] font-black text-[6px] leading-none">6-</span>
+            </div>
           </div>
           <span className="text-sm font-bold tracking-tight text-white font-mono">ChartScribe<span className="text-[#D0021B]">AI</span></span>
         </Link>
