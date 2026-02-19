@@ -210,7 +210,6 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  // SINGLE OPTIMIZED PROMPT for consistency — no retry variations
   const prompt = `You are a professional chord transcriber. Transcribe "${title}" by ${artist || 'Unknown'} with COMPLETE song structure.
 
 CRITICAL REQUIREMENTS:
@@ -223,7 +222,7 @@ CRITICAL REQUIREMENTS:
 
 ${referenceText ? `REFERENCE MATERIAL PROVIDED:\n${referenceText}\n` : ''}
 
-JSON STRUCTURE:
+EXAMPLE OUTPUT FORMAT (do not copy these chords — transcribe the actual song):
 {
   "key_tonic": "A",
   "key_mode": "major",
@@ -235,7 +234,7 @@ JSON STRUCTURE:
       "arrangement_cue": "",
       "measures": [
         {"chords": [{"chord": "A", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 2}, {"chord": "E", "beats": 2}], "cue": ""}
+        {"chords": [{"chord": "E", "beats": 4}], "cue": ""}
       ]
     },
     {
@@ -247,7 +246,9 @@ JSON STRUCTURE:
       ]
     }
   ]
-}`;
+}
+
+Now transcribe "${title}" by ${artist || 'Unknown'} using the exact same JSON structure above:`;
 
   const schema = {
     type: "object",
