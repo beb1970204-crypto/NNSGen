@@ -52,6 +52,7 @@ import Home from './pages/Home';
 import SetlistViewer from './pages/SetlistViewer';
 import Settings from './pages/Settings';
 import ChartViewer from './pages/ChartViewer';
+import SetlistLearningPath from './pages/SetlistLearningPath';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +62,7 @@ export const PAGES = {
     "SetlistViewer": SetlistViewer,
     "Settings": Settings,
     "ChartViewer": ChartViewer,
+    "SetlistLearningPath": SetlistLearningPath,
 }
 
 export const pagesConfig = {
