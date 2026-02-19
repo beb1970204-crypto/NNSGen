@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Send, Loader2, BookOpen, Lightbulb, Music, Ear, Download } from 'lucide-react';
+import { X, Send, Loader2, BookOpen, Lightbulb, Music, Ear, Download, Zap, TrendingUp, Users } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -43,6 +43,23 @@ export default function MusicTheoryTabs({
   // Ear training state
   const [earTrainingData, setEarTrainingData] = useState(null);
   const [earTrainingLoading, setEarTrainingLoading] = useState(false);
+
+  // Arrangement state
+  const [arrangementData, setArrangementData] = useState(null);
+  const [arrangementLoading, setArrangementLoading] = useState(false);
+
+  // Modulation state
+  const [modulationData, setModulationData] = useState(null);
+  const [modulationLoading, setModulationLoading] = useState(false);
+  const [modulationTargetKey, setModulationTargetKey] = useState('');
+
+  // Comparative analysis state
+  const [analysisData, setAnalysisData] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  // Practice state
+  const [practiceData, setPracticeData] = useState(null);
+  const [practiceLoading, setPracticeLoading] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -226,6 +243,22 @@ export default function MusicTheoryTabs({
           <TabsTrigger value="ear" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#D0021B]">
             <Ear className="w-4 h-4 mr-1" />
             <span className="text-xs">Ear</span>
+          </TabsTrigger>
+          <TabsTrigger value="arrange" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#D0021B]">
+            <Zap className="w-4 h-4 mr-1" />
+            <span className="text-xs">Arrange</span>
+          </TabsTrigger>
+          <TabsTrigger value="modulate" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#D0021B]">
+            <TrendingUp className="w-4 h-4 mr-1" />
+            <span className="text-xs">Modulate</span>
+          </TabsTrigger>
+          <TabsTrigger value="compare" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#D0021B]">
+            <Users className="w-4 h-4 mr-1" />
+            <span className="text-xs">Compare</span>
+          </TabsTrigger>
+          <TabsTrigger value="practice" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#D0021B]">
+            <Music className="w-4 h-4 mr-1" />
+            <span className="text-xs">Practice</span>
           </TabsTrigger>
         </TabsList>
 
