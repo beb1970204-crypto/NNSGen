@@ -249,19 +249,18 @@ JSON STRUCTURE:
   ]
 }`;
 
-  // Simplified schema — avoids JSON parse failures with the search/vision model
   const schema = {
     type: "object",
     properties: {
       key_tonic: { type: "string" },
-      key_mode: { type: "string" },
+      key_mode: { type: "string", enum: ["major", "minor"] },
       time_signature: { type: "string" },
       sections: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            label: { type: "string" },
+            label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
             repeat_count: { type: "number" },
             arrangement_cue: { type: "string" },
             measures: {
@@ -269,53 +268,77 @@ JSON STRUCTURE:
               items: {
                 type: "object",
                 properties: {
-                  chords: { type: "array", items: { type: "object" } },
+                  chords: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        chord: { type: "string" },
+                        beats: { type: "number" }
+                      },
+                      required: ["chord", "beats"]
+                    }
+                  },
                   cue: { type: "string" }
-                }
+                },
+                required: ["chords"]
               }
             }
-          }
+          },
+          required: ["label", "measures"]
         }
       }
     },
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  try {
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      add_context_from_internet: false,
-      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-      response_json_schema: schema
-    });
-
-    if (!response?.sections?.length) {
-      throw new Error('LLM returned no sections');
+  // Try with internet context first; fall back to without if the search model returns invalid JSON
+  let response = null;
+  let lastError = null;
+  for (const useInternet of [true, false]) {
+    try {
+      console.log(`LLM attempt with add_context_from_internet=${useInternet}`);
+      response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        add_context_from_internet: useInternet,
+        file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+        response_json_schema: schema
+      });
+      if (response?.sections?.length) break;
+      lastError = new Error('LLM returned no sections');
+    } catch (error) {
+      console.error(`LLM attempt failed (internet=${useInternet}):`, error.message);
+      lastError = error;
+      // Only retry on JSON parse errors — other errors are fatal
+      if (!error.message?.includes('invalid JSON') && !error.message?.includes('JSON')) break;
     }
-
-    // Validate for completeness BEFORE resolving key
-    const completenessCheck = validateChartOutput(response.sections);
-    if (!completenessCheck.valid) {
-      throw new Error(`Completeness check failed: ${completenessCheck.reason}`);
-    }
-
-    // Resolve key with TonalJS
-    const tonic = response.key_tonic || 'C';
-    const isMinor = response.key_mode === 'minor';
-    let key;
-    if (isMinor) {
-      const mk = Key.minorKey(tonic);
-      key = (mk.tonic || tonic) + 'm';
-    } else {
-      const mk = Key.majorKey(tonic);
-      key = mk.tonic || tonic;
-    }
-
-    return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
-  } catch (error) {
-    console.error('LLM generation error:', error.message);
-    throw new Error(`Chart generation failed: ${error.message}`);
   }
+
+  if (!response?.sections?.length) {
+    const msg = lastError?.message || 'LLM returned no sections';
+    console.error('LLM generation error:', msg);
+    throw new Error(`Chart generation failed: ${msg}`);
+  }
+
+  // Validate for completeness BEFORE resolving key
+  const completenessCheck = validateChartOutput(response.sections);
+  if (!completenessCheck.valid) {
+    throw new Error(`Completeness check failed: ${completenessCheck.reason}`);
+  }
+
+  // Resolve key with TonalJS
+  const tonic = response.key_tonic || 'C';
+  const isMinor = response.key_mode === 'minor';
+  let key;
+  if (isMinor) {
+    const mk = Key.minorKey(tonic);
+    key = (mk.tonic || tonic) + 'm';
+  } else {
+    const mk = Key.majorKey(tonic);
+    key = mk.tonic || tonic;
+  }
+
+  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
 }
 
 // ─── Output Validation ─────────────────────────────────────────────────────────
