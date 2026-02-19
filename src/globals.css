@@ -93,6 +93,18 @@
   font-style: italic;
   color: #a0a0a0;
   font-size: 0.75rem;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Musical data values — monospace treatment */
+.music-value {
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* UI text — always Inter */
+.ui-text {
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 /* Sidebar Styles */
