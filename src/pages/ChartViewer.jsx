@@ -9,6 +9,7 @@ import ChartDisplay from "@/components/chart/ChartDisplay";
 import SongSettingsSidebar from "@/components/chart/SongSettingsSidebar";
 import MeasurePropertiesSidebar from "@/components/chart/MeasurePropertiesSidebar";
 import ChartToolbar from "@/components/chart/ChartToolbar";
+import MusicTheoryPanel from "@/components/chart/MusicTheoryPanel";
 import ShareDialog from "@/components/chart/ShareDialog";
 import { toast } from "sonner";
 
@@ -644,6 +645,15 @@ export default function ChartViewer() {
         onShare={(sharedWith) => shareChart.mutate(sharedWith)}
         isLoading={shareChart.isPending}
         chartId={chartId}
+      />
+
+      {/* Music Theory Panel */}
+      <MusicTheoryPanel
+        isOpen={musicTheoryOpen}
+        onClose={() => setMusicTheoryOpen(false)}
+        chartData={chart}
+        sectionData={selectedSection}
+        selectedMeasure={selectedMeasure}
       />
     </div>
   );
