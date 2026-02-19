@@ -1,49 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 
 const STANDARD_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
-const DIAGRAM_WIDTH = 120;
-const DIAGRAM_HEIGHT = 160;
-const STRING_SPACING = (DIAGRAM_WIDTH - 20) / 5;
-const FRET_SPACING = 25;
-
-// Common chord voicings - maps chord name to fret positions [string 1-6] and finger positions
-const CHORD_VOICINGS = {
-  'C': [0, 3, 2, 0, 1, 0],
-  'C#': [4, 4, 3, 1, 2, 4],
-  'Cm': [3, 3, 5, 5, 5, 3],
-  'D': [0, 0, 0, 2, 3, 2],
-  'D#': [1, 1, 1, 3, 4, 3],
-  'Dm': [0, 0, 0, 2, 3, 1],
-  'E': [0, 2, 2, 1, 0, 0],
-  'Em': [0, 2, 2, 0, 0, 0],
-  'F': [1, 3, 3, 2, 1, 1],
-  'F#': [2, 4, 4, 3, 2, 2],
-  'Fm': [1, 3, 3, 1, 1, 1],
-  'G': [3, 2, 0, 0, 3, 3],
-  'G#': [4, 3, 1, 1, 4, 4],
-  'Gm': [3, 5, 5, 3, 3, 3],
-  'A': [0, 0, 2, 2, 2, 0],
-  'A#': [1, 1, 3, 3, 3, 1],
-  'Am': [0, 0, 2, 2, 1, 0],
-  'B': [2, 2, 4, 4, 4, 2],
-  'Bb': [1, 1, 3, 3, 3, 1],
-  'Bm': [2, 3, 4, 4, 3, 2],
-};
 
 export default function ChordDiagram({ chord, size = 'sm' }) {
+  const [voicing, setVoicing] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!chord) return;
+
+    const fetchChordDiagram = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await base44.functions.invoke('getGuitarChordDiagram', { chord });
+        if (response.data?.found) {
+          setVoicing(response.data.frets);
+        } else {
+          setError(response.data?.error || 'Chord not found');
+          setVoicing(null);
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to load chord');
+        setVoicing(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChordDiagram();
+  }, [chord]);
+
   if (!chord) return null;
-
-  // Extract base chord name (remove extensions like maj7, add9, etc)
-  const baseChord = chord.match(/^[A-G]#?m?b?/)?.[0] || chord;
-  const voicing = CHORD_VOICINGS[baseChord];
-
-  if (!voicing) return null;
+  if (loading) return <div className="text-xs text-[#6b6b6b]">Loading...</div>;
+  if (error || !voicing) return null;
 
   const isSmall = size === 'sm';
-  const width = isSmall ? 100 : DIAGRAM_WIDTH;
-  const height = isSmall ? 140 : DIAGRAM_HEIGHT;
+  const width = isSmall ? 100 : 120;
+  const height = isSmall ? 140 : 160;
   const stringSpacing = (width - 20) / 5;
-  const fretSpacing = isSmall ? 20 : FRET_SPACING;
+  const fretSpacing = isSmall ? 20 : 25;
   const dotRadius = isSmall ? 4 : 5;
   const fontSize = isSmall ? 8 : 10;
 
@@ -103,6 +101,23 @@ export default function ChordDiagram({ chord, size = 'sm' }) {
       {voicing.map((fret, stringIdx) => {
         const x = 10 + stringIdx * stringSpacing + stringSpacing / 2;
 
+        if (fret === null || fret === undefined) {
+          // Open string (O)
+          return (
+            <text
+              key={`dot-${stringIdx}`}
+              x={x}
+              y={18}
+              textAnchor="middle"
+              fill="#a0a0a0"
+              fontSize={fontSize + 2}
+              fontWeight="bold"
+            >
+              ○
+            </text>
+          );
+        }
+
         if (fret === 0) {
           // Muted string (X)
           return (
@@ -119,8 +134,6 @@ export default function ChordDiagram({ chord, size = 'sm' }) {
             </text>
           );
         }
-
-        if (fret === -1) return null; // Skip
 
         const fretIdx = fret - startFret - 1;
         if (fretIdx < 0 || fretIdx > 3) return null;
