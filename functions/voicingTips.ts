@@ -28,6 +28,7 @@ Return ONLY valid JSON:
 {
   "voicings": [
     {
+      "chord": "${chord}",
       "name": "Shell Voicing",
       "notes": "Root-3rd-7th",
       "description": "A minimal, clean voicing...",
@@ -48,6 +49,7 @@ Return ONLY valid JSON:
             items: {
               type: "object",
               properties: {
+                chord: { type: "string" },
                 name: { type: "string" },
                 notes: { type: "string" },
                 description: { type: "string" },

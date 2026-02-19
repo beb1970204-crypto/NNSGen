@@ -437,11 +437,11 @@ export default function MusicTheoryTabs({
             ) : (
               <div className="space-y-4 overflow-y-auto">
                 {Array.isArray(voicingData) ? (
-                  voicingData.map((v, idx) => (
-                    <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
-                      <div className="flex justify-center">
-                        <ChordDiagram chord={selectedMeasure?.chords?.[0]?.chord} size="sm" />
-                      </div>
+                   voicingData.map((v, idx) => (
+                     <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
+                       <div className="flex justify-center">
+                         <ChordDiagram chord={v.chord || selectedMeasure?.chords?.[0]?.chord} size="sm" />
+                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#6b6b6b] uppercase mb-1">{v.name}</p>
                         <p className="text-sm font-mono text-[#D0021B] font-bold">{v.notes}</p>
@@ -454,10 +454,10 @@ export default function MusicTheoryTabs({
                     </div>
                   ))
                 ) : (
-                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
-                    <div className="flex justify-center">
-                      <ChordDiagram chord={selectedMeasure?.chords?.[0]?.chord} size="sm" />
-                    </div>
+                   <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
+                     <div className="flex justify-center">
+                       <ChordDiagram chord={voicingData.chord || selectedMeasure?.chords?.[0]?.chord} size="sm" />
+                     </div>
                     <div>
                       <p className="text-xs font-bold text-[#6b6b6b] uppercase mb-1">{voicingData.name || 'Suggested Voicing'}</p>
                       <p className="text-sm font-mono text-[#D0021B] font-bold">{voicingData.notes || voicingData.voicing}</p>
