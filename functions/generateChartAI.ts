@@ -397,23 +397,13 @@ Transcribe "${title}" by ${artist || 'Unknown'}:`;
 function validateChartOutput(sections) {
   // Check section count (need at least 1)
   if (!sections || sections.length < 1) {
-    console.log(`Validation failed: Only ${sections?.length || 0} sections (need at least 1)`);
     return { valid: false, reason: 'No sections generated' };
   }
-  if (sections.length > 10) {
+  if (sections.length > 12) {
     return { valid: false, reason: 'Too many sections (likely fragmented)' };
   }
 
-  // Check for completeness: must have Verse + Chorus at minimum
-  const labels = sections.map(s => s.label);
-  const hasVerse = labels.includes('Verse');
-  const hasChorus = labels.includes('Chorus');
-  
-  if (!hasVerse || !hasChorus) {
-    return { valid: false, reason: `Incomplete song structure. Found: ${labels.join(', ')}. Need at minimum: Verse + Chorus` };
-  }
-
-  // Check chord complexity across all sections
+  // Count chords and measure stats
   const uniqueChords = new Set();
   let totalMeasures = 0;
   let totalChords = 0;
@@ -433,18 +423,20 @@ function validateChartOutput(sections) {
     }
   }
 
-
-
   console.log(`Validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
 
-  // Warn but don't reject if unusual: too few chords (possibly valid, like "All Blues")
-  if (totalChords < 4) {
-    console.log(`Warning: Very few chords (${totalChords}), may be valid but check manually`);
+  // Very basic sanity checks — allow flexibility for diverse song structures
+  if (totalMeasures < 1) {
+    return { valid: false, reason: 'No measures generated' };
   }
 
-  // Flag hallucination: proportional to song length. Jazz/prog songs legitimately have 15-20+ chords.
-  const expectedMaxChords = Math.ceil(totalMeasures / 2) + 10;
-  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 25) {
+  if (totalChords < 1) {
+    return { valid: false, reason: 'No chords generated' };
+  }
+
+  // Flag extreme hallucination only
+  const expectedMaxChords = Math.ceil(totalMeasures / 2) + 15;
+  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 30) {
     return { valid: false, reason: `Unusually high chord density (${uniqueChords.size} unique chords), likely hallucination` };
   }
 
