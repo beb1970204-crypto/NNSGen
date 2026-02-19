@@ -24,7 +24,6 @@ export default function Settings() {
     queryFn: () => base44.auth.me(),
   });
 
-  const [defaultKey, setDefaultKey] = useState(user?.defaultKey || "C");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
