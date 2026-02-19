@@ -781,15 +781,15 @@ export default function MusicTheoryTabs({
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Desktop Sidebar - only show on fullscreen or lg screens */}
-        {(isFullscreen || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
+        {/* Desktop Sidebar - only show on fullscreen */}
+        {isFullscreen && (
           <div className="w-48 bg-[#0a0a0a] border-r border-[#2a2a2a] overflow-y-auto flex-shrink-0">
             <SidebarContent />
           </div>
         )}
 
-        {/* Mobile Sidebar Dropdown */}
-        {sidebarOpen && !isFullscreen && (
+        {/* Mobile/Floating Sidebar Dropdown */}
+        {sidebarOpen && (
           <div className="absolute left-0 top-full w-40 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl z-20 max-h-96 overflow-y-auto mt-1">
             <SidebarContent />
           </div>
