@@ -292,11 +292,11 @@ JSON STRUCTURE:
     required: ["key_tonic", "key_mode", "time_signature", "sections"]
   };
 
-  // Use internet context for factual transcription grounding
-  try {
+  const attemptLLM = async (useInternet) => {
+    console.log(`LLM attempt with add_context_from_internet=${useInternet}`);
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
-      add_context_from_internet: true,
+      add_context_from_internet: useInternet,
       file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: schema
     });
@@ -305,13 +305,11 @@ JSON STRUCTURE:
       throw new Error('LLM returned no sections');
     }
 
-    // Validate for completeness BEFORE resolving key
     const completenessCheck = validateChartOutput(response.sections);
     if (!completenessCheck.valid) {
       throw new Error(`Completeness check failed: ${completenessCheck.reason}`);
     }
 
-    // Resolve key with TonalJS
     const tonic = response.key_tonic || 'C';
     const isMinor = response.key_mode === 'minor';
     let key;
@@ -324,9 +322,19 @@ JSON STRUCTURE:
     }
 
     return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
-  } catch (error) {
-    console.error('LLM generation error:', error.message);
-    throw new Error(`Chart generation failed: ${error.message}`);
+  };
+
+  // Try with internet context first, fall back to without if it fails (search models can return malformed JSON)
+  try {
+    return await attemptLLM(true);
+  } catch (internetError) {
+    console.error(`LLM attempt failed (internet=true): ${internetError.message}`);
+    try {
+      return await attemptLLM(false);
+    } catch (error) {
+      console.error('LLM generation error (both attempts failed):', error.message);
+      throw new Error(`Chart generation failed: ${error.message}`);
+    }
   }
 }
 
