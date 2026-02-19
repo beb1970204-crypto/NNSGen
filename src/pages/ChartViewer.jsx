@@ -33,6 +33,7 @@ export default function ChartViewer() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [displayMode, setDisplayMode] = useState('chords');
+  const [musicTheoryOpen, setMusicTheoryOpen] = useState(false);
 
 
   const { data: chart, isLoading, error } = useQuery({
@@ -478,6 +479,7 @@ export default function ChartViewer() {
             onToggleEditMode={() => setEditMode(!editMode)}
             displayMode={displayMode}
             onToggleDisplayMode={toggleDisplayMode}
+            onToggleMusicTheory={() => setMusicTheoryOpen(!musicTheoryOpen)}
           />
           
           <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
