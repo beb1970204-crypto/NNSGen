@@ -74,7 +74,7 @@ export default function SetlistViewer() {
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white text-xl">Loading setlist...</div>
+          <div className="text-white text-xl font-sans">Loading setlist...</div>
         </div>
       </div>
     );
@@ -111,11 +111,11 @@ export default function SetlistViewer() {
               Add Chart
             </Button>
           </div>
-          <h1 className="text-3xl font-bold">{setlist?.name}</h1>
+          <h1 className="text-3xl font-bold font-sans">{setlist?.name}</h1>
           {setlist?.description && (
-            <p className="text-[#a0a0a0] mt-2">{setlist.description}</p>
+            <p className="text-[#a0a0a0] mt-2 font-sans">{setlist.description}</p>
           )}
-          <div className="flex items-center gap-4 mt-3 text-sm text-[#6b6b6b]">
+          <div className="flex items-center gap-4 mt-3 text-sm text-[#6b6b6b] font-sans">
             {setlist?.event_date && (
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -164,18 +164,18 @@ export default function SetlistViewer() {
                             {index + 1}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{chart.title}</h3>
+                            <h3 className="font-semibold text-lg font-sans">{chart.title}</h3>
                             {chart.artist && (
-                              <p className="text-sm text-[#6b6b6b]">{chart.artist}</p>
+                              <p className="text-sm text-[#6b6b6b] font-sans">{chart.artist}</p>
                             )}
-                            <div className="flex gap-3 mt-2 text-xs text-[#6b6b6b]">
-                              <span>Key: {chart.key}</span>
+                            <div className="flex gap-3 mt-2 text-xs text-[#6b6b6b] font-sans">
+                              <span>Key: <span className="font-mono">{chart.key}</span></span>
                               <span>•</span>
-                              <span>{chart.time_signature}</span>
+                              <span className="font-mono">{chart.time_signature}</span>
                               {chart.tempo && (
                                 <>
                                   <span>•</span>
-                                  <span>{chart.tempo} BPM</span>
+                                  <span className="font-mono">{chart.tempo} BPM</span>
                                 </>
                               )}
                             </div>
