@@ -435,28 +435,39 @@ export default function MusicTheoryTabs({
                 onAction={loadVoicing}
               />
             ) : (
-              <div className="space-y-3 overflow-y-auto">
+              <div className="space-y-4 overflow-y-auto">
                 {Array.isArray(voicingData) ? (
                   voicingData.map((v, idx) => (
-                    <ResultCard
-                      key={idx}
-                      title={v.name}
-                      content={v.notes}
-                      copyText={v.notes}
-                      details={[v.description, `Technique: ${v.technique}`, `When: ${v.context}`]}
-                      badge={v.difficulty}
-                      color="text-[#D0021B] font-mono text-lg font-bold"
-                    />
+                    <div key={idx} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
+                      <div className="flex justify-center">
+                        <ChordDiagram chord={selectedMeasure?.chords?.[0]?.chord} size="sm" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#6b6b6b] uppercase mb-1">{v.name}</p>
+                        <p className="text-sm font-mono text-[#D0021B] font-bold">{v.notes}</p>
+                      </div>
+                      <div className="space-y-1 text-xs text-[#a0a0a0]">
+                        {v.description && <p>{v.description}</p>}
+                        {v.technique && <p>Technique: {v.technique}</p>}
+                        {v.context && <p>When: {v.context}</p>}
+                      </div>
+                    </div>
                   ))
                 ) : (
-                  <ResultCard
-                    title={voicingData.name || 'Suggested Voicing'}
-                    content={voicingData.notes || voicingData.voicing}
-                    copyText={voicingData.notes || voicingData.voicing}
-                    details={[voicingData.description || voicingData.tips, `Context: ${voicingData.context || 'Jazz/contemporary'}`]}
-                    badge="Guitar"
-                    color="text-[#D0021B] font-mono text-lg font-bold"
-                  />
+                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-3">
+                    <div className="flex justify-center">
+                      <ChordDiagram chord={selectedMeasure?.chords?.[0]?.chord} size="sm" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#6b6b6b] uppercase mb-1">{voicingData.name || 'Suggested Voicing'}</p>
+                      <p className="text-sm font-mono text-[#D0021B] font-bold">{voicingData.notes || voicingData.voicing}</p>
+                    </div>
+                    <div className="space-y-1 text-xs text-[#a0a0a0]">
+                      {voicingData.description && <p>{voicingData.description}</p>}
+                      {voicingData.tips && <p>{voicingData.tips}</p>}
+                      {voicingData.context && <p>Context: {voicingData.context}</p>}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
