@@ -450,11 +450,14 @@ export default function ChartViewer() {
           chart={chart}
           sections={sections}
           onSaveSettings={(data) => {
-            const updates = {};
-            if (data.time_signature !== chart.time_signature) updates.time_signature = data.time_signature;
-            if (data.tempo !== chart.tempo) updates.tempo = data.tempo;
-            if (Object.keys(updates).length > 0) updateChart.mutate(updates);
-            if (data.key !== chart.key) transposeChart.mutate(data.key);
+            if (data.key !== chart.key) {
+              transposeChart.mutate(data.key);
+            } else {
+              const updates = {};
+              if (data.time_signature !== chart.time_signature) updates.time_signature = data.time_signature;
+              if (data.tempo !== chart.tempo) updates.tempo = data.tempo;
+              if (Object.keys(updates).length > 0) updateChart.mutate(updates);
+            }
           }}
            onToggleNotation={toggleDisplayMode}
           />
