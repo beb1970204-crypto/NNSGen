@@ -22,6 +22,13 @@ export default function ChartToolbar({
   return (
     <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between transition-all">
       <div className="flex items-center gap-1">
+        <Link to={createPageUrl("Home")}>
+          <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-red-600/10 hover:text-red-500 transition-all text-[#a0a0a0]">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+        </Link>
+        <div className="w-px h-6 bg-[#2a2a2a] mx-1" />
         <Button 
           variant="ghost" 
           size="sm" 
