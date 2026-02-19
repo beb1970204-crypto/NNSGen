@@ -77,33 +77,37 @@ export default function ChartToolbar({
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="w-px h-6 bg-[#2a2a2a]" />
-        <div className="flex items-center gap-1">
-          <Button
-            variant={displayMode === 'chords' ? 'default' : 'ghost'}
-            size="sm"
-            className="h-8 px-2.5 text-xs font-semibold"
-            onClick={() => onToggleDisplayMode?.('chords')}
-          >
-            Chords
-          </Button>
-          <Button
-            variant={displayMode === 'roman' ? 'default' : 'ghost'}
-            size="sm"
-            className="h-8 px-2.5 text-xs font-semibold"
-            onClick={() => onToggleDisplayMode?.('roman')}
-          >
-            Roman
-          </Button>
-          <Button
-            variant={displayMode === 'nns' ? 'default' : 'ghost'}
-            size="sm"
-            className="h-8 px-2.5 text-xs font-semibold"
-            onClick={() => onToggleDisplayMode?.('nns')}
-          >
-            NNS
-          </Button>
-        </div>
+        {!editMode && (
+          <>
+            <div className="w-px h-6 bg-[#2a2a2a]" />
+            <div className="flex items-center gap-1">
+              <Button
+                variant={displayMode === 'chords' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-8 px-2.5 text-xs font-semibold"
+                onClick={() => onToggleDisplayMode?.('chords')}
+              >
+                Chords
+              </Button>
+              <Button
+                variant={displayMode === 'roman' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-8 px-2.5 text-xs font-semibold"
+                onClick={() => onToggleDisplayMode?.('roman')}
+              >
+                Roman
+              </Button>
+              <Button
+                variant={displayMode === 'nns' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-8 px-2.5 text-xs font-semibold"
+                onClick={() => onToggleDisplayMode?.('nns')}
+              >
+                NNS
+              </Button>
+            </div>
+          </>
+        )}
         <div className="w-px h-6 bg-[#2a2a2a]" />
         <Button 
           variant="ghost" 

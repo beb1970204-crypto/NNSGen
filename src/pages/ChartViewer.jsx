@@ -33,13 +33,12 @@ export default function ChartViewer() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(true);
 
+
   const { data: chart, isLoading, error } = useQuery({
     queryKey: ['chart', chartId],
     queryFn: () => base44.entities.Chart.get(chartId),
     enabled: !!chartId
   });
-
-  const [displayMode, setDisplayMode] = useState('chords');
 
   const { data: rawSections = [] } = useQuery({
     queryKey: ['sections', chartId],
@@ -70,18 +69,9 @@ export default function ChartViewer() {
     }
   });
 
-  // Keep displayMode in sync with chart data
-  useEffect(() => {
-    if (chart?.display_mode) {
-      setDisplayMode(chart.display_mode);
-    }
-  }, [chart?.display_mode]);
-
-  const toggleDisplayMode = (mode) => {
-    setDisplayMode(mode);
-    base44.entities.Chart.update(chartId, { display_mode: mode }).catch(() => {
-      toast.error('Failed to save notation mode');
-    });
+  const toggleDisplayMode = async (mode) => {
+    await base44.entities.Chart.update(chartId, { display_mode: mode });
+    queryClient.invalidateQueries({ queryKey: ['chart', chartId] });
   };
 
   const transposeChart = useMutation({
@@ -473,17 +463,17 @@ export default function ChartViewer() {
         {/* Center Canvas */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <ChartToolbar
-             hasSelection={!!selectedMeasure}
-             zoomLevel={zoomLevel}
-             onZoomIn={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
-             onZoomOut={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
-             onDelete={handleDeleteSelectedMeasure}
-             onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
-             editMode={editMode}
-             onToggleEditMode={() => setEditMode(!editMode)}
-             displayMode={displayMode}
-             onToggleDisplayMode={toggleDisplayMode}
-           />
+            hasSelection={!!selectedMeasure}
+            zoomLevel={zoomLevel}
+            onZoomIn={() => setZoomLevel(prev => Math.min(prev + 10, 200))}
+            onZoomOut={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
+            onDelete={handleDeleteSelectedMeasure}
+            onAddMeasure={() => sections[0] && handleAddMeasure(sections[0].id)}
+            editMode={editMode}
+            onToggleEditMode={() => setEditMode(!editMode)}
+            displayMode={chart.display_mode}
+            onToggleDisplayMode={toggleDisplayMode}
+          />
           
           <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
             {sections.length === 0 ? (
@@ -525,10 +515,10 @@ export default function ChartViewer() {
                         className="space-y-8"
                       >
                         <ChartDisplay 
-                           sections={sections}
-                           chartKey={chart.key}
-                           displayMode={displayMode}
-                           editMode={true}
+                          sections={sections}
+                          chartKey={chart.key}
+                          displayMode={chart.display_mode}
+                          editMode={true}
                           onUpdateSection={handleUpdateSection}
                           onAddMeasure={handleAddMeasure}
                           onMeasureClick={handleMeasureClick}
@@ -576,31 +566,31 @@ export default function ChartViewer() {
                   {sections.slice(0, Math.ceil(sections.length / 2)).map((section, index) => (
                     <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
                       <ChartDisplay 
-                         sections={[section]}
-                         chartKey={chart.key}
-                         displayMode={displayMode}
-                         editMode={false}
-                         onUpdateSection={handleUpdateSection}
-                         onAddMeasure={handleAddMeasure}
-                         onMeasureClick={handleMeasureClick}
-                         selectedMeasureIndex={selectedMeasureIndex}
-                         selectedSectionId={selectedSection?.id}
-                         onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                         onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                         onMoveSectionUp={() => moveSectionUp(index)}
-                         onMoveSectionDown={() => moveSectionDown(index)}
-                       />
-                      </div>
-                      ))}
-                      </div>
-                      {/* Right Column */}
-                      <div className="space-y-3">
-                      {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
-                      <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
-                       <ChartDisplay 
-                         sections={[section]}
-                         chartKey={chart.key}
-                         displayMode={displayMode}
+                        sections={[section]}
+                        chartKey={chart.key}
+                        displayMode={chart.display_mode}
+                        editMode={false}
+                        onUpdateSection={handleUpdateSection}
+                        onAddMeasure={handleAddMeasure}
+                        onMeasureClick={handleMeasureClick}
+                        selectedMeasureIndex={selectedMeasureIndex}
+                        selectedSectionId={selectedSection?.id}
+                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                        onMoveSectionUp={() => moveSectionUp(index)}
+                        onMoveSectionDown={() => moveSectionDown(index)}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Right Column */}
+                <div className="space-y-3">
+                  {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
+                      <ChartDisplay 
+                        sections={[section]}
+                        chartKey={chart.key}
+                        displayMode={chart.display_mode}
                         editMode={false}
                         onUpdateSection={handleUpdateSection}
                         onAddMeasure={handleAddMeasure}
