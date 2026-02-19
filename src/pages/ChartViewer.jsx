@@ -525,10 +525,10 @@ export default function ChartViewer() {
                         className="space-y-8"
                       >
                         <ChartDisplay 
-                          sections={sections}
-                          chartKey={chart.key}
-                          displayMode={chart.display_mode}
-                          editMode={true}
+                           sections={sections}
+                           chartKey={chart.key}
+                           displayMode={displayMode}
+                           editMode={true}
                           onUpdateSection={handleUpdateSection}
                           onAddMeasure={handleAddMeasure}
                           onMeasureClick={handleMeasureClick}
