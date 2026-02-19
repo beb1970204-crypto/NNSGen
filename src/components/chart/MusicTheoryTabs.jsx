@@ -185,6 +185,82 @@ export default function MusicTheoryTabs({
     }
   };
 
+  const loadArrangement = async () => {
+    if (!sectionData) return;
+    setArrangementLoading(true);
+    try {
+      const response = await base44.functions.invoke('arrangementGuidance', {
+        chartData,
+        sectionData
+      });
+      if (response.data?.success) {
+        setArrangementData(response.data.arrangement);
+      }
+    } catch (error) {
+      console.error('Arrangement error:', error);
+    } finally {
+      setArrangementLoading(false);
+    }
+  };
+
+  const loadModulation = async () => {
+    if (!modulationTargetKey) return;
+    setModulationLoading(true);
+    try {
+      const response = await base44.functions.invoke('modulationPlanning', {
+        chartData,
+        currentKey: chartData.key,
+        targetKey: modulationTargetKey,
+        context: sectionData?.label || 'general'
+      });
+      if (response.data?.success) {
+        setModulationData(response.data.modulation);
+      }
+    } catch (error) {
+      console.error('Modulation error:', error);
+    } finally {
+      setModulationLoading(false);
+    }
+  };
+
+  const loadAnalysis = async () => {
+    if (!sectionData) return;
+    setAnalysisLoading(true);
+    try {
+      const response = await base44.functions.invoke('comparativeAnalysis', {
+        chartData,
+        sectionData,
+        genre: chartData.genres || 'general'
+      });
+      if (response.data?.success) {
+        setAnalysisData(response.data.analysis);
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  const loadPractice = async () => {
+    if (!sectionData) return;
+    setPracticeLoading(true);
+    try {
+      const response = await base44.functions.invoke('practiceRecommendations', {
+        chartData,
+        sectionData,
+        skillLevel: 'intermediate'
+      });
+      if (response.data?.success) {
+        setPracticeData(response.data.practice);
+      }
+    } catch (error) {
+      console.error('Practice error:', error);
+    } finally {
+      setPracticeLoading(false);
+    }
+  };
+
   const saveAnalysisNote = async () => {
     try {
       await base44.entities.ChartAnalysisNote.create({
