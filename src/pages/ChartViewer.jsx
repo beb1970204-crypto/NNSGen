@@ -32,6 +32,7 @@ export default function ChartViewer() {
   const [exportingPDF, setExportingPDF] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(true);
+  const [displayMode, setDisplayMode] = useState('chords');
 
 
   const { data: chart, isLoading, error } = useQuery({
