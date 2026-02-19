@@ -67,15 +67,14 @@ Deno.serve(async (req) => {
     }
 
     // ── Step 1: Generate a fresh complete chart ──
-    const generationPrompt = `Transcribe "${title}" by ${artist || 'Unknown'} addressing this feedback: "${userFeedback}"
-
-Chart the complete song as it naturally occurs.
+    const generationPrompt = `Research and transcribe the actual chord progression for "${title}" by ${artist || 'Unknown'}, addressing this feedback: "${userFeedback}"
 
 REQUIREMENTS:
-1. Chart the ENTIRE song as it naturally occurs
-2. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-3. Be musically coherent — infer a reasonable key and maintain consistency
-4. Return ONLY valid JSON, no explanation
+1. Use the ACTUAL chords from the song — research the real progression, do not invent or guess
+2. Chart the ENTIRE song structure as it naturally occurs
+3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
+4. Determine the actual key and mode from the song's real chords
+5. Return ONLY valid JSON, no explanation
 
 EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple chords per measure):
 {
@@ -105,7 +104,7 @@ EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple cho
   ]
 }
 
-Transcribe "${title}" by ${artist || 'Unknown'}:`;
+Transcribe the actual chords for "${title}" by ${artist || 'Unknown'}:`;
 
     const schema = {
       type: "object",
