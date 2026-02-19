@@ -386,7 +386,7 @@ export default function ChartViewer() {
       {/* Top Bar */}
       <div className="bg-[#141414] border-b border-[#2a2a2a] px-6 py-3 shadow-lg grid grid-cols-3 items-center">
         {/* Left — Logo */}
-        <div className="flex items-center gap-1.5">
+        <Link to={createPageUrl("Home")} className="flex items-center gap-1.5">
           <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
             <div className="absolute inset-0 border border-[#D0021B]" style={{ boxShadow: '0 0 8px #D0021B' }} />
             <span className="text-[#D0021B] font-black text-xs">1</span>
