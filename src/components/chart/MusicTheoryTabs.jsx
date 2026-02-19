@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Send, Loader2, BookOpen, Lightbulb, Music, Ear, Download, Zap, TrendingUp, Users, Maximize2, Minimize2, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import FeatureEmptyState from './FeatureEmptyState';
+import ResultCard from './ResultCard';
 
 const FEATURE_GROUPS = {
   learning: {
@@ -303,19 +305,29 @@ export default function MusicTheoryTabs({
 
       case 'quiz':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!quizData ? (
-              <Button onClick={loadQuiz} disabled={quizLoading || !sectionData} className="bg-[#D0021B]">
-                {quizLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Generate Quiz
-              </Button>
+              <FeatureEmptyState
+                icon={Music}
+                title="Music Theory Quiz"
+                description="Test your understanding of this section's harmony and progressions"
+                expectedOutput="5-10 progressive questions focused on harmonic analysis"
+                requirements={[
+                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                ]}
+                isLoading={quizLoading}
+                onAction={loadQuiz}
+              />
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 overflow-y-auto">
                 {quizData.map((q, idx) => (
-                  <div key={idx} className="bg-[#252525] p-3 rounded-lg text-sm space-y-2">
-                    <p className="text-white font-semibold">{q.question}</p>
-                    {q.options?.map((opt, i) => <p key={i} className="text-[#a0a0a0] text-xs">• {opt}</p>)}
-                  </div>
+                  <ResultCard
+                    key={idx}
+                    title={`Question ${idx + 1}`}
+                    content={q.question}
+                    details={q.options?.map((opt, i) => `${String.fromCharCode(65 + i)}) ${opt}`)}
+                    badge={idx === 0 ? 'Easiest' : idx === quizData.length - 1 ? 'Hardest' : undefined}
+                  />
                 ))}
               </div>
             )}
@@ -324,19 +336,32 @@ export default function MusicTheoryTabs({
 
       case 'suggest':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!suggestData ? (
-              <Button onClick={loadSuggestions} disabled={suggestLoading || !selectedMeasure} className="bg-[#D0021B]">
-                {suggestLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Get Suggestions
-              </Button>
+              <FeatureEmptyState
+                icon={Lightbulb}
+                title="Chord Suggestions"
+                description="Find alternative voicings and substitutions for any chord"
+                expectedOutput="3-5 chord alternatives with harmonic reasons"
+                requirements={[
+                  { label: 'Measure selected', unmet: !selectedMeasure, hint: 'Click a chord in the chart' }
+                ]}
+                isLoading={suggestLoading}
+                onAction={loadSuggestions}
+              />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3 overflow-y-auto">
                 {suggestData.map((s, idx) => (
-                  <div key={idx} className="bg-[#252525] p-3 rounded-lg">
-                    <p className="text-white font-semibold text-sm">{s.chord}</p>
-                    <p className="text-[#a0a0a0] text-xs">{s.reason}</p>
-                  </div>
+                  <ResultCard
+                    key={idx}
+                    title={s.chord}
+                    subtitle={`Score: ${s.similarity || 95}%`}
+                    content={s.chord}
+                    copyText={s.chord}
+                    details={s.reason}
+                    badge={idx === 0 ? 'Best match' : undefined}
+                    color="text-[#D0021B] font-bold"
+                  />
                 ))}
               </div>
             )}
@@ -345,16 +370,29 @@ export default function MusicTheoryTabs({
 
       case 'voice':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!voicingData ? (
-              <Button onClick={loadVoicing} disabled={voicingLoading || !selectedMeasure} className="bg-[#D0021B]">
-                {voicingLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Suggest Voicing
-              </Button>
+              <FeatureEmptyState
+                icon={Music}
+                title="Voicing Tips"
+                description="Get instrument-specific voicing suggestions"
+                expectedOutput="Shell voicing, comping patterns, and voice leading tips"
+                requirements={[
+                  { label: 'Measure selected', unmet: !selectedMeasure, hint: 'Click a chord in the chart' }
+                ]}
+                isLoading={voicingLoading}
+                onAction={loadVoicing}
+              />
             ) : (
-              <div className="space-y-2">
-                <p className="text-white font-semibold text-sm">{voicingData.voicing}</p>
-                <p className="text-[#a0a0a0] text-xs">{voicingData.tips}</p>
+              <div className="space-y-3 overflow-y-auto">
+                <ResultCard
+                  title={voicingData.name || 'Suggested Voicing'}
+                  content={voicingData.voicing}
+                  copyText={voicingData.voicing}
+                  details={[voicingData.tips, `Context: ${voicingData.context || 'Jazz/contemporary'}`]}
+                  badge="Guitar"
+                  color="text-[#D0021B] font-mono text-lg font-bold"
+                />
               </div>
             )}
           </div>
@@ -362,15 +400,24 @@ export default function MusicTheoryTabs({
 
       case 'ear':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!earTrainingData ? (
-              <Button onClick={loadEarTraining} disabled={earTrainingLoading || !sectionData} className="bg-[#D0021B]">
-                {earTrainingLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Generate Guide
-              </Button>
+              <FeatureEmptyState
+                icon={Ear}
+                title="Ear Training Guide"
+                description="Learn to hear and recognize the harmonic movements in this section"
+                expectedOutput="5-7 targeted listening exercises and melodic patterns"
+                requirements={[
+                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                ]}
+                isLoading={earTrainingLoading}
+                onAction={loadEarTraining}
+              />
             ) : (
-              <div className="text-sm text-[#a0a0a0]">
-                <ReactMarkdown>{earTrainingData}</ReactMarkdown>
+              <div className="text-sm text-[#a0a0a0] overflow-y-auto space-y-3">
+                <ReactMarkdown className="prose prose-sm prose-invert max-w-none">
+                  {earTrainingData}
+                </ReactMarkdown>
               </div>
             )}
           </div>
@@ -378,19 +425,32 @@ export default function MusicTheoryTabs({
 
       case 'arrange':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!arrangementData ? (
-              <Button onClick={loadArrangement} disabled={arrangementLoading || !sectionData} className="bg-[#D0021B]">
-                {arrangementLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Arrange
-              </Button>
+              <FeatureEmptyState
+                icon={Zap}
+                title="Arrangement Guidance"
+                description="Get instrument-specific playing ideas and patterns"
+                expectedOutput="Drums, bass, keys, and guitar arrangement suggestions"
+                requirements={[
+                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                ]}
+                isLoading={arrangementLoading}
+                onAction={loadArrangement}
+              />
             ) : (
-              <div className="space-y-2 text-xs">
+              <div className="space-y-3 overflow-y-auto">
                 {['drums', 'bass', 'keys', 'guitar'].map(inst => (
-                  <div key={inst} className="bg-[#252525] p-2 rounded">
-                    <p className="text-white font-semibold capitalize">{inst}</p>
-                    <p className="text-[#a0a0a0]">{arrangementData[inst]?.tips}</p>
-                  </div>
+                  <ResultCard
+                    key={inst}
+                    title={inst.charAt(0).toUpperCase() + inst.slice(1)}
+                    content={arrangementData[inst]?.pattern || 'N/A'}
+                    details={[
+                      arrangementData[inst]?.tips,
+                      arrangementData[inst]?.intensity && `Intensity: ${arrangementData[inst].intensity}`
+                    ].filter(Boolean)}
+                    badge={inst === 'drums' ? 'Foundation' : undefined}
+                  />
                 ))}
               </div>
             )}
@@ -399,26 +459,45 @@ export default function MusicTheoryTabs({
 
       case 'modulate':
         return (
-          <div className="flex flex-col gap-3">
-            <Input
-              value={modulationTargetKey}
-              onChange={(e) => setModulationTargetKey(e.target.value)}
-              placeholder="Target key (e.g., G, Am)"
-              className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-[#6b6b6b] text-sm"
-            />
+          <div className="flex flex-col gap-3 h-full">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-[#6b6b6b]">Target Key</label>
+              <Input
+                value={modulationTargetKey}
+                onChange={(e) => setModulationTargetKey(e.target.value)}
+                placeholder="e.g., G, Am, F#m"
+                className="bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder-[#6b6b6b] text-sm"
+              />
+            </div>
             {!modulationData ? (
-              <Button onClick={loadModulation} disabled={modulationLoading || !modulationTargetKey} className="bg-[#D0021B]" size="sm">
-                {modulationLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Plan
-              </Button>
+              <FeatureEmptyState
+                icon={TrendingUp}
+                title="Modulation Planning"
+                description="Find smooth key change strategies"
+                expectedOutput="3-4 modulation approaches with pivot chords and placement"
+                requirements={[
+                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' },
+                  { label: 'Target key entered', unmet: !modulationTargetKey, hint: 'Enter the key to modulate to' }
+                ]}
+                isLoading={modulationLoading}
+                onAction={loadModulation}
+              />
             ) : (
-              <div className="text-xs text-[#a0a0a0] space-y-2">
-                <p><strong>Strategy:</strong> {modulationData.recommendedStrategy}</p>
+              <div className="space-y-3 overflow-y-auto">
+                <ResultCard
+                  title={`${chartData.key} → ${modulationTargetKey}`}
+                  content={modulationData.recommendedStrategy}
+                  badge="Recommended"
+                />
                 {modulationData.modulationStrategies?.map((s, i) => (
-                  <div key={i} className="bg-[#252525] p-2 rounded">
-                    <p className="text-white">{s.approach}</p>
-                    <p className="text-[#6b6b6b]">{s.description}</p>
-                  </div>
+                  <ResultCard
+                    key={i}
+                    title={s.approach}
+                    content={s.pivotChord || 'N/A'}
+                    copyText={s.pivotChord || ''}
+                    details={[s.description, `Placement: ${s.placement || 'Bridge/Chorus'}`]}
+                    color="text-[#D0021B] font-mono font-bold"
+                  />
                 ))}
               </div>
             )}
@@ -427,20 +506,33 @@ export default function MusicTheoryTabs({
 
       case 'compare':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!analysisData ? (
-              <Button onClick={loadAnalysis} disabled={analysisLoading || !sectionData} className="bg-[#D0021B]">
-                {analysisLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Compare
-              </Button>
+              <FeatureEmptyState
+                icon={Users}
+                title="Comparative Analysis"
+                description="See how famous songs use similar chord progressions"
+                expectedOutput="4-6 famous songs with harmonic similarities and lessons"
+                requirements={[
+                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                ]}
+                isLoading={analysisLoading}
+                onAction={loadAnalysis}
+              />
             ) : (
-              <div className="space-y-2 text-xs">
+              <div className="space-y-3 overflow-y-auto">
                 {analysisData.comparisons?.map((c, idx) => (
-                  <div key={idx} className="bg-[#252525] p-3 rounded">
-                    <p className="text-white font-semibold">{c.songTitle}</p>
-                    <p className="text-[#a0a0a0]">{c.artist} • {c.genre}</p>
-                    <p className="text-[#6b6b6b] italic">{c.lessonsLearned}</p>
-                  </div>
+                  <ResultCard
+                    key={idx}
+                    title={c.songTitle}
+                    subtitle={c.artist}
+                    content={`Genre: ${c.genre}`}
+                    details={[
+                      `Similarity: ${c.similarity || 'High'}`,
+                      c.lessonsLearned
+                    ]}
+                    badge={idx === 0 ? 'Closest match' : undefined}
+                  />
                 ))}
               </div>
             )}
@@ -449,20 +541,32 @@ export default function MusicTheoryTabs({
 
       case 'practice':
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {!practiceData ? (
-              <Button onClick={loadPractice} disabled={practiceLoading || !sectionData} className="bg-[#D0021B]">
-                {practiceLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Generate
-              </Button>
+              <FeatureEmptyState
+                icon={Music}
+                title="Practice Recommendations"
+                description="Get targeted exercises to master this section"
+                expectedOutput="4-6 progressive exercises building key skills"
+                requirements={[
+                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                ]}
+                isLoading={practiceLoading}
+                onAction={loadPractice}
+              />
             ) : (
-              <div className="space-y-2 text-xs">
+              <div className="space-y-3 overflow-y-auto">
                 {practiceData.exercises?.map((ex, idx) => (
-                  <div key={idx} className="bg-[#252525] p-3 rounded">
-                    <p className="text-white font-semibold">{ex.title}</p>
-                    <p className="text-[#a0a0a0]">{ex.description}</p>
-                    <p className="text-[#D0021B] font-mono mt-1">{ex.progression}</p>
-                  </div>
+                  <ResultCard
+                    key={idx}
+                    title={ex.title}
+                    subtitle={`Duration: ${ex.duration || '5 min'}`}
+                    content={ex.progression}
+                    copyText={ex.progression}
+                    details={ex.description}
+                    badge={idx === 0 ? 'Start here' : undefined}
+                    color="text-[#D0021B] font-mono font-bold"
+                  />
                 ))}
               </div>
             )}
