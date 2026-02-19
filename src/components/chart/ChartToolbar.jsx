@@ -113,6 +113,16 @@ export default function ChartToolbar({
         <Button 
           variant="ghost" 
           size="sm" 
+          className="h-9 px-3 gap-1.5 hover:bg-blue-600/10 hover:text-blue-400 transition-all text-[#a0a0a0]"
+          onClick={onToggleMusicTheory}
+          title="Music Theory Professor"
+        >
+          <BookOpen className="w-4 h-4" />
+          <span className="text-xs hidden sm:inline">Theory</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
           className="h-9 w-9 p-0 hover:bg-red-600/10 hover:text-red-500 transition-all"
           onClick={onZoomOut}
         >
