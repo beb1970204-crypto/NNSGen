@@ -763,10 +763,10 @@ export default function MusicTheoryTabs({
     </div>
   );
 
-  // For sidebar mode, always show content as sidebar
+  // For sidebar mode, use top menu layout with 40% width
   if (isSidebar) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="fixed right-0 top-16 w-[40vw] h-[calc(100vh-4rem)] bg-[#141414] border-l border-[#2a2a2a] flex flex-col shadow-2xl z-40">
         {/* Header */}
         <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -778,14 +778,64 @@ export default function MusicTheoryTabs({
           </button>
         </div>
 
-        {/* Sidebar Navigation and Content */}
-        <div className="flex flex-1 overflow-hidden">
-          <div className="w-40 bg-[#0a0a0a] border-r border-[#2a2a2a] overflow-y-auto flex-shrink-0">
-            <SidebarNavigation />
+        {/* Top Menu Navigation */}
+        <div className="border-b border-[#2a2a2a] px-3 py-2 flex-shrink-0 space-y-2">
+          {/* Main Category Nav */}
+          <div className="flex gap-2 items-center min-w-max overflow-x-auto">
+            {Object.entries(FEATURE_GROUPS).map(([groupId, group]) => (
+              <button
+                key={groupId}
+                onClick={() => {
+                  setExpandedGroups(prev => ({ ...prev, [groupId]: true }));
+                  const firstFeature = group.features[0];
+                  if (firstFeature) setActiveFeature(firstFeature.id);
+                }}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 ${
+                  Object.keys(FEATURE_GROUPS).find(g => 
+                    FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
+                  ) === groupId
+                    ? 'bg-[#D0021B] text-white'
+                    : 'text-[#a0a0a0] hover:bg-[#252525] hover:text-white'
+                }`}
+              >
+                <group.icon className="w-3.5 h-3.5" />
+                {group.label}
+              </button>
+            ))}
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            {renderFeatureContent()}
-          </div>
+
+          {/* Submenu Features */}
+          {(() => {
+            const currentGroupId = Object.keys(FEATURE_GROUPS).find(g => 
+              FEATURE_GROUPS[g].features.some(f => f.id === activeFeature)
+            );
+            const currentGroup = FEATURE_GROUPS[currentGroupId];
+            
+            return currentGroup ? (
+              <div className="flex gap-1.5 pl-1 border-l-2 border-[#D0021B]">
+                {currentGroup.features.map(feat => (
+                  <button
+                    key={feat.id}
+                    onClick={() => setActiveFeature(feat.id)}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 flex-shrink-0 ${
+                      activeFeature === feat.id
+                        ? 'bg-[#D0021B]/20 text-[#D0021B]'
+                        : 'text-[#6b6b6b] hover:text-white'
+                    }`}
+                    title={feat.desc}
+                  >
+                    <feat.icon className="w-3 h-3" />
+                    <span>{feat.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null;
+          })()}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {renderFeatureContent()}
         </div>
       </div>
     );
