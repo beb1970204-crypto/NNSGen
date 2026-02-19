@@ -37,18 +37,11 @@ const buttonVariants = cva(
 
 const Button = React.forwardRef(({ className, variant, size, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "button"
-  
-  // Apply default red color if variant is 'default'
-  let finalClassName = className;
-  if (variant === 'default') {
-    finalClassName = cn(className, 'bg-[#D0021B] hover:bg-[#A0011B]');
-  }
-  
   return (
-    (<Comp
-      className={cn(buttonVariants({ variant, size, finalClassName }))}
+    <Comp
+      className={cn(buttonVariants({ variant, size }), variant === 'default' || !variant ? 'bg-[#D0021B] hover:bg-[#A0011B]' : '', className)}
       ref={ref}
-      {...props} />)
+      {...props} />
   );
 })
 Button.displayName = "Button"
