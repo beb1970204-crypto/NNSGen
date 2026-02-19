@@ -283,7 +283,7 @@ Transcribe the actual chords for "${title}" by ${artist || 'Unknown'}:`;
   try {
     response = await base44.integrations.Core.InvokeLLM({
       prompt,
-      add_context_from_internet: false,
+      add_context_from_internet: true,
       file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       response_json_schema: schema
     });
