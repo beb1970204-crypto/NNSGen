@@ -44,22 +44,7 @@ async function fetchChordonomicon(params) {
     queries.push(`"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`);
   }
   
-  if (title && artist) {
-    const cleanTitle = title.split(' - ')[0].replace(/\s*\(.*?\)/g, '').trim().replace(/'/g, "''");
-    const cleanArtist = artist.replace(/'/g, "''");
-    // Exact match
-    queries.push(`"title"='${cleanTitle}' AND "artist"='${cleanArtist}'`);
-    // Case-insensitive partial match
-    const titleWords = cleanTitle.split(' ').filter(w => w.length > 2).join('%');
-    if (titleWords) {
-      queries.push(`"title" LIKE '%${titleWords}%' AND "artist"='${cleanArtist}'`);
-    }
-    // Try just the first significant word
-    const firstWord = cleanTitle.split(' ')[0];
-    if (firstWord && firstWord.length > 2) {
-      queries.push(`"title" LIKE '${firstWord}%' AND "artist"='${cleanArtist}'`);
-    }
-  }
+
 
   const headers = { 'Accept': 'application/json' };
   if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
