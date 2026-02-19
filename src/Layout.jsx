@@ -61,23 +61,19 @@ export default function Layout({ children, currentPageName }) {
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-[#141414] border-b border-[#2a2a2a] z-50 flex items-center px-6 shadow-lg">
         <div className="flex items-center gap-2">
-          <div className="relative w-10 h-10 flex items-center justify-center">
-            {/* Outer glowing square */}
-            <div 
-              className="absolute inset-0 border border-[#D0021B]"
-              style={{ boxShadow: '0 0 12px #D0021B, inset 0 0 8px rgba(208, 2, 27, 0.3)' }}
-            />
-            {/* Inner number */}
-            <span className="text-[#D0021B] font-black text-sm">1</span>
-            {/* Stylus pen detail - top right */}
-            <div 
-              className="absolute -top-1 -right-1 w-3 h-3"
-              style={{
-                background: '#D0021B',
-                clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
-                boxShadow: '0 0 8px #D0021B'
-              }}
-            />
+          <div className="grid grid-cols-2 gap-0.5 w-10 h-10 flex-shrink-0">
+            <div className="bg-white rounded-sm flex items-center justify-center">
+              <span className="text-black font-black text-xs leading-none">1</span>
+            </div>
+            <div className="rounded-sm flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 6px #D0021B' }}>
+              <span className="text-[#D0021B] font-black text-xs leading-none">4</span>
+            </div>
+            <div className="rounded-sm flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 6px #D0021B' }}>
+              <span className="text-[#D0021B] font-black text-xs leading-none">5</span>
+            </div>
+            <div className="rounded-sm flex items-center justify-center border border-[#c17f00]" style={{ background: '#0a0a0a', boxShadow: '0 0 6px #c17f00' }}>
+              <span className="text-[#e09a00] font-black text-xs leading-none">6-</span>
+            </div>
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-lg font-bold tracking-tight text-white font-mono">ChartScribe</span>
