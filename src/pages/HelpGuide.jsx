@@ -412,7 +412,7 @@ export default function HelpGuide() {
                 {[
                   "Go to My Charts on the Home page.",
                   "Click the multi-select button and check off the songs you want.",
-                  "Click "Add to Setlist" from the bulk actions bar that appears.",
+                  'Click "Add to Setlist" from the bulk actions bar that appears.',
                   "Create a new setlist — add a name, event date, and venue.",
                   "Your setlist is now saved and accessible from the sidebar."
                 ].map((step, i) => (
