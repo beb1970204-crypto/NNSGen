@@ -271,7 +271,7 @@ export default function MusicTheoryTabs({
         genre: chartData.genres || 'general'
       });
       if (response.data?.success && response.data?.comparisons) {
-        setAnalysisData(response.data);
+        setAnalysisData({ comparisons: response.data.comparisons, patterns: response.data.patterns, contextNote: response.data.contextNote });
       } else {
         setErrorMessage('Failed to load comparative analysis');
         toast.error('Failed to load comparative analysis');
