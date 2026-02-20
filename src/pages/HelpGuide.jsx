@@ -150,8 +150,8 @@ export default function HelpGuide() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="ml-[calc(15rem+15rem)] flex-1 min-h-screen pt-16">
-        <div className="max-w-2xl px-8 py-12">
+      <main className="ml-[29rem] flex-1 min-h-screen pt-20">
+        <div className="max-w-2xl px-8 py-6">
 
           {/* Hero */}
           <div className="mb-12">
