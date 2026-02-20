@@ -137,13 +137,13 @@ export default function ChartDisplay({
       return (
         <MeasureContextMenu
           key={measureIdx}
-          onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+          onEditChord={() => onMeasureClick && onMeasureClick(measure, measureIdx, section, isSelected)}
           onAddChord={() => handleUpdateMeasure(section, measureIdx, { ...measure, chords: [...measure.chords, { chord: '-', beats: 4, symbols: [] }] })}
           onDeleteMeasure={() => handleDeleteMeasure(section, measureIdx)}
           onDuplicateMeasure={() => handleDuplicateMeasure(section, measureIdx)}
           onInsertAfter={() => handleInsertAfter(section, measureIdx)}
           chordCount={chordCount}
-          onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+          onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section, isSelected)}
           isSelected={isSelected}
           measurePadding={measurePadding}
           measureHeight={measureHeight}
