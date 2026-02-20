@@ -29,35 +29,47 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Chart data and chord required' }, { status: 400 });
     }
 
+    // Find all shapes in the database that match the exact chord
+    const exactMatches = AVAILABLE_CHORDS.filter(c => c === chord);
+    // Also find enharmonic equivalents (e.g. C# = Db)
+    const enharmonicMap = { 'C#': 'Db', 'Db': 'C#', 'D#': 'Eb', 'Eb': 'D#', 'F#': 'Gb', 'Gb': 'F#', 'G#': 'Ab', 'Ab': 'G#', 'A#': 'Bb', 'Bb': 'A#' };
+    const chordRoot = chord.match(/^[A-G][#b]?/)?.[0] || '';
+    const chordSuffix = chord.slice(chordRoot.length);
+    const enharmonicRoot = enharmonicMap[chordRoot] || '';
+    const enharmonicChord = enharmonicRoot ? enharmonicRoot + chordSuffix : '';
+    const enharmonicMatches = enharmonicChord ? AVAILABLE_CHORDS.filter(c => c === enharmonicChord) : [];
+
+    const candidateChords = [...new Set([...exactMatches, ...enharmonicMatches])];
+
     const prompt = `You are an expert guitar voicing coach.
 
-Chord to voice: ${chord}
-Key: ${chartData.key}
-Context: ${context}
+The guitarist needs to play the chord: "${chord}"
+Key of the song: ${chartData.key}
+Section context: ${context}
 
-AVAILABLE CHORDS IN DATABASE:
-${AVAILABLE_CHORDS.join(', ')}
+AVAILABLE SHAPES FOR THIS CHORD IN DATABASE:
+${candidateChords.length > 0 ? candidateChords.join(', ') : 'None found - use closest match from: ' + AVAILABLE_CHORDS.join(', ')}
 
-Suggest 2-3 voicing alternatives for "${chord}" that exist in the database above.
-For each suggestion, pick the most harmonically appropriate chord name EXACTLY as it appears in the available chords list.
-You must ONLY use chord names from the list above - do not invent names.
+Your job is to rank these exact chord shapes from MOST to LEAST recommended for playing "${chord}" in the key of ${chartData.key}.
+Do NOT suggest different chords or substitutions. Only rank the shapes listed above.
+Each entry must use a "chordName" that is EXACTLY one of the shapes listed above.
 
-For each voicing:
-- "chordName": must be an EXACT match from the available chords list
-- "name": a friendly label like "Shell Voicing", "Open Voicing", "Barre Chord"
-- "description": why this voicing works harmonically
-- "technique": brief playing tip
-- "context": when to use this voicing
+For each shape:
+- "chordName": EXACT name from the list above
+- "name": a descriptive shape label (e.g. "Open Position", "Barre Shape", "Jazz Voicing")
+- "description": why this shape is recommended for this key/context
+- "technique": brief fingering or playing tip
+- "context": best musical situation for this shape
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with shapes ordered best-first:
 {
   "voicings": [
     {
-      "chordName": "Cmaj7",
-      "name": "Open Maj7",
-      "description": "Lush, open sound with major 7th color",
-      "technique": "Let all strings ring freely",
-      "context": "Great for ballads or jazz-influenced playing"
+      "chordName": "${candidateChords[0] || chord}",
+      "name": "Open Position",
+      "description": "Most natural shape in this key",
+      "technique": "Let open strings ring",
+      "context": "Best for strumming and open feels"
     }
   ]
 }`;
