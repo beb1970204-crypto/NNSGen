@@ -53,6 +53,7 @@ import Home from './pages/Home';
 import SetlistLearningPath from './pages/SetlistLearningPath';
 import SetlistViewer from './pages/SetlistViewer';
 import Settings from './pages/Settings';
+import HelpGuide from './pages/HelpGuide';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +64,7 @@ export const PAGES = {
     "SetlistLearningPath": SetlistLearningPath,
     "SetlistViewer": SetlistViewer,
     "Settings": Settings,
+    "HelpGuide": HelpGuide,
 }
 
 export const pagesConfig = {
