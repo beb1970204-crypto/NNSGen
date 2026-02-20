@@ -60,7 +60,8 @@ export default function Layout({ children, currentPageName }) {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-[#141414] border-b border-[#2a2a2a] z-50 flex items-center px-6 shadow-lg">
-        <div className="flex items-center gap-2">
+        <Link to={createPageUrl("Home")} className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-0.5 w-10 h-10 flex-shrink-0">
             <div className="bg-white rounded-sm flex items-center justify-center">
               <span className="text-black font-black text-xs leading-none">1</span>
             </div>
@@ -78,7 +79,7 @@ export default function Layout({ children, currentPageName }) {
             <span className="text-lg font-bold tracking-tight text-white font-mono">ChartScribe</span>
             <span className="text-lg font-bold tracking-tight text-[#D0021B] font-mono">AI</span>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Sidebar */}
