@@ -660,7 +660,6 @@ export default function ChartViewer() {
         )}
 
         {!editMode && musicTheoryOpen && (
-        <div className="w-96 flex-shrink-0 bg-[#141414] border-l border-[#2a2a2a] flex flex-col overflow-hidden rounded-lg">
           <MusicTheoryTabs
             isOpen={true}
             onClose={() => setMusicTheoryOpen(false)}
@@ -670,7 +669,6 @@ export default function ChartViewer() {
             selectedMeasureIndex={selectedMeasureIndex}
             isSidebar={true}
           />
-        </div>
         )}
       </div>
 
