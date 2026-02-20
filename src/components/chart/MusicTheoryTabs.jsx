@@ -483,7 +483,7 @@ export default function MusicTheoryTabs({
                 icon={Ear}
                 title="Ear Training Guide"
                 description="Learn to hear and recognize the harmonic movements in the entire song"
-                expectedOutput="8-12 targeted listening exercises covering all sections"
+                expectedOutput="Targeted listening tips and practice exercises"
                 requirements={[
                   { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
@@ -491,10 +491,55 @@ export default function MusicTheoryTabs({
                 onAction={loadEarTraining}
               />
             ) : (
-              <div className="text-sm text-[#a0a0a0] overflow-y-auto space-y-3">
-                <ReactMarkdown className="prose prose-sm prose-invert max-w-none [&>*]:mb-3 [&>h2]:text-base [&>h2]:font-bold [&>h2]:text-white [&>ul]:list-disc [&>ul]:ml-4">
-                  {earTrainingData}
-                </ReactMarkdown>
+              <div className="overflow-y-auto space-y-3">
+                {earTrainingData.soundCharacter && (
+                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                    <p className="text-xs font-bold text-[#D0021B] uppercase mb-1">Overall Sound</p>
+                    <p className="text-xs text-[#a0a0a0]">{earTrainingData.soundCharacter}</p>
+                  </div>
+                )}
+                {earTrainingData.listenFor?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-white uppercase mb-2">Listen For</p>
+                    <div className="space-y-2">
+                      {earTrainingData.listenFor.map((item, i) => (
+                        <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                          <p className="text-xs font-semibold text-white mb-0.5">{item.moment}</p>
+                          <p className="text-xs text-[#a0a0a0] mb-1">{item.sound}</p>
+                          {item.distinguishingFeature && (
+                            <p className="text-xs text-[#D0021B] italic">{item.distinguishingFeature}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {earTrainingData.practiceTips?.length > 0 && (
+                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                    <p className="text-xs font-bold text-white uppercase mb-2">Practice Tips</p>
+                    <ul className="space-y-1">
+                      {earTrainingData.practiceTips.map((tip, i) => (
+                        <li key={i} className="text-xs text-[#a0a0a0] flex gap-2">
+                          <span className="text-[#D0021B] flex-shrink-0">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {earTrainingData.similarProgressions?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold text-white uppercase mb-2">Similar Progressions</p>
+                    <div className="space-y-2">
+                      {earTrainingData.similarProgressions.map((prog, i) => (
+                        <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                          <p className="text-xs font-mono font-bold text-[#D0021B] mb-0.5">{prog.example}</p>
+                          <p className="text-xs text-[#a0a0a0]">{prog.comparison}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
