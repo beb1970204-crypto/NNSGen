@@ -169,8 +169,8 @@ export default function HelpGuide() {
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="ml-56 flex-1 min-h-screen -ml-60 pl-56">
-        <div className="max-w-2xl mx-auto px-8 py-12">
+      <main className="ml-56 flex-1 min-h-screen">
+        <div className="max-w-2xl mx-auto px-8 py-12 ml-0">
 
           {/* Hero */}
           <div className="mb-12">
