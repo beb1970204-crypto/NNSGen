@@ -157,7 +157,7 @@ export default function ChartDisplay({
     return (
       <div
         key={measureIdx}
-        onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section)}
+        onClick={() => onMeasureClick && onMeasureClick(measure, measureIdx, section, isSelected)}
         className={`bg-[#1a1a1a] border ${isSelected ? 'border-red-600 shadow-lg shadow-red-600/20' : 'border-[#2a2a2a]'} rounded-lg ${measurePadding} ${measureHeight} flex flex-col justify-center cursor-pointer hover:bg-[#202020] hover:border-[#3a3a3a] transition-all duration-150`}
       >
         {chordContent}
