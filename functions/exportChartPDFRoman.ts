@@ -70,24 +70,32 @@ function chordToRoman(chord, chartKey) {
   return roman + qualitySuffix + bass;
 }
 
+// Sanitize Unicode music symbols that fall outside jsPDF's Latin-1 (Windows-1252) font encoding
+function sanitizePDFStr(str) {
+  return str
+    .replace(/♯/g, '#')
+    .replace(/♭/g, 'b')
+    .replace(/△/g, '^'); // △ (U+25B3) not in Latin-1; ^ is the standard ASCII maj7 symbol
+}
+
 // Split a converted chord string into base text and superscript suffix
 function splitChordSuffix(str) {
-  const slashIdx = str.indexOf('/');
-  const basePart = slashIdx !== -1 ? str.slice(0, slashIdx) : str;
-  const bassSuffix = slashIdx !== -1 ? str.slice(slashIdx) : '';
+  const s = sanitizePDFStr(str);
+  const slashIdx = s.indexOf('/');
+  const basePart = slashIdx !== -1 ? s.slice(0, slashIdx) : s;
+  const bassSuffix = slashIdx !== -1 ? s.slice(slashIdx) : '';
 
-  if (basePart.endsWith('maj7')) {
-    return { base: basePart.slice(0, -4) + bassSuffix, sup: '\u25b3' }; // △
-  }
+  if (basePart.endsWith('maj7'))  return { base: basePart.slice(0, -4) + bassSuffix, sup: '^' };   // maj7
+  if (basePart.endsWith('-7'))    return { base: basePart.slice(0, -2) + bassSuffix, sup: '-7' };   // minor 7 (NNS)
+  if (basePart.endsWith('\u00b07')) return { base: basePart.slice(0, -2) + bassSuffix, sup: 'o7' }; // dim7 (°7)
   if (basePart.endsWith('7')) {
-    const beforeSeven = basePart.slice(0, -1);
-    const lastChar = beforeSeven[beforeSeven.length - 1];
-    if (lastChar && /[a-z]/.test(lastChar)) {
-      return { base: beforeSeven + bassSuffix, sup: '-7' }; // minor 7
-    }
-    return { base: beforeSeven + bassSuffix, sup: '7' }; // dominant 7
+    const before = basePart.slice(0, -1);
+    if (/[a-z]$/.test(before)) return { base: before + bassSuffix, sup: '-7' }; // minor 7 (roman: vi7)
+    return { base: before + bassSuffix, sup: '7' };                              // dominant 7
   }
-  return { base: str, sup: null };
+  if (basePart.endsWith('\u00b0')) return { base: basePart.slice(0, -1) + bassSuffix, sup: 'o' };   // dim (°)
+  if (basePart.endsWith('+'))     return { base: basePart.slice(0, -1) + bassSuffix, sup: '+' };    // aug
+  return { base: s, sup: null };
 }
 
 // Draw a single chord string with superscript notation, centered at (cx, cy)
