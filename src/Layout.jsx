@@ -149,7 +149,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* User Profile at Bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-5 border-t border-[#2a2a2a] bg-[#141414] space-y-2">
-          <Link to={`${createPageUrl("Settings")}`}>
+          <Link to={`${createPageUrl("HelpGuide")}`}>
             <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#252525] transition-all text-[#a0a0a0] hover:text-white text-sm font-medium">
               <HelpingHand className="w-4 h-4" />
               Help & Guide
