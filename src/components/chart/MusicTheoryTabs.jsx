@@ -198,7 +198,7 @@ export default function MusicTheoryTabs({
     setErrorMessage(null);
     try {
       const response = await base44.functions.invoke('earTrainingGuide', {
-        chartData
+        chartData: { ...chartData, _sections: chartData._sections || [] }
       });
       if (response.data?.success && response.data?.guide) {
         const guide = response.data.guide;
