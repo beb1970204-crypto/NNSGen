@@ -109,33 +109,14 @@ export default function HelpGuide() {
       {/* ── Sidebar TOC ── */}
       <aside className="fixed top-16 left-60 w-56 h-[calc(100vh-4rem)] bg-[#111] border-r border-[#1e1e1e] flex flex-col z-10">
         {/* Header */}
-        <div className="px-4 pt-5 pb-4 border-b border-[#1e1e1e]">
+        <div className="px-4 pt-4 pb-3 border-b border-[#1e1e1e]">
           <Link to={createPageUrl("Home")}>
-            <button className="flex items-center gap-1.5 text-[#555] hover:text-white transition-colors text-xs mb-5">
+            <button className="flex items-center gap-1.5 text-[#555] hover:text-white transition-colors text-xs mb-3">
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to App
             </button>
           </Link>
-          <div className="flex items-center gap-2.5">
-            <div className="grid grid-cols-2 gap-0.5 w-7 h-7 flex-shrink-0">
-              <div className="bg-white rounded-[2px] flex items-center justify-center">
-                <span className="text-black font-black text-[8px]">1</span>
-              </div>
-              <div className="rounded-[2px] flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a' }}>
-                <span className="text-[#D0021B] font-black text-[8px]">4</span>
-              </div>
-              <div className="rounded-[2px] flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a' }}>
-                <span className="text-[#D0021B] font-black text-[8px]">5</span>
-              </div>
-              <div className="rounded-[2px] flex items-center justify-center border border-[#c17f00]" style={{ background: '#0a0a0a' }}>
-                <span className="text-[#e09a00] font-black text-[8px]">6-</span>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white font-mono leading-tight">ChartScribe AI</p>
-              <p className="text-[10px] text-[#555] leading-tight mt-0.5">Help & Guide</p>
-            </div>
-          </div>
+          <p className="text-[10px] text-[#444] leading-tight">Help & Guide</p>
         </div>
 
         {/* TOC nav */}
