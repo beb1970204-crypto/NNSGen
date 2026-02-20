@@ -496,59 +496,63 @@ export default function MusicTheoryTabs({
                 isLoading={earTrainingLoading}
                 onAction={loadEarTraining}
               />
-            ) : earTrainingData && typeof earTrainingData === 'object' ? (
+            ) : (
               <div className="overflow-y-auto space-y-3">
-                {earTrainingData.soundCharacter && (
-                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
-                    <p className="text-xs font-bold text-[#D0021B] uppercase mb-1">Overall Sound</p>
-                    <p className="text-xs text-[#a0a0a0]">{earTrainingData.soundCharacter}</p>
-                  </div>
-                )}
-                {earTrainingData.listenFor?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-white uppercase mb-2">Listen For</p>
-                    <div className="space-y-2">
-                      {earTrainingData.listenFor.map((item, i) => (
-                        <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
-                          <p className="text-xs font-semibold text-white mb-0.5">{item.moment}</p>
-                          <p className="text-xs text-[#a0a0a0] mb-1">{item.sound}</p>
-                          {item.distinguishingFeature && (
-                            <p className="text-xs text-[#D0021B] italic">{item.distinguishingFeature}</p>
-                          )}
+                {earTrainingData && typeof earTrainingData === 'object' ? (
+                  <>
+                    {earTrainingData.soundCharacter && (
+                      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                        <p className="text-xs font-bold text-[#D0021B] uppercase mb-1">Overall Sound</p>
+                        <p className="text-xs text-[#a0a0a0]">{earTrainingData.soundCharacter}</p>
+                      </div>
+                    )}
+                    {earTrainingData.listenFor?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-white uppercase mb-2">Listen For</p>
+                        <div className="space-y-2">
+                          {earTrainingData.listenFor.map((item, i) => (
+                            <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                              <p className="text-xs font-semibold text-white mb-0.5">{item.moment}</p>
+                              <p className="text-xs text-[#a0a0a0] mb-1">{item.sound}</p>
+                              {item.distinguishingFeature && (
+                                <p className="text-xs text-[#D0021B] italic">{item.distinguishingFeature}</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {earTrainingData.practiceTips?.length > 0 && (
-                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
-                    <p className="text-xs font-bold text-white uppercase mb-2">Practice Tips</p>
-                    <ul className="space-y-1">
-                      {earTrainingData.practiceTips.map((tip, i) => (
-                        <li key={i} className="text-xs text-[#a0a0a0] flex gap-2">
-                          <span className="text-[#D0021B] flex-shrink-0">•</span>
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {earTrainingData.similarProgressions?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-white uppercase mb-2">Similar Progressions</p>
-                    <div className="space-y-2">
-                      {earTrainingData.similarProgressions.map((prog, i) => (
-                        <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
-                          <p className="text-xs font-mono font-bold text-[#D0021B] mb-0.5">{prog.example}</p>
-                          <p className="text-xs text-[#a0a0a0]">{prog.comparison}</p>
+                      </div>
+                    )}
+                    {earTrainingData.practiceTips?.length > 0 && (
+                      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                        <p className="text-xs font-bold text-white uppercase mb-2">Practice Tips</p>
+                        <ul className="space-y-1">
+                          {earTrainingData.practiceTips.map((tip, i) => (
+                            <li key={i} className="text-xs text-[#a0a0a0] flex gap-2">
+                              <span className="text-[#D0021B] flex-shrink-0">•</span>
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {earTrainingData.similarProgressions?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-white uppercase mb-2">Similar Progressions</p>
+                        <div className="space-y-2">
+                          {earTrainingData.similarProgressions.map((prog, i) => (
+                            <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
+                              <p className="text-xs font-mono font-bold text-[#D0021B] mb-0.5">{prog.example}</p>
+                              <p className="text-xs text-[#a0a0a0]">{prog.comparison}</p>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-[#6b6b6b] p-4 text-center">No ear training data available.</div>
                 )}
               </div>
-            ) : (
-              <div className="text-xs text-[#6b6b6b] p-4 text-center">No ear training data available.</div>
             )}
           </div>
         );
