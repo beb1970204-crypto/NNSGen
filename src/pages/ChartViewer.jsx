@@ -483,7 +483,7 @@ export default function ChartViewer() {
             onToggleMusicTheory={() => setMusicTheoryOpen(!musicTheoryOpen)}
           />
           
-          <div className="flex-1 overflow-auto bg-[#0a0a0a] p-8">
+          <div className={`flex-1 overflow-auto bg-[#0a0a0a] p-8 ${!editMode && musicTheoryOpen ? 'pr-[calc(40vw+2rem)]' : ''}`}>
             {sections.length === 0 ? (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center">
