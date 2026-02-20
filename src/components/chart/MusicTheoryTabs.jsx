@@ -547,6 +547,8 @@ export default function MusicTheoryTabs({
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="text-xs text-[#6b6b6b] p-4 text-center">No ear training data available.</div>
             )}
           </div>
         );
