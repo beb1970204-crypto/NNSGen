@@ -1,5 +1,5 @@
 import React from "react";
-import { chordToRoman, chordToNNS } from "@/components/chordConversion";
+import { chordToRoman, chordToNNS, splitChordSuffix } from "@/components/chordConversion";
 import MeasureContextMenu from "./MeasureContextMenu";
 import SectionContextMenu from "./SectionContextMenu";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,17 @@ export default function ChartDisplay({
   const renderChord = (chordObj) => {
     const chordText = typeof chordObj === 'string' ? chordObj : chordObj.chord;
 
-    if (displayMode === 'roman') return chordToRoman(chordText, chartKey);
-    if (displayMode === 'nns')   return chordToNNS(chordText, chartKey);
+    if (displayMode === 'roman' || displayMode === 'nns') {
+      const converted = displayMode === 'roman'
+        ? chordToRoman(chordText, chartKey)
+        : chordToNNS(chordText, chartKey);
+      const { base, sup } = splitChordSuffix(converted);
+      if (sup) {
+        return <>{base}<sup className="text-[0.6em] font-bold align-super">{sup}</sup></>;
+      }
+      return converted;
+    }
+
     return chordText;
   };
 

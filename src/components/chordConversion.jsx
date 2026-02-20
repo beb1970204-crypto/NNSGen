@@ -150,6 +150,41 @@ export function chordToNNS(chord, chartKey) {
   return degree + minorDash + qualityMark + qualitySuffix + bass;
 }
 
+// ─── Superscript Notation Splitter ───────────────────────────────────────────
+// Used by Roman and NNS display modes to apply △, ⁷, and ⁻⁷ superscript notation.
+// Returns { base: string, sup: string | null }
+
+export function splitChordSuffix(str) {
+  // Separate bass note (e.g. /V or /5) before processing
+  const slashIdx = str.indexOf('/');
+  const basePart = slashIdx !== -1 ? str.slice(0, slashIdx) : str;
+  const bassSuffix = slashIdx !== -1 ? str.slice(slashIdx) : '';
+
+  // Major 7th → △ superscript (e.g. Imaj7 → I△, 1maj7 → 1△)
+  if (basePart.endsWith('maj7')) {
+    return { base: basePart.slice(0, -4) + bassSuffix, sup: '△' };
+  }
+
+  // NNS minor 7th: -7 suffix (e.g. 6-7 → 6 + sup:-7)
+  if (basePart.endsWith('-7')) {
+    return { base: basePart.slice(0, -2) + bassSuffix, sup: '-7' };
+  }
+
+  // Any remaining 7 suffix
+  if (basePart.endsWith('7')) {
+    const beforeSeven = basePart.slice(0, -1);
+    const lastChar = beforeSeven[beforeSeven.length - 1];
+    // Roman numeral minor 7th: lowercase letter before 7 (e.g. vi7 → vi + sup:-7)
+    if (lastChar && /[a-z]/.test(lastChar)) {
+      return { base: beforeSeven + bassSuffix, sup: '-7' };
+    }
+    // Dominant 7th or NNS number 7 (e.g. VI7 → VI + sup:7, or 57 → 5 + sup:7)
+    return { base: beforeSeven + bassSuffix, sup: '7' };
+  }
+
+  return { base: str, sup: null };
+}
+
 // ─── Measure Input Parser ─────────────────────────────────────────────────────
 
 export function parseMeasureInput(input, timeSignature = '4/4') {
