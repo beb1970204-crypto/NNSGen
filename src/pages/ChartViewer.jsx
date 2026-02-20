@@ -146,10 +146,25 @@ export default function ChartViewer() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedMeasure, selectedMeasureIndex, selectedSection]);
 
-  const handleMeasureClick = (measure, measureIdx, section) => {
-    setSelectedMeasure(measure);
-    setSelectedMeasureIndex(measureIdx);
-    setSelectedSection(section);
+  const handleMeasureClick = (measure, measureIdx, section, isAlreadySelected = false) => {
+    if (isAlreadySelected) {
+      setSelectedMeasure(null);
+      setSelectedMeasureIndex(null);
+      setSelectedSection(null);
+    } else {
+      setSelectedMeasure(measure);
+      setSelectedMeasureIndex(measureIdx);
+      setSelectedSection(section);
+    }
+  };
+
+  const handleCanvasClick = (e) => {
+    // Deselect if clicking on the canvas background (not a child interactive element)
+    if (e.target === e.currentTarget) {
+      setSelectedMeasure(null);
+      setSelectedMeasureIndex(null);
+      setSelectedSection(null);
+    }
   };
 
   const handleUpdateSelectedMeasure = (updatedMeasure) => {
