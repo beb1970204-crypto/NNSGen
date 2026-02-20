@@ -201,12 +201,7 @@ export default function MusicTheoryTabs({
         chartData
       });
       if (response.data?.success) {
-        const guide = response.data.guide;
-        if (typeof guide === 'object') {
-          setEarTrainingData(JSON.stringify(guide, null, 2));
-        } else {
-          setEarTrainingData(guide);
-        }
+        setEarTrainingData(response.data.guide);
       } else {
         setErrorMessage('Failed to load ear training guide');
         toast.error('Failed to load ear training guide');
