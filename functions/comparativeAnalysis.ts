@@ -11,10 +11,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
 
-    const allChords = chartData.sections?.flatMap(sectionId => {
-      const section = chartData._sections?.find(s => s.id === sectionId);
-      return section?.measures?.flatMap(m => m.chords?.map(c => c.chord)) || [];
-    }).join(' ') || '';
+    const sectionsData = chartData._sections || [];
+    const allChords = sectionsData.flatMap(s =>
+      s.measures?.flatMap(m => m.chords?.map(c => c.chord) || []) || []
+    ).filter(Boolean).join(' ') || 'chord progression not available';
 
     const prompt = `You are a music analyst comparing chord progressions across famous songs.
 
@@ -69,7 +69,7 @@ Return ONLY valid JSON:
       }
     });
 
-    return Response.json({ success: true, analysis: response });
+    return Response.json({ success: true, comparisons: response.comparisons, patterns: response.patterns, contextNote: response.contextNote });
   } catch (error) {
     console.error('comparativeAnalysis error:', error);
     return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });

@@ -11,10 +11,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
 
-    const allChords = chartData.sections?.flatMap(sectionId => {
-      const section = chartData._sections?.find(s => s.id === sectionId);
-      return section?.measures?.flatMap(m => m.chords?.map(c => c.chord)) || [];
-    }).join(' ') || '';
+    // _sections is populated by the frontend when passing chartData+sections together
+    const sectionsData = chartData._sections || [];
+    const allChords = sectionsData.flatMap(s =>
+      s.measures?.flatMap(m => m.chords?.map(c => c.chord) || []) || []
+    ).filter(Boolean).join(' ') || 'chord progression not available';
 
     const prompt = `You are an ear training coach preparing someone to recognize chord progressions by ear.
 
