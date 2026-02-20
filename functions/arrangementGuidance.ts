@@ -7,13 +7,16 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { chartData, sectionData } = await req.json();
-    if (!chartData || !sectionData) {
-      return Response.json({ error: 'Chart and section data required' }, { status: 400 });
+    if (!chartData) {
+      return Response.json({ error: 'Chart data required' }, { status: 400 });
     }
 
-    const chords = sectionData.measures?.map(m => m.chords?.[0]?.chord).join('-') || '';
+    const sectionsData = chartData._sections || (sectionData ? [sectionData] : []);
+    const chords = sectionsData.flatMap(s =>
+      s.measures?.flatMap(m => m.chords?.map(c => c.chord) || []) || []
+    ).filter(Boolean).join(' - ') || 'chord progression not available';
 
-    const prompt = `You are an experienced arranger. Given this chord progression in a ${sectionData.label} section:
+    const prompt = `You are an experienced arranger. Given the full chord progression for this song:
 
 Progression: ${chords}
 Key: ${chartData.key}
