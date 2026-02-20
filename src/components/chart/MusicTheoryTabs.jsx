@@ -496,7 +496,7 @@ export default function MusicTheoryTabs({
                 isLoading={earTrainingLoading}
                 onAction={loadEarTraining}
               />
-            ) : (
+            ) : earTrainingData && typeof earTrainingData === 'object' ? (
               <div className="overflow-y-auto space-y-3">
                 {earTrainingData.soundCharacter && (
                   <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3">
