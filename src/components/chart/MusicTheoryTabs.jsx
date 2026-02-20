@@ -86,6 +86,18 @@ export default function MusicTheoryTabs({
   const [errorMessage, setErrorMessage] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(isFullscreen);
 
+  // Reset voicing data when selected chord changes
+  const currentVoicingChord = selectedMeasure?.chords?.[0]?.chord;
+  React.useEffect(() => {
+    if (currentVoicingChord && currentVoicingChord !== prevVoicingChordRef.current) {
+      prevVoicingChordRef.current = currentVoicingChord;
+      if (activeFeature === 'voice') {
+        setVoicingData(null);
+        setErrorMessage(null);
+      }
+    }
+  }, [currentVoicingChord, activeFeature]);
+
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
