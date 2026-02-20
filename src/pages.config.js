@@ -49,22 +49,22 @@
  */
 import ChartCreator from './pages/ChartCreator';
 import ChartViewer from './pages/ChartViewer';
+import HelpGuide from './pages/HelpGuide';
 import Home from './pages/Home';
 import SetlistLearningPath from './pages/SetlistLearningPath';
 import SetlistViewer from './pages/SetlistViewer';
 import Settings from './pages/Settings';
-import HelpGuide from './pages/HelpGuide';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "ChartCreator": ChartCreator,
     "ChartViewer": ChartViewer,
+    "HelpGuide": HelpGuide,
     "Home": Home,
     "SetlistLearningPath": SetlistLearningPath,
     "SetlistViewer": SetlistViewer,
     "Settings": Settings,
-    "HelpGuide": HelpGuide,
 }
 
 export const pagesConfig = {
