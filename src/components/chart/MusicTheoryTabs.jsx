@@ -200,8 +200,15 @@ export default function MusicTheoryTabs({
       const response = await base44.functions.invoke('earTrainingGuide', {
         chartData
       });
-      if (response.data?.success) {
-        setEarTrainingData(response.data.guide);
+      if (response.data?.success && response.data?.guide) {
+        const guide = response.data.guide;
+        // If guide came back as a string (shouldn't happen but guard anyway), show error
+        if (typeof guide === 'string') {
+          setErrorMessage('Unexpected response format. Please try again.');
+          toast.error('Failed to load ear training guide');
+        } else {
+          setEarTrainingData(guide);
+        }
       } else {
         setErrorMessage('Failed to load ear training guide');
         toast.error('Failed to load ear training guide');
