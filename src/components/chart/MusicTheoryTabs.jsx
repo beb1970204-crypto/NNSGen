@@ -216,12 +216,11 @@ export default function MusicTheoryTabs({
   };
 
   const loadArrangement = async () => {
-    if (!sectionData) return;
+    if (!chartData) return;
     setArrangementLoading(true);
     try {
       const response = await base44.functions.invoke('arrangementGuidance', {
-        chartData,
-        sectionData
+        chartData
       });
       if (response.data?.success) {
         setArrangementData(response.data.arrangement);
@@ -552,10 +551,10 @@ export default function MusicTheoryTabs({
               <FeatureEmptyState
                 icon={Zap}
                 title="Arrangement Guidance"
-                description="Get instrument-specific playing ideas and patterns"
+                description="Get instrument-specific playing ideas for the full song"
                 expectedOutput="Drums, bass, keys, and guitar arrangement suggestions"
                 requirements={[
-                  { label: 'Section selected', unmet: !sectionData, hint: 'Select a section in the chart' }
+                  { label: 'Chart loaded', unmet: !chartData, hint: 'Open a chart to begin' }
                 ]}
                 isLoading={arrangementLoading}
                 onAction={loadArrangement}
