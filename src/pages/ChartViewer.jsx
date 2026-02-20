@@ -567,8 +567,8 @@ export default function ChartViewer() {
                 </div>
               </div>
             ) : musicTheoryOpen ? (
-              // Read Mode - Single Column (with theory sidebar)
-              <div className="space-y-3">
+              // Read Mode - Single Column (with theory sidebar — sidebar takes 40vw)
+              <div className="space-y-3 max-w-full">
                 {sections.map((section, index) => (
                   <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
                     <ChartDisplay 
