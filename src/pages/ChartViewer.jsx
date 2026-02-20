@@ -664,7 +664,7 @@ export default function ChartViewer() {
           <MusicTheoryTabs
             isOpen={true}
             onClose={() => setMusicTheoryOpen(false)}
-            chartData={chart}
+            chartData={{ ...chart, _sections: sections }}
             sectionData={selectedSection}
             selectedMeasure={selectedMeasure}
             selectedMeasureIndex={selectedMeasureIndex}
