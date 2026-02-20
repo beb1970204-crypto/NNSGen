@@ -151,7 +151,7 @@ export default function HelpGuide() {
 
       {/* ── Main Content ── */}
       <main className="ml-52 flex-1 min-h-screen pt-20">
-        <div className="max-w-2xl px-8 py-6">
+        <div className="max-w-2xl mx-auto px-8 py-6">
 
           {/* Hero */}
           <div className="mb-12">
