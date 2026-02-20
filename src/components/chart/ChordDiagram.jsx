@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
-const STANDARD_TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
+// Standard tuning low to high: E A D G B e
+const STANDARD_TUNING = ['E', 'A', 'D', 'G', 'B', 'e'];
 
 export default function ChordDiagram({ chord, frets: initialFrets, size = 'sm' }) {
   const [voicing, setVoicing] = useState(null);
@@ -9,15 +10,12 @@ export default function ChordDiagram({ chord, frets: initialFrets, size = 'sm' }
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // If frets are directly provided (e.g., from AI voicing suggestions), use them immediately
     if (initialFrets && Array.isArray(initialFrets) && initialFrets.length === 6) {
       setVoicing(initialFrets);
       setLoading(false);
       return;
     }
-
     if (!chord) return;
-
     const fetchChordDiagram = async () => {
       setLoading(true);
       setError(null);
@@ -36,66 +34,138 @@ export default function ChordDiagram({ chord, frets: initialFrets, size = 'sm' }
         setLoading(false);
       }
     };
-
     fetchChordDiagram();
   }, [chord, initialFrets]);
 
   if (!chord && !initialFrets) return null;
-  if (loading) return <div className="text-xs text-[#6b6b6b]">Loading...</div>;
+  if (loading) return <div className="text-xs text-[#6b6b6b] py-2 text-center">Loading...</div>;
   if (error || !voicing) return null;
 
-  const isSmall = size === 'sm';
-  const width = isSmall ? 100 : 120;
-  const height = isSmall ? 140 : 160;
-  const stringSpacing = (width - 20) / 5;
-  const fretSpacing = isSmall ? 20 : 25;
-  const dotRadius = isSmall ? 4 : 5;
-  const fontSize = isSmall ? 8 : 10;
+  // Layout constants
+  const NUM_STRINGS = 6;
+  const NUM_FRETS = 4;
+  const paddingLeft = 18;   // space for mute/open markers on left edge
+  const paddingRight = 14;
+  const paddingTop = 22;    // space above nut for open/mute indicators
+  const paddingBottom = 18; // space below last fret for tuning labels
 
-  const maxFret = Math.max(...voicing.filter(f => f > 0));
-  const startFret = Math.max(0, maxFret - 4);
+  const isSmall = size === 'sm';
+  const stringSpacing = isSmall ? 16 : 20;
+  const fretSpacing = isSmall ? 18 : 22;
+  const dotRadius = isSmall ? 5 : 6;
+  const labelFontSize = isSmall ? 8 : 9;
+
+  const totalWidth = paddingLeft + (NUM_STRINGS - 1) * stringSpacing + paddingRight;
+  const totalHeight = paddingTop + NUM_FRETS * fretSpacing + paddingBottom;
+
+  // Determine fret window
+  const playedFrets = voicing.filter(f => f !== null && f > 0);
+  const maxFret = playedFrets.length > 0 ? Math.max(...playedFrets) : 0;
+  const minFret = playedFrets.length > 0 ? Math.min(...playedFrets) : 0;
+
+  // Start the window so all dots fit in NUM_FRETS rows
+  let startFret = minFret > 0 ? minFret - 1 : 0;
+  if (maxFret - startFret > NUM_FRETS) startFret = maxFret - NUM_FRETS;
+  const showNut = startFret === 0;
+
+  const getStringX = (stringIdx) => paddingLeft + stringIdx * stringSpacing;
+  const getFretY = (fretNum) => paddingTop + (fretNum - startFret) * fretSpacing;
 
   return (
-    <svg width={width} height={height} className="bg-[#0a0a0a] rounded border border-[#2a2a2a]">
-      {/* Nut/Fret indicator */}
-      {startFret === 0 ? (
-        <rect x={8} y={8} width={width - 16} height={3} fill="#D0021B" />
+    <svg
+      width={totalWidth}
+      height={totalHeight}
+      className="bg-[#0a0a0a] rounded border border-[#2a2a2a]"
+      style={{ display: 'block' }}
+    >
+      {/* Nut or fret position indicator */}
+      {showNut ? (
+        <rect
+          x={paddingLeft}
+          y={paddingTop - 4}
+          width={(NUM_STRINGS - 1) * stringSpacing}
+          height={4}
+          fill="#D0021B"
+          rx={1}
+        />
       ) : (
-        <text x={width / 2} y={12} textAnchor="middle" fill="#6b6b6b" fontSize={fontSize - 1}>
-          {startFret + 1}
+        <text
+          x={paddingLeft - 2}
+          y={paddingTop + fretSpacing * 0.5 + 3}
+          textAnchor="end"
+          fill="#6b6b6b"
+          fontSize={labelFontSize}
+        >
+          {startFret + 1}fr
         </text>
       )}
 
       {/* Fret lines */}
-      {[0, 1, 2, 3, 4].map((fretIdx) => {
-        const fretNum = startFret + fretIdx;
-        const y = 12 + (fretIdx + 1) * fretSpacing;
+      {Array.from({ length: NUM_FRETS + 1 }).map((_, i) => {
+        const y = paddingTop + i * fretSpacing;
         return (
           <line
-            key={`fret-${fretNum}`}
-            x1={10}
+            key={`fret-${i}`}
+            x1={paddingLeft}
             y1={y}
-            x2={width - 10}
+            x2={paddingLeft + (NUM_STRINGS - 1) * stringSpacing}
             y2={y}
-            stroke="#2a2a2a"
-            strokeWidth="1"
+            stroke={i === 0 ? '#3a3a3a' : '#2a2a2a'}
+            strokeWidth={i === 0 ? 1.5 : 1}
           />
         );
       })}
 
-      {/* Strings */}
-      {[0, 1, 2, 3, 4, 5].map((stringIdx) => {
-        const x = 10 + stringIdx * stringSpacing + stringSpacing / 2;
+      {/* Strings (vertical lines) + tuning labels + open/mute markers */}
+      {voicing.map((fret, stringIdx) => {
+        const x = getStringX(stringIdx);
+        const isMuted = fret === null;
+        const isOpen = fret === 0;
+
         return (
           <g key={`string-${stringIdx}`}>
-            <line x1={x} y1={12} x2={x} y2={height - 8} stroke="#6b6b6b" strokeWidth="1.5" />
-            {/* String label */}
+            {/* Vertical string line */}
+            <line
+              x1={x}
+              y1={paddingTop}
+              x2={x}
+              y2={paddingTop + NUM_FRETS * fretSpacing}
+              stroke="#4a4a4a"
+              strokeWidth="1.2"
+            />
+
+            {/* Open/mute marker above nut */}
+            {isMuted && (
+              <text
+                x={x}
+                y={paddingTop - 7}
+                textAnchor="middle"
+                fill="#D0021B"
+                fontSize={labelFontSize + 2}
+                fontWeight="bold"
+              >
+                ✕
+              </text>
+            )}
+            {isOpen && (
+              <text
+                x={x}
+                y={paddingTop - 7}
+                textAnchor="middle"
+                fill="#a0a0a0"
+                fontSize={labelFontSize + 2}
+              >
+                ○
+              </text>
+            )}
+
+            {/* Tuning label below */}
             <text
               x={x}
-              y={height - 2}
+              y={totalHeight - 4}
               textAnchor="middle"
-              fill="#a0a0a0"
-              fontSize={fontSize - 1}
+              fill="#6b6b6b"
+              fontSize={labelFontSize}
               fontWeight="bold"
             >
               {STANDARD_TUNING[stringIdx]}
@@ -104,59 +174,30 @@ export default function ChordDiagram({ chord, frets: initialFrets, size = 'sm' }
         );
       })}
 
-      {/* Fret dots and mutes */}
+      {/* Fret dots */}
       {voicing.map((fret, stringIdx) => {
-        const x = 10 + stringIdx * stringSpacing + stringSpacing / 2;
+        if (fret === null || fret === 0) return null;
+        const fretRow = fret - startFret;
+        if (fretRow < 1 || fretRow > NUM_FRETS) return null;
 
-        if (fret === null || fret === undefined) {
-          // Open string (O)
-          return (
-            <text
-              key={`dot-${stringIdx}`}
-              x={x}
-              y={18}
-              textAnchor="middle"
-              fill="#a0a0a0"
-              fontSize={fontSize + 2}
-              fontWeight="bold"
-            >
-              ○
-            </text>
-          );
-        }
-
-        if (fret === 0) {
-          // Muted string (X)
-          return (
-            <text
-              key={`dot-${stringIdx}`}
-              x={x}
-              y={18}
-              textAnchor="middle"
-              fill="#D0021B"
-              fontSize={fontSize + 2}
-              fontWeight="bold"
-            >
-              ✕
-            </text>
-          );
-        }
-
-        const fretIdx = fret - startFret - 1;
-        if (fretIdx < 0 || fretIdx > 3) return null;
-
-        const y = 12 + (fretIdx + 1) * fretSpacing + fretSpacing / 2;
+        const x = getStringX(stringIdx);
+        // Center dot between fret lines
+        const y = paddingTop + (fretRow - 0.5) * fretSpacing;
 
         return (
-          <circle
-            key={`dot-${stringIdx}`}
-            cx={x}
-            cy={y}
-            r={dotRadius}
-            fill="#D0021B"
-            stroke="white"
-            strokeWidth="0.5"
-          />
+          <g key={`dot-${stringIdx}`}>
+            <circle cx={x} cy={y} r={dotRadius} fill="#D0021B" />
+            <text
+              x={x}
+              y={y + labelFontSize * 0.35}
+              textAnchor="middle"
+              fill="white"
+              fontSize={labelFontSize - 1}
+              fontWeight="bold"
+            >
+              {fret}
+            </text>
+          </g>
         );
       })}
     </svg>
