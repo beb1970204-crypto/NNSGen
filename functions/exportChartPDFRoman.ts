@@ -70,6 +70,64 @@ function chordToRoman(chord, chartKey) {
   return roman + qualitySuffix + bass;
 }
 
+// Split a converted chord string into base text and superscript suffix
+function splitChordSuffix(str) {
+  const slashIdx = str.indexOf('/');
+  const basePart = slashIdx !== -1 ? str.slice(0, slashIdx) : str;
+  const bassSuffix = slashIdx !== -1 ? str.slice(slashIdx) : '';
+
+  if (basePart.endsWith('maj7')) {
+    return { base: basePart.slice(0, -4) + bassSuffix, sup: '\u25b3' }; // △
+  }
+  if (basePart.endsWith('7')) {
+    const beforeSeven = basePart.slice(0, -1);
+    const lastChar = beforeSeven[beforeSeven.length - 1];
+    if (lastChar && /[a-z]/.test(lastChar)) {
+      return { base: beforeSeven + bassSuffix, sup: '-7' }; // minor 7
+    }
+    return { base: beforeSeven + bassSuffix, sup: '7' }; // dominant 7
+  }
+  return { base: str, sup: null };
+}
+
+// Draw a single chord string with superscript notation, centered at (cx, cy)
+function drawChordWithSup(doc, chordStr, cx, cy, mainSize, supSize) {
+  const { base, sup } = splitChordSuffix(chordStr);
+  if (!sup) {
+    doc.setFontSize(mainSize);
+    doc.text(base, cx, cy, { align: 'center' });
+  } else {
+    doc.setFontSize(mainSize);
+    const baseWidth = doc.getTextWidth(base);
+    doc.setFontSize(supSize);
+    const supWidth = doc.getTextWidth(sup);
+    const totalWidth = baseWidth + supWidth;
+    const startX = cx - totalWidth / 2;
+    doc.setFontSize(mainSize);
+    doc.text(base, startX, cy);
+    doc.setFontSize(supSize);
+    doc.text(sup, startX + baseWidth, cy - 2.2);
+    doc.setFontSize(mainSize);
+  }
+}
+
+// Draw all chords in a measure cell with superscript notation
+function drawMeasureChords(doc, chords, mx, my, cellWidth, cellHeight, converterFn, chartKey) {
+  const centerY = my + cellHeight / 2 + 0.5;
+  if (chords.length === 1) {
+    const converted = converterFn(chords[0].chord, chartKey);
+    drawChordWithSup(doc, converted, mx + cellWidth / 2, centerY, 9, 6.5);
+  } else {
+    const slotWidth = cellWidth / chords.length;
+    chords.forEach((chordObj, i) => {
+      const converted = converterFn(chordObj.chord, chartKey);
+      const cx = mx + (i + 0.5) * slotWidth;
+      drawChordWithSup(doc, converted, cx, centerY, 7, 5);
+    });
+    doc.setFontSize(9);
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
