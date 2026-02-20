@@ -90,10 +90,13 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { chartData, chord, context = 'general' } = await req.json();
-    if (!chartData || !chord) {
+    const { chartData, chord: rawChord, context = 'general' } = await req.json();
+    if (!chartData || !rawChord) {
       return Response.json({ error: 'Chart data and chord required' }, { status: 400 });
     }
+
+    // Strip slash bass note (e.g. "G/B" -> "G", "Am/C" -> "Am")
+    const chord = rawChord.includes('/') ? rawChord.split('/')[0] : rawChord;
 
     // Find voicings for exact chord match only
     let voicingShapes = CHORD_VOICINGS[chord] || [];
@@ -110,7 +113,7 @@ Deno.serve(async (req) => {
     }
 
     if (voicingShapes.length === 0) {
-      return Response.json({ success: false, error: `No voicings found for chord: ${chord}` }, { status: 404 });
+      return Response.json({ success: false, voicings: [], error: `No voicings found for chord: ${chord}` });
     }
 
     // Ask the LLM to rank and describe the voicing positions
