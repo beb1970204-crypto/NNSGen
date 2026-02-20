@@ -71,6 +71,7 @@ export default function MusicTheoryTabs({
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [voicingData, setVoicingData] = useState(null);
   const [voicingLoading, setVoicingLoading] = useState(false);
+  const prevVoicingChordRef = React.useRef(null);
   const [earTrainingData, setEarTrainingData] = useState(null);
   const [earTrainingLoading, setEarTrainingLoading] = useState(false);
   const [arrangementData, setArrangementData] = useState(null);
