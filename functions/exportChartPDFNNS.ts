@@ -277,13 +277,9 @@ Deno.serve(async (req) => {
         // Draw cell border
         doc.rect(mx, my, cellWidth, cellHeight);
 
-        // Draw centered chords in NNS notation
+        // Draw centered chords in NNS notation with superscript
         if (measure.chords && measure.chords.length > 0) {
-          const nnsChords = measure.chords.map(c => chordToNNS(c.chord, chart.key)).join(' ');
-          doc.text(nnsChords, mx + cellWidth / 2, my + cellHeight / 2 + 0.5, { 
-            align: 'center',
-            maxWidth: cellWidth - 2
-          });
+          drawMeasureChords(doc, measure.chords, mx, my, cellWidth, cellHeight, chordToNNS, chart.key);
         }
 
         // Draw cue if present
