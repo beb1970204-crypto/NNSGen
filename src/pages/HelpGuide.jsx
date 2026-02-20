@@ -107,7 +107,7 @@ export default function HelpGuide() {
     <div className="min-h-screen bg-[#0a0a0a] flex font-sans">
 
       {/* ── Sidebar TOC ── */}
-      <aside className="fixed top-0 left-0 w-56 h-screen bg-[#111] border-r border-[#1e1e1e] flex flex-col z-10">
+      <aside className="fixed top-16 left-60 w-56 h-[calc(100vh-4rem)] bg-[#111] border-r border-[#1e1e1e] flex flex-col z-10">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 border-b border-[#1e1e1e]">
           <Link to={createPageUrl("Home")}>
