@@ -293,8 +293,10 @@ Deno.serve(async (req) => {
 
       if (isLeftColumn) {
         leftY = y;
+        currentColumn = 'left';
       } else {
         rightY = y;
+        currentColumn = 'right';
       }
     }
 
