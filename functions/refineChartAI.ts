@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Step 1: Generate a fresh complete chart ──
-    const generationPrompt = `Research and transcribe the actual chord progression for "${title}" by ${artist || 'Unknown'}, addressing this feedback: "${userFeedback}"
+    const generationPrompt = `Research and transcribe the ACTUAL, COMPLETE chord chart for "${title}" by ${artist || 'Unknown'}, addressing this feedback: "${userFeedback}"
 
 REQUIREMENTS:
 1. Use the ACTUAL chords from the song — research the real progression, do not invent or guess
@@ -104,7 +104,7 @@ EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple cho
   ]
 }
 
-Transcribe the actual chords for "${title}" by ${artist || 'Unknown'}:`;
+Transcribe ALL the ACTUAL chords for "${title}" by ${artist || 'Unknown'}:`;
 
     const schema = {
       type: "object",
