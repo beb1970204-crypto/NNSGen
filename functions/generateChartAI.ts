@@ -186,48 +186,59 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are an expert session musician and music theorist. Your task is to transcribe the complete, accurate chord progression for "${title}" by ${artist || 'Unknown'}.
+  const prompt = `You are an expert session musician and music theorist. Transcribe the complete, accurate chord chart for "${title}" by ${artist || 'Unknown'}.
 
 ${referenceText ? `### REFERENCE MATERIAL:\n${referenceText}\n\n` : ''}
 
-### STRICT REQUIREMENTS:
-1. **NO TRUNCATION:** You must chart the ENTIRE song from start to finish. Do not summarize or skip repeating sections. Every single measure of the recorded song must be mapped out sequentially.
-2. **BEAT MATH:** The sum of the "beats" in each measure array MUST exactly equal the numerator of your "time_signature" (e.g., in 4/4 time, the beats for a single measure must add up to exactly 4). Every measure object must have beats summing to exactly that number.
-3. **SECTION LABELS:** Use ONLY these exact labels (no numbers, no suffixes): Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. Do NOT use "Verse 1", "Verse 2", etc. — use "Verse" for every verse section.
-4. **ONE CHORD PER MEASURE:** Each measure should contain exactly ONE chord object unless two different chords genuinely split a single measure (e.g. 2 beats each in 4/4). Do NOT put multiple measures worth of the same chord into a single measure object. Each bar = one measure object.
-5. **12-BAR BLUES:** If this is a 12-bar blues song, each 12-bar chorus must be written out as exactly 12 separate measure objects: bars 1-4 (I chord), bars 5-6 (IV chord), bars 7-8 (I chord), bar 9 (V chord), bar 10 (IV chord), bars 11-12 (I chord). Do not collapse repeated bars.
-6. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
-7. **OUTPUT FORMAT:** Return ONLY a valid JSON object matching the exact structure below. Do not wrap it in markdown code blocks (\`\`\`). Do not add introductory text, do not add concluding text, and do not add any new keys to the JSON.
+### RULES — READ CAREFULLY:
 
-### REQUIRED JSON SCHEMA (EXAMPLE ONLY DO NOT COPY. Shows required structure and beat math flexibility):
+**RULE 1 — ONE BAR = ONE MEASURE OBJECT (MOST IMPORTANT)**
+Every single bar of music is its own measure object. Never combine multiple bars into one measure object, even if consecutive bars have the same chord. If "Bm" lasts for 4 bars, that is 4 separate measure objects, each with beats: 4.
+
+**RULE 2 — COUNT EVERY BAR IN EVERY SECTION**
+Before writing a section's measures array, count the exact number of bars in that section in the real recording. A 12-bar blues section has exactly 12 measure objects. A 4-bar intro has exactly 4 measure objects.
+
+**RULE 3 — INCLUDE ALL CHORDS IN A SECTION**
+A section includes ALL of its bars — including chord changes within it. For a 12-bar blues in Bm: bars 1-4 are Bm, bars 5-6 are Em, bars 7-8 are Bm, bar 9 is F#7, bar 10 is Em, bars 11-12 are Bm. All 12 measure objects belong in the same section, not split across sections.
+
+**RULE 4 — BEAT MATH**
+The sum of beats in a single measure's chords array must equal the time signature numerator (4 in 4/4). One chord per bar = beats: 4. Two chords splitting a bar = e.g. beats: 2 and beats: 2.
+
+**RULE 5 — SECTION LABELS**
+Use only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. You may number them (Verse 1, Verse 2).
+
+**RULE 6 — COMPLETE THE SONG**
+Chart the ENTIRE song. Do not skip or summarize repeated sections.
+
+### EXAMPLE — 12-bar blues in G (shows correct one-bar-per-measure-object format):
 {
-  "_structural_plan": "Intro -> Verse 1 -> Chorus -> Verse 2 -> Chorus -> Bridge -> Chorus -> Outro",
-  "key": "D",
+  "_structural_plan": "Intro -> Verse 1 -> Verse 2 -> Outro",
+  "key": "G",
   "time_signature": "4/4",
   "sections": [
     {
-      "label": "Verse",
+      "label": "Verse 1",
       "repeat_count": 1,
       "arrangement_cue": "",
       "measures": [
-        {"chords": [{"chord": "D", "beats": 2}, {"chord": "A", "beats": 2}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Chorus",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "C7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "C7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "D7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "C7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
+        {"chords": [{"chord": "D7", "beats": 4}], "cue": ""}
       ]
     }
   ]
 }
 
-Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
+Now transcribe "${title}" by ${artist || 'Unknown'} following these rules exactly:`;
 
 
   const schema = {
