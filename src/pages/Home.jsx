@@ -55,17 +55,21 @@ export default function Home() {
     queryFn: async () => {
       if (!user?.email) return [];
 
+      const allCharts = await base44.entities.Chart.list('-updated_date');
+
       // "Shared with me" view: charts owned by others that include this user
       if (currentView === 'shared') {
-        const allCharts = await base44.entities.Chart.list('-updated_date');
         return allCharts.filter(chart =>
           chart.created_by !== user.email &&
           chart.shared_with?.some(share => share.email === user.email)
         );
       }
 
-      // All other views: only charts owned by the current user
-      return base44.entities.Chart.filter({ created_by: user.email }, '-updated_date');
+      // All other views: own charts + charts shared with this user
+      return allCharts.filter(chart =>
+        chart.created_by === user.email ||
+        chart.shared_with?.some(share => share.email === user.email)
+      );
     },
     initialData: [],
     enabled: !!user?.email,
