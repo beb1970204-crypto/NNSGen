@@ -53,39 +53,63 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are an expert session musician and music theorist. Your task is to transcribe the complete, accurate chord progression for "${title}" by ${artist || 'Unknown'}.
+  // ── Step 1: Research the song (free-text, internet-enabled) ──────────────────
+  // Keeping this separate from JSON generation avoids LLM timeouts caused by
+  // combining internet search + large structured schema in one call.
+  const researchPrompt = `You are an expert session musician and music theorist.
+Research and describe the complete chord progression for "${title}" by ${artist || 'Unknown'}.
 
 ${referenceText ? `### REFERENCE MATERIAL:\n${referenceText}\n\n` : ''}
+${fileUrls.length > 0 ? '(See attached reference image.)\n\n' : ''}
 
-### STRICT REQUIREMENTS:
-1. **NO TRUNCATION:** You must chart the ENTIRE song from start to finish. Do not summarize or skip repeating sections. Every single bar of the recorded song must be listed sequentially.
-2. **ONE BAR PER PIPE SEGMENT:** In the chord_string, each "|"-separated segment represents exactly one bar/measure. If the same chord lasts 4 bars, write it 4 times separated by pipes: "G | G | G | G". Never collapse multiple bars into one segment.
-3. **SPLIT BARS:** If two chords share a single bar, put both chords space-separated in that segment: "G F#7" means G and F#7 share one bar equally. Use "G*2 F#7*2" to be explicit about beat counts when unequal.
-4. **SECTION LABELS:** Use ONLY these labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. You may append numbers if needed (e.g., Verse 1, Verse 2).
-5. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
+List EVERY section of the song (Intro, Verse, Chorus, Bridge, Solo, Outro, etc.) in order.
+For each section, list the chord progression bar by bar. Be thorough and complete — do not skip or summarize repeating sections.
+Include the song key, time signature, and note any modulations or key changes.`;
 
-### REQUIRED JSON SCHEMA (EXAMPLE ONLY — DO NOT COPY. A 12-bar blues in G):
+  console.log('Step 1: Researching chord data...');
+  let researchData;
+  try {
+    researchData = await base44.integrations.Core.InvokeLLM({
+      prompt: researchPrompt,
+      add_context_from_internet: true,
+      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+    });
+  } catch (error) {
+    throw new Error(`Research step failed: ${error.message}`);
+  }
+
+  if (!researchData || typeof researchData !== 'string' || researchData.trim().length < 50) {
+    throw new Error('Could not retrieve chord data for this song. Please try again or upload a reference file.');
+  }
+
+  console.log('Step 1 complete. Research length:', researchData.length);
+
+  // ── Step 2: Convert research into structured JSON (no internet needed) ────────
+  const structurePrompt = `You are a music transcription expert. Convert the following chord research into a structured JSON chart.
+
+### CHORD RESEARCH:
+${researchData}
+
+### FORMAT RULES:
+1. chord_string uses pipe "|" separators — each segment is ONE bar/measure.
+   Example 4 bars of G7: "G7 | G7 | G7 | G7"
+2. Two chords sharing one bar: space-separate them: "G F#7" (equal split) or "G*2 F#7*2" (explicit beats).
+3. Section labels MUST be one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro.
+   You may append numbers (e.g., Verse 1, Verse 2).
+4. Do NOT truncate. Every bar of every section must appear in chord_string.
+
+### EXAMPLE OUTPUT (12-bar blues in G):
 {
-  "_structural_plan": "Intro -> Verse 1 -> Verse 2 -> Outro",
+  "_structural_plan": "Verse 1 -> Verse 2 -> Outro",
   "key": "G",
   "time_signature": "4/4",
   "sections": [
-    {
-      "label": "Verse 1",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "chord_string": "G7 | G7 | G7 | G7 | C7 | C7 | G7 | G7 | D7 | C7 | G7 | D7"
-    },
-    {
-      "label": "Outro",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "chord_string": "G7 | G7 | G7 G7*2 D7*2"
-    }
+    { "label": "Verse 1", "repeat_count": 1, "arrangement_cue": "", "chord_string": "G7 | G7 | G7 | G7 | C7 | C7 | G7 | G7 | D7 | C7 | G7 | D7" },
+    { "label": "Outro", "repeat_count": 1, "arrangement_cue": "", "chord_string": "G7 | G7 | D7" }
   ]
 }
 
-Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
+Now produce the full structured JSON for "${title}" by ${artist || 'Unknown'}:`;
 
   const schema = {
     type: "object",
@@ -114,18 +138,17 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      console.log(`LLM attempt ${attempt}/${maxAttempts}`);
+      console.log(`Step 2: Structuring JSON (attempt ${attempt}/${maxAttempts})...`);
       response = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        add_context_from_internet: true,
-        file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+        prompt: structurePrompt,
+        add_context_from_internet: false,
         response_json_schema: schema
       });
       if (response?.sections?.length) break;
       console.warn(`Attempt ${attempt}: LLM returned no sections, retrying...`);
     } catch (error) {
       console.error(`Attempt ${attempt} error: ${error.message}`);
-      if (attempt === maxAttempts) throw new Error(`Failed to generate chart after ${maxAttempts} attempts: ${error.message}`);
+      if (attempt === maxAttempts) throw new Error(`Failed to structure chart after ${maxAttempts} attempts: ${error.message}`);
     }
   }
 
