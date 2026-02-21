@@ -54,11 +54,42 @@ export default function Layout({ children, currentPageName }) {
 
   const isHelpGuide = currentPageName === "HelpGuide";
 
-  // Hide sidebar and top bar entirely for ChartViewer, ChartCreator, and HelpGuide
-  if (isChartViewer || isChartCreator || isHelpGuide) {
+  // Hide sidebar and top bar entirely for ChartViewer and ChartCreator
+  if (isChartViewer || isChartCreator) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white">
         {children}
+      </div>
+    );
+  }
+
+  // HelpGuide: show top bar only, no sidebar
+  if (isHelpGuide) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="fixed top-0 left-0 right-0 h-16 bg-[#141414] border-b border-[#2a2a2a] z-50 flex items-center px-6 shadow-lg">
+          <Link to={createPageUrl("Home")} className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-0.5 w-10 h-10 flex-shrink-0">
+              <div className="bg-white rounded-sm flex items-center justify-center">
+                <span className="text-black font-black text-xs leading-none">1</span>
+              </div>
+              <div className="rounded-sm flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 6px #D0021B' }}>
+                <span className="text-[#D0021B] font-black text-xs leading-none">4</span>
+              </div>
+              <div className="rounded-sm flex items-center justify-center border border-[#D0021B]" style={{ background: '#0a0a0a', boxShadow: '0 0 6px #D0021B' }}>
+                <span className="text-[#D0021B] font-black text-xs leading-none">5</span>
+              </div>
+              <div className="rounded-sm flex items-center justify-center border border-[#c17f00]" style={{ background: '#0a0a0a', boxShadow: '0 0 6px #c17f00' }}>
+                <span className="text-[#e09a00] font-black text-xs leading-none">6-</span>
+              </div>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-bold tracking-tight text-white font-mono">ChartScribe</span>
+              <span className="text-lg font-bold tracking-tight text-[#D0021B] font-mono">AI</span>
+            </div>
+          </Link>
+        </div>
+        <div className="pt-16">{children}</div>
       </div>
     );
   }
