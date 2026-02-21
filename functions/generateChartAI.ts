@@ -252,7 +252,7 @@ Now transcribe "${title}" by ${artist || 'Unknown'} following these rules exactl
         items: {
           type: "object",
           properties: {
-            label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+            label: { type: "string" },
             repeat_count: { type: "number" },
             arrangement_cue: { type: "string" },
             measures: {
