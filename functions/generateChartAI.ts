@@ -39,17 +39,13 @@ async function fetchChordonomicon(params) {
 
   let queries = [];
   
-  // Build multiple query variations for aggressive search
   if (spotify_song_id && spotify_artist_id) {
     queries.push(`"spotify_song_id"='${spotify_song_id.replace(/'/g, "''")}'`);
   }
-  
-
 
   const headers = { 'Accept': 'application/json' };
   if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`;
 
-  // Try each query variation
   for (const where of queries) {
     try {
       const url = `https://datasets-server.huggingface.co/filter?dataset=ailsntua/Chordonomicon&config=default&split=train&where=${encodeURIComponent(where)}&offset=0&length=1`;
@@ -81,7 +77,6 @@ async function fetchChordonomicon(params) {
 
 // ─── Chordonomicon chord parsing ──────────────────────────────────────────────
 
-// Convert colon-notation to standard chord names: B:min → Bm, F#:7 → F#7
 function normalizeChordName(chord) {
   if (!chord || chord === 'N' || chord === 'X') return '-';
 
@@ -106,7 +101,6 @@ function normalizeChordName(chord) {
   return (root + suffix + slash) || '-';
 }
 
-// Infer key from a sample of chord tokens using TonalJS — no LLM needed
 function inferKeyFromChords(rawChords) {
   const tokens = rawChords.split(/\s+/).filter(Boolean).slice(0, 40);
   const roots = tokens
@@ -118,17 +112,14 @@ function inferKeyFromChords(rawChords) {
 
   if (!roots.length) return 'C';
 
-  // Tally root note occurrences
   const counts = {};
   for (const { root } of roots) {
     counts[root] = (counts[root] || 0) + 1;
   }
 
-  // First root is typically the tonic in Chordonomicon ordering
   const firstRoot = roots[0].root;
   const firstIsMinor = roots[0].isMinor;
 
-  // Validate with TonalJS
   if (firstIsMinor) {
     const mk = Key.minorKey(firstRoot);
     return mk.tonic ? mk.tonic + 'm' : firstRoot + 'm';
@@ -308,7 +299,6 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
 // ─── Output Validation ─────────────────────────────────────────────────────────
 
 function validateChartOutput(chartData) {
-  // 1. Top-Level Schema Checks
   if (!chartData || typeof chartData !== 'object') {
     return { valid: false, reason: 'Output is not a valid JSON object' };
   }
@@ -322,11 +312,9 @@ function validateChartOutput(chartData) {
     return { valid: false, reason: 'Too many sections (likely fragmented or looping)' };
   }
 
-  // 2. Determine expected beats per measure from Time Signature
   const tsMatch = (chartData.time_signature || "").match(/^(\d+)\/\d+$/);
   const expectedBeats = tsMatch ? parseInt(tsMatch[1], 10) : null;
 
-  // 3. Deep Validation (Math, Structure, and Counting)
   const uniqueChords = new Set();
   let totalMeasures = 0;
   let totalChords = 0;
@@ -351,7 +339,6 @@ function validateChartOutput(chartData) {
         }
       }
 
-      // 4. Beat Math Check
       if (expectedBeats && measureBeats !== expectedBeats) {
         return { 
           valid: false, 
@@ -363,7 +350,6 @@ function validateChartOutput(chartData) {
 
   console.log(`Validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
 
-  // 5. Basic Sanity & Truncation Checks
   if (totalMeasures < 4) {
     return { valid: false, reason: 'Suspiciously low measure count. Likely truncated.' };
   }
@@ -371,7 +357,6 @@ function validateChartOutput(chartData) {
     return { valid: false, reason: 'No chords generated' };
   }
 
-  // 6. Hallucination Check 
   const expectedMaxChords = Math.ceil(totalMeasures / 2) + 15;
   if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 50) {
     return { 
@@ -400,8 +385,6 @@ Deno.serve(async (req) => {
     if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
 
     // ── Step 1: Try Chordonomicon via Spotify ID ───────────────────────────────
-    // Spotify is the only way to get an ID to look up Chordonomicon.
-    // Search Spotify → use top result's ID → lookup Chordonomicon. Fall back to LLM.
     let chordonomiconData = null;
     let spotifyMatch = null;
 
@@ -422,7 +405,7 @@ Deno.serve(async (req) => {
       console.log('Spotify/Chordonomicon lookup failed:', e.message);
     }
 
-    // ── Step 2a: Chordonomicon hit — parse chords, infer key, no LLM needed ───
+    // ── Step 2a: Chordonomicon hit ─────────────────────────────────────────────
     let chartData, sectionsData, dataSource;
 
     if (chordonomiconData) {
@@ -430,7 +413,6 @@ Deno.serve(async (req) => {
       console.log('Using Chordonomicon data');
 
       let resolvedKey = key || inferKeyFromChords(chordonomiconData.rawChords);
-      // Validate key is not a Chordonomicon tag (e.g., <verse_1>)
       if (resolvedKey.startsWith('<') || resolvedKey.endsWith('>')) {
         console.warn(`Invalid key parsed: ${resolvedKey}, falling back to C`);
         resolvedKey = 'C';
@@ -449,14 +431,13 @@ Deno.serve(async (req) => {
       sectionsData = parseChordonomiconSections(chordonomiconData.rawChords, beatsPerBar);
 
     } else {
-      // ── Step 2b: LLM fallback with validation ────────────────────────────
+      // ── Step 2b: LLM fallback ────────────────────────────────────────────────
       dataSource = 'llm';
       console.log('Falling back to LLM generation');
 
       const llm = await generateWithLLM(base44, title, artist, reference_file_url);
       if (!llm.sections?.length) return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
 
-      // Validate LLM output
       const validation = validateChartOutput(llm);
       if (!validation.valid) {
         console.log('LLM output validation failed:', validation.reason);
@@ -475,33 +456,21 @@ Deno.serve(async (req) => {
 
     chartData.data_source = dataSource;
 
-    // ── Step 3: Expand multi-chord measures into separate measures ──────────────
+    // ── Step 3: Sanitize symbols only — preserve multi-chord measures as-is ───
     const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
-    const beatsPerMeasure = parseInt((chartData.time_signature || '4/4').split('/')[0]) || 4;
 
     sectionsData = sectionsData.map(section => ({
       ...section,
       repeat_count: Number(section.repeat_count) || 1,
       arrangement_cue: section.arrangement_cue || '',
-      measures: (section.measures || []).flatMap(measure => {
-        const chords = (measure.chords || []).map(c => ({
+      measures: (section.measures || []).map(measure => ({
+        chords: (measure.chords || []).map(c => ({
           chord: c.chord || '-',
           beats: Number(c.beats) || 4,
           symbols: Array.isArray(c.symbols) ? c.symbols.filter(s => VALID_SYMBOLS.includes(s)) : []
-        }));
-
-        // If measure has multiple chords OR chord beats don't match measure size, expand
-        if (chords.length === 1 && chords[0].beats === beatsPerMeasure) {
-          // Single chord that fills the measure — keep as is
-          return [{ chords, cue: measure.cue || '' }];
-        } else {
-          // Multiple chords or partial measure — split into separate measures (1 chord per measure)
-          return chords.map((c, idx) => ({
-            chords: [{ ...c, beats: beatsPerMeasure }],
-            cue: idx === 0 ? (measure.cue || '') : ''
-          }));
-        }
-      })
+        })),
+        cue: measure.cue || ''
+      }))
     }));
 
     return Response.json({
