@@ -242,77 +242,25 @@ Deno.serve(async (req) => {
     const { title, artist, key, time_signature, reference_file_url } = await req.json();
     if (!title) return Response.json({ error: 'Title is required' }, { status: 400 });
 
-    // ── Step 1: Try Chordonomicon via Spotify ID ───────────────────────────────
-    let chordonomiconData = null;
-    let spotifyMatch = null;
+    // ── Generate via LLM ──────────────────────────────────────────────────────
+    const llm = await generateWithLLM(base44, title, artist, reference_file_url);
+    if (!llm.sections?.length) return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
 
-    try {
-      const tracks = await searchSpotify(title, artist);
-      const topTrack = tracks[0];
-      if (topTrack) {
-        chordonomiconData = await fetchChordonomicon({
-          spotify_song_id: topTrack.spotify_song_id,
-          spotify_artist_id: topTrack.spotify_artist_id
-        }).catch(() => null);
-        if (chordonomiconData) {
-          spotifyMatch = topTrack;
-          console.log('Chordonomicon hit via Spotify ID');
-        }
-      }
-    } catch (e) {
-      console.log('Spotify/Chordonomicon lookup failed:', e.message);
+    const validation = validateChartOutput(llm);
+    if (!validation.valid) {
+      console.log('LLM output validation failed:', validation.reason);
+      return Response.json({ error: `Chart validation failed: ${validation.reason}. Please try again or provide a reference.` }, { status: 400 });
     }
 
-    // ── Step 2a: Chordonomicon hit ─────────────────────────────────────────────
-    let chartData, sectionsData, dataSource;
-
-    if (chordonomiconData) {
-      dataSource = 'chordonomicon';
-      console.log('Using Chordonomicon data');
-
-      let resolvedKey = key || inferKeyFromChords(chordonomiconData.rawChords);
-      if (resolvedKey.startsWith('<') || resolvedKey.endsWith('>')) {
-        console.warn(`Invalid key parsed: ${resolvedKey}, falling back to C`);
-        resolvedKey = 'C';
-      }
-      const resolvedTimeSig = time_signature || '4/4';
-      const beatsPerBar = parseInt(resolvedTimeSig.split('/')[0]) || 4;
-
-      chartData = {
-        title: spotifyMatch?.title || title,
-        artist: spotifyMatch?.artist || artist || 'Unknown',
-        key: resolvedKey,
-        time_signature: resolvedTimeSig,
-        reference_file_url,
-        ...chordonomiconData.metadata
-      };
-      sectionsData = parseChordonomiconSections(chordonomiconData.rawChords, beatsPerBar);
-
-    } else {
-      // ── Step 2b: LLM fallback ────────────────────────────────────────────────
-      dataSource = 'llm';
-      console.log('Falling back to LLM generation');
-
-      const llm = await generateWithLLM(base44, title, artist, reference_file_url);
-      if (!llm.sections?.length) return Response.json({ error: 'Failed to generate chart' }, { status: 500 });
-
-      const validation = validateChartOutput(llm);
-      if (!validation.valid) {
-        console.log('LLM output validation failed:', validation.reason);
-        return Response.json({ error: `Chart validation failed: ${validation.reason}. Please try again or provide a reference.` }, { status: 400 });
-      }
-
-      chartData = {
-        title,
-        artist: artist || 'Unknown',
-        key: key || llm.key,
-        time_signature: time_signature || llm.time_signature,
-        reference_file_url
-      };
-      sectionsData = llm.sections;
-    }
-
-    chartData.data_source = dataSource;
+    let chartData = {
+      title,
+      artist: artist || 'Unknown',
+      key: key || llm.key,
+      time_signature: time_signature || llm.time_signature,
+      reference_file_url,
+      data_source: 'llm'
+    };
+    let sectionsData = llm.sections;
 
     // ── Step 3: Sanitize symbols only — preserve multi-chord measures as-is ───
     const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
