@@ -216,21 +216,19 @@ Deno.serve(async (req) => {
     let leftY = yPosition;
     let rightY = yPosition;
 
-    let currentColumn = 'left';
+    let onRightColumn = false;
 
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       const numRows = Math.ceil(section.measures.length / measuresPerRow);
       const sectionHeight = 5 + (section.arrangement_cue ? 3.5 : 0) + (numRows * cellHeight);
 
-      let isLeftColumn = currentColumn === 'left';
-      let x = isLeftColumn ? leftX : rightX;
-      let y = isLeftColumn ? leftY : rightY;
+      let x = onRightColumn ? rightX : leftX;
+      let y = onRightColumn ? rightY : leftY;
 
       if (y + sectionHeight > pageHeight - margin) {
-        if (isLeftColumn) {
-          currentColumn = 'right';
-          isLeftColumn = false;
+        if (!onRightColumn) {
+          onRightColumn = true;
           x = rightX;
           y = rightY;
         }
@@ -238,8 +236,7 @@ Deno.serve(async (req) => {
           doc.addPage();
           leftY = margin;
           rightY = margin;
-          currentColumn = 'left';
-          isLeftColumn = true;
+          onRightColumn = false;
           x = leftX;
           y = margin;
         }
