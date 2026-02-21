@@ -318,53 +318,85 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
 
 // ─── Output Validation ─────────────────────────────────────────────────────────
 
-function validateChartOutput(sections) {
-  // Check section count (need at least 1)
-  if (!sections || sections.length < 1) {
-    return { valid: false, reason: 'No sections generated' };
-  }
-  if (sections.length > 20) {
-    return { valid: false, reason: 'Too many sections (likely fragmented)' };
+function validateChartOutput(chartData) {
+  // 1. Top-Level Schema Checks
+  if (!chartData || typeof chartData !== 'object') {
+    return { valid: false, reason: 'Output is not a valid JSON object' };
   }
 
-  // Count chords and measure stats
+  const sections = chartData.sections;
+  if (!Array.isArray(sections) || sections.length < 1) {
+    return { valid: false, reason: 'No sections generated or sections is not an array' };
+  }
+  
+  if (sections.length > 20) {
+    return { valid: false, reason: 'Too many sections (likely fragmented or looping)' };
+  }
+
+  // 2. Determine expected beats per measure from Time Signature
+  const tsMatch = (chartData.time_signature || "").match(/^(\d+)\/\d+$/);
+  const expectedBeats = tsMatch ? parseInt(tsMatch[1], 10) : null;
+
+  // 3. Deep Validation (Math, Structure, and Counting)
   const uniqueChords = new Set();
   let totalMeasures = 0;
   let totalChords = 0;
   
-  for (const section of sections) {
+  for (let s = 0; s < sections.length; s++) {
+    const section = sections[s];
     const measures = section.measures || [];
     totalMeasures += measures.length;
     
-    for (const measure of measures) {
+    for (let m = 0; m < measures.length; m++) {
+      const measure = measures[m];
       const chords = measure.chords || [];
+      let measureBeats = 0;
+      
       for (const chordObj of chords) {
         if (chordObj.chord && chordObj.chord !== '-') {
           uniqueChords.add(chordObj.chord);
           totalChords++;
         }
+        if (typeof chordObj.beats === 'number') {
+          measureBeats += chordObj.beats;
+        }
+      }
+
+      // 4. Beat Math Check
+      if (expectedBeats && measureBeats !== expectedBeats) {
+        return { 
+          valid: false, 
+          reason: `Beat math failed in ${section.label || 'Section'} (Measure ${m + 1}). Expected ${expectedBeats} beats, got ${measureBeats}.` 
+        };
       }
     }
   }
 
   console.log(`Validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
 
-  // Very basic sanity checks — allow flexibility for diverse song structures
-  if (totalMeasures < 1) {
-    return { valid: false, reason: 'No measures generated' };
+  // 5. Basic Sanity & Truncation Checks
+  if (totalMeasures < 4) {
+    return { valid: false, reason: 'Suspiciously low measure count. Likely truncated.' };
   }
-
   if (totalChords < 1) {
     return { valid: false, reason: 'No chords generated' };
   }
 
-  // Flag extreme hallucination only
+  // 6. Hallucination Check 
   const expectedMaxChords = Math.ceil(totalMeasures / 2) + 15;
   if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 50) {
-    return { valid: false, reason: `Unusually high chord density (${uniqueChords.size} unique chords), likely hallucination` };
+    return { 
+      valid: false, 
+      reason: `Unusually high chord density (${uniqueChords.size} unique chords), likely hallucination.` 
+    };
   }
 
-  return { valid: true, uniqueChords: uniqueChords.size, totalMeasures, totalChords };
+  return { 
+    valid: true, 
+    uniqueChords: uniqueChords.size, 
+    totalMeasures, 
+    totalChords 
+  };
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
