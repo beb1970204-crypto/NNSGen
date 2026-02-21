@@ -174,8 +174,13 @@ export function splitChordSuffix(str) {
   if (basePart.endsWith('7')) {
     const beforeSeven = basePart.slice(0, -1);
     const lastChar = beforeSeven[beforeSeven.length - 1];
+    // No superscript if 7 is the entire chord (e.g. bare "7") or immediately
+    // preceded by ♭ or ♯ (e.g. ♭7 — the flat seven scale degree in NNS)
+    if (!beforeSeven || lastChar === '♭' || lastChar === '♯') {
+      return { base: str, sup: null };
+    }
     // Roman numeral minor 7th: lowercase letter before 7 (e.g. vi7 → vi + sup:-7)
-    if (lastChar && /[a-z]/.test(lastChar)) {
+    if (/[a-z]/.test(lastChar)) {
       return { base: beforeSeven + bassSuffix, sup: '-7' };
     }
     // Dominant 7th or NNS number 7 (e.g. VI7 → VI + sup:7, or 57 → 5 + sup:7)
