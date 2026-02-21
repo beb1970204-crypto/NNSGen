@@ -283,20 +283,26 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
   };
 
   let response;
-  try {
-    response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      add_context_from_internet: true,
-      file_urls: fileUrls.length > 0 ? fileUrls : undefined,
-      response_json_schema: schema
-    });
-  } catch (error) {
-    console.error('LLM generation error:', error.message);
-    throw new Error(`Failed to generate chart: ${error.message}`);
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`LLM attempt ${attempt}/${maxAttempts}`);
+      response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        add_context_from_internet: true,
+        file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+        response_json_schema: schema
+      });
+      if (response?.sections?.length) break;
+      console.warn(`Attempt ${attempt}: LLM returned no sections, retrying...`);
+    } catch (error) {
+      console.error(`Attempt ${attempt} error: ${error.message}`);
+      if (attempt === maxAttempts) throw new Error(`Failed to generate chart after ${maxAttempts} attempts: ${error.message}`);
+    }
   }
 
   if (!response?.sections?.length) {
-    throw new Error('LLM returned no sections');
+    throw new Error('LLM returned no sections after all retries');
   }
 
   // Convert each section's chord_string → measures array
