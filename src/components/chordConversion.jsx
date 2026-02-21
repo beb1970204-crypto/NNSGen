@@ -191,24 +191,58 @@ export function splitChordSuffix(str) {
 }
 
 // ─── Measure Input Parser ─────────────────────────────────────────────────────
+// Supports two input formats:
+//   1. Beat-duration format: "Bm - 16 beats Em7 - 8 beats" 
+//      → expands into individual measures based on beatsPerMeasure
+//   2. Pipe-separated format: "C | Am | F | G"
+//      → each segment becomes one measure, chords split evenly
 
 export function parseMeasureInput(input, timeSignature = '4/4') {
-  const beats = parseInt(timeSignature.split('/')[0]);
+  const beatsPerMeasure = parseInt(timeSignature.split('/')[0]) || 4;
+
+  // Detect beat-duration format: contains "- N beats" pattern
+  const beatDurationPattern = /\b([A-G][b#]?[^\s-]*)\s*-\s*(\d+)\s*beats?\b/gi;
+  const hasBeatDurations = beatDurationPattern.test(input);
+
+  if (hasBeatDurations) {
+    const measures = [];
+    // Reset regex after .test() consumed it
+    const regex = /\b([A-G][b#]?[^\s-]*)\s*-\s*(\d+)\s*beats?\b/gi;
+    let match;
+
+    while ((match = regex.exec(input)) !== null) {
+      const chordName = match[1].trim();
+      let beatsRemaining = parseInt(match[2], 10);
+
+      // Expand into as many full measures as needed
+      while (beatsRemaining > 0) {
+        const beatsThisMeasure = Math.min(beatsRemaining, beatsPerMeasure);
+        measures.push({
+          chords: [{ chord: chordName, beats: beatsThisMeasure, symbols: [] }],
+          cue: ''
+        });
+        beatsRemaining -= beatsThisMeasure;
+      }
+    }
+
+    return measures.length > 0
+      ? measures
+      : [{ chords: [{ chord: '-', beats: beatsPerMeasure, symbols: [] }], cue: '' }];
+  }
+
+  // Pipe-separated format: "C Am | F G" → each pipe segment = one measure
   const measuresText = input.split('|').map(m => m.trim()).filter(m => m);
 
   return measuresText.map(measureText => {
     const chordStrings = measureText.split(/\s+/).filter(c => c);
     const chordsPerMeasure = chordStrings.length || 1;
-    const beatsPerChord = beats / chordsPerMeasure;
+    const beatsPerChord = beatsPerMeasure / chordsPerMeasure;
 
     return {
       chords: chordStrings.length > 0
-        ? chordStrings.map(chord => ({
-            chord,
-            beats: beatsPerChord,
-            symbols: []
-          }))
-        : [{ chord: '-', beats, symbols: [] }]
+        ? chordStrings.map(chord => ({ chord, beats: beatsPerChord, symbols: [] }))
+        : [{ chord: '-', beats: beatsPerMeasure, symbols: [] }],
+      cue: ''
     };
   });
 }
