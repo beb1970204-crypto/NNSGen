@@ -1,35 +1,41 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.18';
-import { Key } from 'npm:tonal@6.0.1';
 
+// ─── chord_string → measures parser (shared with generateChartAI) ─────────────
+function chordStringToMeasures(chordString, beatsPerMeasure) {
+  const bars = chordString.split('|').map(b => b.trim()).filter(Boolean);
+  return bars.map(bar => {
+    const tokens = bar.split(/\s+/).filter(Boolean);
+    const beatsPerChord = beatsPerMeasure / tokens.length;
+    const chords = tokens.map(token => {
+      const starIdx = token.indexOf('*');
+      if (starIdx !== -1) {
+        return { chord: token.slice(0, starIdx), beats: parseFloat(token.slice(starIdx + 1)) || beatsPerChord, symbols: [] };
+      }
+      return { chord: token, beats: beatsPerChord, symbols: [] };
+    });
+    const total = chords.reduce((s, c) => s + c.beats, 0);
+    if (total !== beatsPerMeasure) {
+      const scale = beatsPerMeasure / total;
+      chords.forEach(c => { c.beats = Math.round(c.beats * scale * 100) / 100; });
+    }
+    return { chords, cue: '' };
+  });
+}
 
-
-// ─── Output Validation (refinement-specific, more lenient than generation) ────────
-
+// ─── Output Validation ────────────────────────────────────────────────────────
 function validateChartOutput(sections) {
-  if (!sections || sections.length < 1) {
-    return { valid: false, reason: 'No sections generated' };
-  }
-  if (sections.length > 12) {
-    return { valid: false, reason: 'Too many sections (likely fragmented)' };
-  }
-
-  // For refinement, be more lenient: just require at least one section
-  const labels = sections.map(s => s.label);
-  if (labels.length === 0) {
-    return { valid: false, reason: 'No sections generated' };
-  }
+  if (!sections || sections.length < 1) return { valid: false, reason: 'No sections generated' };
+  if (sections.length > 20) return { valid: false, reason: 'Too many sections (likely fragmented)' };
 
   const uniqueChords = new Set();
   let totalMeasures = 0;
   let totalChords = 0;
-  
+
   for (const section of sections) {
     const measures = section.measures || [];
     totalMeasures += measures.length;
-    
     for (const measure of measures) {
-      const chords = measure.chords || [];
-      for (const chordObj of chords) {
+      for (const chordObj of measure.chords || []) {
         if (chordObj.chord && chordObj.chord !== '-') {
           uniqueChords.add(chordObj.chord);
           totalChords++;
@@ -38,22 +44,20 @@ function validateChartOutput(sections) {
     }
   }
 
-  console.log(`Refinement validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords, ${uniqueChords.size} unique`);
+  console.log(`Refinement validation: ${sections.length} sections, ${totalMeasures} measures, ${totalChords} chords`);
 
-  if (totalChords < 4) {
-    console.log(`Warning: Very few chords (${totalChords}), may be valid but check manually`);
-  }
+  if (totalMeasures < 4) return { valid: false, reason: 'Suspiciously low measure count' };
+  if (totalChords < 1) return { valid: false, reason: 'No chords generated' };
 
-  const expectedMaxChords = Math.ceil(totalMeasures / 2) + 10;
-  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 25) {
+  const expectedMaxChords = Math.ceil(totalMeasures / 2) + 15;
+  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 50) {
     return { valid: false, reason: `Unusually high chord density (${uniqueChords.size} unique chords), likely hallucination` };
   }
 
   return { valid: true, uniqueChords: uniqueChords.size, totalMeasures, totalChords };
 }
 
-// ─── Main Refinement Handler ──────────────────────────────────────────────────
-
+// ─── Main Handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -61,193 +65,130 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { title, artist, key, time_signature, userFeedback, currentSections } = await req.json();
-    
     if (!title || !userFeedback || !currentSections?.length) {
       return Response.json({ error: 'Title, feedback, and current sections are required' }, { status: 400 });
     }
 
-    // ── Step 1: Generate a fresh complete chart ──
-    const generationPrompt = `Research and transcribe the ACTUAL, COMPLETE chord chart for "${title}" by ${artist || 'Unknown'}, addressing this feedback: "${userFeedback}"
+    const currentChartSummary = currentSections.map(s =>
+      `${s.label}: ${(s.measures || []).map(m => m.chords?.map(c => c.chord).join('/') || '-').join(' | ')}`
+    ).join('\n');
 
-REQUIREMENTS:
-1. Use the ACTUAL chords from the song — research the real progression, do not invent or guess
-2. Chart the ENTIRE song structure as it naturally occurs
-3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-4. Determine the actual key and mode from the song's real chords
-5. Return ONLY valid JSON, no explanation
+    // ── Step 1: Research the refinement (free-text, internet-enabled) ──────────
+    const researchPrompt = `You are an expert session musician and music theorist.
+The user has a chord chart for "${title}" by ${artist || 'Unknown'} and wants it refined based on this feedback: "${userFeedback}"
 
-EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple chords per measure):
-{
-  "key_tonic": "D",
-  "key_mode": "major",
-  "time_signature": "4/4",
-  "sections": [
-    {
-      "label": "Verse",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "D", "beats": 2}, {"chord": "A", "beats": 2}], "cue": ""},
-        {"chords": [{"chord": "G", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
-      ]
-    },
-    {
-      "label": "Chorus",
-      "repeat_count": 1,
-      "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "D", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "A", "beats": 4}], "cue": ""}
-      ]
+### CURRENT CHART:
+${currentChartSummary}
+
+Research the actual, correct chord progression for this song and describe the corrections or improvements needed to address the user's feedback.
+List the complete corrected chart section by section, bar by bar. Include the key and time signature.`;
+
+    console.log('Step 1: Researching refinement...');
+    let researchData;
+    try {
+      researchData = await base44.integrations.Core.InvokeLLM({
+        prompt: researchPrompt,
+        add_context_from_internet: true,
+      });
+    } catch (error) {
+      throw new Error(`Research step failed: ${error.message}`);
     }
-  ]
-}
 
-Transcribe ALL the ACTUAL chords for "${title}" by ${artist || 'Unknown'}:`;
+    if (!researchData || typeof researchData !== 'string' || researchData.trim().length < 50) {
+      throw new Error('Could not retrieve refinement data. Please try again.');
+    }
+
+    console.log('Step 1 complete. Research length:', researchData.length);
+
+    // ── Step 2: Convert refined research into structured JSON ──────────────────
+    const tsMatch = (time_signature || '4/4').match(/^(\d+)/);
+    const beatsPerMeasure = tsMatch ? parseInt(tsMatch[1], 10) : 4;
+
+    const structurePrompt = `You are a music transcription expert. Convert the following chord refinement research into a structured JSON chart.
+
+### CHORD RESEARCH:
+${researchData}
+
+### FORMAT RULES:
+1. chord_string uses pipe "|" separators — each segment is ONE bar/measure.
+   Example 4 bars of G7: "G7 | G7 | G7 | G7"
+2. Two chords sharing one bar: space-separate them: "G F#7" (equal split) or "G*2 F#7*2" (explicit beats).
+3. Section labels MUST be one of: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro.
+   You may append numbers (e.g., Verse 1, Verse 2).
+4. Do NOT truncate. Every bar of every section must appear in chord_string.
+
+Now produce the full structured JSON for "${title}" by ${artist || 'Unknown'}:`;
 
     const schema = {
       type: "object",
       properties: {
-        key_tonic: { type: "string" },
-        key_mode: { type: "string", enum: ["major", "minor"] },
+        _structural_plan: { type: "string" },
+        key: { type: "string" },
         time_signature: { type: "string" },
         sections: {
           type: "array",
           items: {
             type: "object",
             properties: {
-              label: { type: "string", enum: ["Intro", "Verse", "Pre", "Chorus", "Bridge", "Instrumental Solo", "Outro"] },
+              label: { type: "string" },
               repeat_count: { type: "number" },
               arrangement_cue: { type: "string" },
-              measures: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    chords: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          chord: { type: "string" },
-                          beats: { type: "number" }
-                        },
-                        required: ["chord", "beats"]
-                      }
-                    },
-                    cue: { type: "string" }
-                  },
-                  required: ["chords"]
-                }
-              }
+              chord_string: { type: "string" }
             },
-            required: ["label", "measures"]
+            required: ["label", "chord_string"]
           }
         }
       },
-      required: ["key_tonic", "key_mode", "time_signature", "sections"]
+      required: ["key", "time_signature", "sections"]
     };
 
-    let freshChart;
-    try {
-      freshChart = await base44.integrations.Core.InvokeLLM({
-        prompt: generationPrompt,
-        add_context_from_internet: false,
-        response_json_schema: schema
-      });
-    } catch (llmError) {
-      console.error('Fresh chart generation failed:', llmError.message);
-      return Response.json({ 
-        error: 'Failed to generate reference chart. Please try again.'
-      }, { status: 400 });
+    let response;
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        console.log(`Step 2: Structuring JSON (attempt ${attempt}/${maxAttempts})...`);
+        response = await base44.integrations.Core.InvokeLLM({
+          prompt: structurePrompt,
+          add_context_from_internet: false,
+          response_json_schema: schema
+        });
+        if (response?.sections?.length) break;
+        console.warn(`Attempt ${attempt}: LLM returned no sections, retrying...`);
+      } catch (error) {
+        console.error(`Attempt ${attempt} error: ${error.message}`);
+        if (attempt === maxAttempts) throw new Error(`Failed to structure refined chart: ${error.message}`);
+      }
     }
 
-    if (!freshChart?.sections?.length) {
-      return Response.json({ error: 'Fresh chart generation returned no sections' }, { status: 500 });
+    if (!response?.sections?.length) {
+      throw new Error('Unable to refine chart after multiple attempts. Please try again with different feedback.');
     }
 
-    // ── Step 2: Validate fresh chart ──
-    const freshValidation = validateChartOutput(freshChart.sections);
-    if (!freshValidation.valid) {
-      console.log('Fresh chart validation failed:', freshValidation.reason);
-      return Response.json({ error: `Fresh chart invalid: ${freshValidation.reason}. Try refining again.` }, { status: 400 });
-    }
-
-    // ── Step 3: Compare fresh chart to current and determine if it addresses the user's issue ──
-    const currentChartJSON = JSON.stringify(currentSections, null, 2);
-    const freshChartJSON = JSON.stringify(freshChart.sections, null, 2);
-
-    const comparisonPrompt = `You are evaluating if a freshly generated chart solves the user's stated problem with their current chart.
-
-CURRENT CHART (user's existing chart):
-${currentChartJSON}
-
-FRESH CHART (newly generated from scratch):
-${freshChartJSON}
-
-USER'S FEEDBACK/ISSUE: "${userFeedback}"
-
-TASK: Determine if the fresh chart addresses what the user complained about. Answer with JSON:
-{
-  "solves_issue": true or false,
-  "reasoning": "brief explanation of why it does or doesn't solve the issue"
-}`;
-
-    const comparisonSchema = {
-      type: "object",
-      properties: {
-        solves_issue: { type: "boolean" },
-        reasoning: { type: "string" }
-      },
-      required: ["solves_issue", "reasoning"]
-    };
-
-    let comparisonResponse;
-    try {
-      comparisonResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: comparisonPrompt,
-        add_context_from_internet: false,
-        response_json_schema: comparisonSchema
-      });
-    } catch (comparisonError) {
-      console.error('Comparison validation failed:', comparisonError.message);
-      return Response.json({ 
-        error: 'Failed to validate if fresh chart solves the issue. Try again.'
-      }, { status: 400 });
-    }
-
-    if (!comparisonResponse?.solves_issue) {
-      console.log('Comparison determined fresh chart does not solve issue:', comparisonResponse?.reasoning);
-      return Response.json({ 
-        error: `The fresh chart does not solve your issue (${comparisonResponse?.reasoning || 'unknown reason'}). Try providing different feedback.`
-      }, { status: 400 });
-    }
-
-    // Sanitize and expand measures (same as generateChartAI)
-    const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
-    const beatsPerMeasure = parseInt(time_signature.split('/')[0]) || 4;
-
-    const refinedSections = freshChart.sections.map(section => ({
-      ...section,
+    // ── Convert chord_string → measures ────────────────────────────────────────
+    const sections = response.sections.map(section => ({
+      label: section.label,
       repeat_count: Number(section.repeat_count) || 1,
       arrangement_cue: section.arrangement_cue || '',
-      measures: (section.measures || []).flatMap(measure => {
-        const chords = (measure.chords || []).map(c => ({
+      measures: chordStringToMeasures(section.chord_string || '', beatsPerMeasure)
+    }));
+
+    const validation = validateChartOutput(sections);
+    if (!validation.valid) {
+      return Response.json({ error: `Refined chart validation failed: ${validation.reason}. Please try again.` }, { status: 400 });
+    }
+
+    // ── Sanitize symbols ───────────────────────────────────────────────────────
+    const VALID_SYMBOLS = ["diamond", "marcato", "push", "pull", "fermata", "bass_up", "bass_down"];
+    const refinedSections = sections.map(section => ({
+      ...section,
+      measures: section.measures.map(measure => ({
+        chords: measure.chords.map(c => ({
           chord: c.chord || '-',
           beats: Number(c.beats) || 4,
           symbols: Array.isArray(c.symbols) ? c.symbols.filter(s => VALID_SYMBOLS.includes(s)) : []
-        }));
-
-        if (chords.length === 1 && chords[0].beats === beatsPerMeasure) {
-          return [{ chords, cue: measure.cue || '' }];
-        } else {
-          return chords.map((c, idx) => ({
-            chords: [{ ...c, beats: beatsPerMeasure }],
-            cue: idx === 0 ? (measure.cue || '') : ''
-          }));
-        }
-      })
+        })),
+        cue: measure.cue || ''
+      }))
     }));
 
     return Response.json({
