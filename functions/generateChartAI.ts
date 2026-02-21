@@ -240,8 +240,8 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
   const schema = {
     type: "object",
     properties: {
-      key_tonic: { type: "string" },
-      key_mode: { type: "string", enum: ["major", "minor"] },
+      _structural_plan: { type: "string" },
+      key: { type: "string" },
       time_signature: { type: "string" },
       sections: {
         type: "array",
