@@ -297,7 +297,7 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
     throw new Error('LLM returned no sections');
   }
 
-  const completenessCheck = validateChartOutput(response.sections);
+  const completenessCheck = validateChartOutput(response);
   if (!completenessCheck.valid) {
     throw new Error(`Chart validation failed: ${completenessCheck.reason}`);
   }
