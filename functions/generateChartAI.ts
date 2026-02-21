@@ -192,10 +192,12 @@ ${referenceText ? `### REFERENCE MATERIAL:\n${referenceText}\n\n` : ''}
 
 ### STRICT REQUIREMENTS:
 1. **NO TRUNCATION:** You must chart the ENTIRE song from start to finish. Do not summarize or skip repeating sections. Every single measure of the recorded song must be mapped out sequentially.
-2. **BEAT MATH:** The sum of the "beats" in each measure array MUST exactly equal the numerator of your "time_signature" (e.g., in 4/4 time, the beats for a single measure must add up to exactly 4).
-3. **SECTION LABELS:** Use ONLY these labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. You may append numbers if needed (e.g., Verse 1, Verse 2).
-4. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
-5. **OUTPUT FORMAT:** Return ONLY a valid JSON object matching the exact structure below. Do not wrap it in markdown code blocks (\`\`\`). Do not add introductory text, do not add concluding text, and do not add any new keys to the JSON.
+2. **BEAT MATH:** The sum of the "beats" in each measure array MUST exactly equal the numerator of your "time_signature" (e.g., in 4/4 time, the beats for a single measure must add up to exactly 4). Every measure object must have beats summing to exactly that number.
+3. **SECTION LABELS:** Use ONLY these exact labels (no numbers, no suffixes): Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. Do NOT use "Verse 1", "Verse 2", etc. — use "Verse" for every verse section.
+4. **ONE CHORD PER MEASURE:** Each measure should contain exactly ONE chord object unless two different chords genuinely split a single measure (e.g. 2 beats each in 4/4). Do NOT put multiple measures worth of the same chord into a single measure object. Each bar = one measure object.
+5. **12-BAR BLUES:** If this is a 12-bar blues song, each 12-bar chorus must be written out as exactly 12 separate measure objects: bars 1-4 (I chord), bars 5-6 (IV chord), bars 7-8 (I chord), bar 9 (V chord), bar 10 (IV chord), bars 11-12 (I chord). Do not collapse repeated bars.
+6. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
+7. **OUTPUT FORMAT:** Return ONLY a valid JSON object matching the exact structure below. Do not wrap it in markdown code blocks (\`\`\`). Do not add introductory text, do not add concluding text, and do not add any new keys to the JSON.
 
 ### REQUIRED JSON SCHEMA (EXAMPLE ONLY DO NOT COPY. Shows required structure and beat math flexibility):
 {
