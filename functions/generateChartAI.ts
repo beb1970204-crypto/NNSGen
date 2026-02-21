@@ -206,10 +206,10 @@ ${referenceText ? `### REFERENCE MATERIAL:\n${referenceText}\n\n` : ''}
 4. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
 5. **OUTPUT FORMAT:** Return ONLY a valid JSON object matching the exact structure below. Do not wrap it in markdown code blocks (\`\`\`). Do not add introductory text, do not add concluding text, and do not add any new keys to the JSON.
 
-### EXAMPLE OUTPUT SCHEMA (Shows required structure and beat math flexibility):
+### REQUIRED JSON SCHEMA (Shows required structure and beat math flexibility):
 {
-  "key_tonic": "D",
-  "key_mode": "major",
+  "_structural_plan": "Intro -> Verse 1 -> Chorus -> Verse 2 -> Chorus -> Bridge -> Chorus -> Outro",
+  "key": "D",
   "time_signature": "4/4",
   "sections": [
     {
