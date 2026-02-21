@@ -10,8 +10,11 @@ function getScaleDegreeInterval(chord, chartKey) {
   const chordData = Chord.get(chord);
   if (!chordData || chordData.empty) return null;
 
-  // Strip minor suffix from key for distance calculation (e.g. "Am" → "A")
-  const keyRoot = chartKey.replace(/m$/, '');
+  // Normalize key to just the root note for distance calculation
+  // Handles: "Am" → "A", "B minor" → "B", "C# major" → "C#", "Db" → "Db"
+  const keyRoot = chartKey
+    .replace(/\s*(major|minor|maj|min)\s*$/i, '') // strip word-form quality
+    .replace(/m$/, '');                            // strip trailing "m"
   // Use .pc to ensure we're working with a pitch class, not an octave-specific note
   const tonic = Note.get(chordData.tonic).pc || chordData.tonic;
   const interval = distance(keyRoot, tonic);
