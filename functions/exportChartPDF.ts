@@ -172,12 +172,6 @@ Deno.serve(async (req) => {
         leftY = y;
       } else {
         rightY = y;
-        // Synchronize columns for next pair
-        if (i < sections.length - 1) {
-          const maxY = Math.max(leftY, rightY);
-          leftY = maxY + 3;
-          rightY = maxY + 3;
-        }
       }
     }
 
