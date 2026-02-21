@@ -288,12 +288,10 @@ Deno.serve(async (req) => {
 
       y += numRows * cellHeight + sectionSpacing;
 
-      if (isLeftColumn) {
-        leftY = y;
-        currentColumn = 'left';
-      } else {
+      if (onRightColumn) {
         rightY = y;
-        currentColumn = 'right';
+      } else {
+        leftY = y;
       }
     }
 
