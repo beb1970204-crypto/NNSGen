@@ -21,15 +21,17 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const { data: charts = [] } = useQuery({
-    queryKey: ['charts-count'],
-    queryFn: () => base44.entities.Chart.list(),
+    queryKey: ['charts-count', user?.email],
+    queryFn: () => user?.email ? base44.entities.Chart.filter({ created_by: user.email }) : [],
     initialData: [],
+    enabled: !!user?.email,
   });
 
   const { data: setlists = [] } = useQuery({
-    queryKey: ['setlists'],
-    queryFn: () => base44.entities.Setlist.list('-created_date'),
+    queryKey: ['setlists', user?.email],
+    queryFn: () => user?.email ? base44.entities.Setlist.filter({ created_by: user.email }, '-created_date') : [],
     initialData: [],
+    enabled: !!user?.email,
   });
 
   const sharedChartsCount = charts.filter(chart => 
