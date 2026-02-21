@@ -606,69 +606,51 @@ export default function ChartViewer() {
               </div>
             ) : (
               // Read Mode - 2-Column Grid (no theory sidebar)
-              // Balance columns by measure count, not by section index split
-              (() => {
-                const leftSections = [];
-                const rightSections = [];
-                let leftCount = 0;
-                let rightCount = 0;
-                sections.forEach((section, index) => {
-                  const measureCount = section.measures?.length || 1;
-                  if (leftCount <= rightCount) {
-                    leftSections.push({ section, index });
-                    leftCount += measureCount;
-                  } else {
-                    rightSections.push({ section, index });
-                    rightCount += measureCount;
-                  }
-                });
-                return (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      {leftSections.map(({ section, index }) => (
-                        <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
-                          <ChartDisplay
-                            sections={[section]}
-                            chartKey={chart.key}
-                            displayMode={displayMode}
-                            editMode={false}
-                            onUpdateSection={handleUpdateSection}
-                            onAddMeasure={handleAddMeasure}
-                            onMeasureClick={handleMeasureClick}
-                            selectedMeasureIndex={selectedMeasureIndex}
-                            selectedSectionId={selectedSection?.id}
-                            onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                            onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                            onMoveSectionUp={() => moveSectionUp(index)}
-                            onMoveSectionDown={() => moveSectionDown(index)}
-                          />
-                        </div>
-                      ))}
+              // Left column: first half of sections (by index), right column: second half
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  {sections.slice(0, Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
+                      <ChartDisplay
+                        sections={[section]}
+                        chartKey={chart.key}
+                        displayMode={displayMode}
+                        editMode={false}
+                        onUpdateSection={handleUpdateSection}
+                        onAddMeasure={handleAddMeasure}
+                        onMeasureClick={handleMeasureClick}
+                        selectedMeasureIndex={selectedMeasureIndex}
+                        selectedSectionId={selectedSection?.id}
+                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                        onMoveSectionUp={() => moveSectionUp(index)}
+                        onMoveSectionDown={() => moveSectionDown(index)}
+                      />
                     </div>
-                    <div className="space-y-3">
-                      {rightSections.map(({ section, index }) => (
-                        <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
-                          <ChartDisplay
-                            sections={[section]}
-                            chartKey={chart.key}
-                            displayMode={displayMode}
-                            editMode={false}
-                            onUpdateSection={handleUpdateSection}
-                            onAddMeasure={handleAddMeasure}
-                            onMeasureClick={handleMeasureClick}
-                            selectedMeasureIndex={selectedMeasureIndex}
-                            selectedSectionId={selectedSection?.id}
-                            onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
-                            onDuplicateSection={(section) => duplicateSection.mutate(section)}
-                            onMoveSectionUp={() => moveSectionUp(index)}
-                            onMoveSectionDown={() => moveSectionDown(index)}
-                          />
-                        </div>
-                      ))}
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {sections.slice(Math.ceil(sections.length / 2)).map((section, index) => (
+                    <div key={section.id} className="bg-[#111111] rounded-lg overflow-hidden border border-[#2a2a2a]">
+                      <ChartDisplay
+                        sections={[section]}
+                        chartKey={chart.key}
+                        displayMode={displayMode}
+                        editMode={false}
+                        onUpdateSection={handleUpdateSection}
+                        onAddMeasure={handleAddMeasure}
+                        onMeasureClick={handleMeasureClick}
+                        selectedMeasureIndex={selectedMeasureIndex}
+                        selectedSectionId={selectedSection?.id}
+                        onDeleteSection={(sectionId) => deleteSection.mutate(sectionId)}
+                        onDuplicateSection={(section) => duplicateSection.mutate(section)}
+                        onMoveSectionUp={() => moveSectionUp(index + Math.ceil(sections.length / 2))}
+                        onMoveSectionDown={() => moveSectionDown(index + Math.ceil(sections.length / 2))}
+                      />
                     </div>
-                  </div>
-                );
-              })()
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
