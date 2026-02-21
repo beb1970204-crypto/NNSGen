@@ -73,34 +73,32 @@ Deno.serve(async (req) => {
     let leftY = yPosition;
     let rightY = yPosition;
 
-    // Track which column we're currently filling (left first, then right)
-    let currentColumn = 'left'; // 'left' or 'right'
+    // Fill left column top-to-bottom, then right column top-to-bottom
+    // Switch to right column once left overflows; new page once right overflows
+    let onRightColumn = false;
 
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       const numRows = Math.ceil(section.measures.length / measuresPerRow);
       const sectionHeight = 5 + (section.arrangement_cue ? 3.5 : 0) + (numRows * cellHeight);
 
-      let isLeftColumn = currentColumn === 'left';
-      let x = isLeftColumn ? leftX : rightX;
-      let y = isLeftColumn ? leftY : rightY;
+      let x = onRightColumn ? rightX : leftX;
+      let y = onRightColumn ? rightY : leftY;
 
       // Check if section fits in current column
       if (y + sectionHeight > pageHeight - margin) {
-        if (isLeftColumn) {
-          // Overflow from left to right column
-          currentColumn = 'right';
-          isLeftColumn = false;
+        if (!onRightColumn) {
+          // Overflow left → switch to right column
+          onRightColumn = true;
           x = rightX;
           y = rightY;
         }
-        // If right column is also full (or we're already on right), new page
+        // Right column also full → new page
         if (y + sectionHeight > pageHeight - margin) {
           doc.addPage();
           leftY = margin;
           rightY = margin;
-          currentColumn = 'left';
-          isLeftColumn = true;
+          onRightColumn = false;
           x = leftX;
           y = margin;
         }
