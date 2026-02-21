@@ -836,32 +836,23 @@ export default function Home() {
                       </button>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-base font-bold text-white truncate transition-colors" title={chart.title} style={{ color: 'inherit' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D0021B'} onMouseLeave={(e) => e.currentTarget.style.color = 'white'}>
                           {chart.title}
                         </h3>
-                      {currentView === 'shared' && (
-                        <span className="flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(208, 2, 27, 0.2)', color: '#D0021B' }}>
-                          Shared with you
-                        </span>
-                      )}
-                      {currentView !== 'shared' && chart.shared_with_users?.length > 0 && (
-                        <span className="flex-shrink-0 px-2 py-1 rounded-full bg-purple-600/20 text-purple-400 text-xs font-semibold flex items-center gap-1 whitespace-nowrap">
-                          <Users className="w-3 h-3" />
-                          {chart.shared_with_users.length}
-                        </span>
-                      )}
                       </div>
+                      {(chart.created_by !== user?.email) && (
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: 'rgba(208, 2, 27, 0.2)', color: '#D0021B' }}>
+                            Shared with you
+                          </span>
+                          <span className="text-xs text-[#6b6b6b] truncate">by {chart.created_by}</span>
+                        </div>
+                      )}
                         <div className="flex items-center gap-3 text-sm font-sans">
                           <span className="text-[#a0a0a0]">Key: <span className="text-white font-semibold font-mono">{chart.key}</span></span>
                           <span className="text-[#4a4a4a]">•</span>
                           <span className="text-[#a0a0a0] font-mono">{chart.time_signature}</span>
-                          {currentView === 'shared' && chart.created_by && (
-                            <>
-                              <span className="text-[#4a4a4a]">•</span>
-                              <span className="text-[#a0a0a0]">by <span className="text-white font-semibold">{chart.created_by}</span></span>
-                            </>
-                          )}
                         </div>
                     </div>
                     </div>
