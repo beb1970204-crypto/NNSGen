@@ -6,6 +6,27 @@ import { Chord, distance, Note, Progression } from "tonal";
 
 // ─── Shared: get scale degree interval from a chord's tonic to the chart key ──
 
+// Enharmonic normalization map: converts "problem" enharmonic spellings to
+// their sharp equivalents so Tonal's distance() returns consistent intervals.
+// e.g. distance("C#", "Db") → "A1" (wrong), distance("C#", "C#") → "1P" (right)
+const ENHARMONIC_TO_SHARP = {
+  'Db': 'C#', 'Eb': 'D#', 'Fb': 'E',  'Gb': 'F#',
+  'Ab': 'G#', 'Bb': 'A#', 'Cb': 'B',
+};
+const ENHARMONIC_TO_FLAT = {
+  'C#': 'Db', 'D#': 'Eb', 'E#': 'F',  'F#': 'Gb',
+  'G#': 'Ab', 'A#': 'Bb', 'B#': 'C',
+};
+
+function normalizeEnharmonic(noteStr, keyRoot) {
+  // If keyRoot uses flats, normalize chord tonic to flats too (and vice versa)
+  const keyUsesFlatSystem = keyRoot.includes('b') && !keyRoot.includes('#');
+  const keyUsesSharpSystem = keyRoot.includes('#');
+  if (keyUsesSharpSystem && ENHARMONIC_TO_SHARP[noteStr]) return ENHARMONIC_TO_SHARP[noteStr];
+  if (keyUsesFlatSystem && ENHARMONIC_TO_FLAT[noteStr]) return ENHARMONIC_TO_FLAT[noteStr];
+  return noteStr;
+}
+
 function getScaleDegreeInterval(chord, chartKey) {
   const chordData = Chord.get(chord);
   if (!chordData || chordData.empty) return null;
@@ -15,8 +36,11 @@ function getScaleDegreeInterval(chord, chartKey) {
   const keyRoot = chartKey
     .replace(/\s*(major|minor|maj|min)\s*$/i, '') // strip word-form quality
     .replace(/m$/, '');                            // strip trailing "m"
+
   // Use .pc to ensure we're working with a pitch class, not an octave-specific note
-  const tonic = Note.get(chordData.tonic).pc || chordData.tonic;
+  const rawTonic = Note.get(chordData.tonic).pc || chordData.tonic;
+  // Normalize enharmonic spelling to match key system (prevents A1/d8 intervals)
+  const tonic = normalizeEnharmonic(rawTonic, keyRoot);
   const interval = distance(keyRoot, tonic);
 
   return { chordData, interval };
