@@ -302,18 +302,7 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
     throw new Error(`Chart validation failed: ${completenessCheck.reason}`);
   }
 
-  const tonic = response.key_tonic || 'C';
-  const isMinor = response.key_mode === 'minor';
-  let key;
-  if (isMinor) {
-    const mk = Key.minorKey(tonic);
-    key = (mk.tonic || tonic) + 'm';
-  } else {
-    const mk = Key.majorKey(tonic);
-    key = mk.tonic || tonic;
-  }
-
-  return { key, time_signature: response.time_signature || '4/4', sections: response.sections };
+  return { key: response.key || 'C', time_signature: response.time_signature || '4/4', sections: response.sections };
 }
 
 // ─── Output Validation ─────────────────────────────────────────────────────────
