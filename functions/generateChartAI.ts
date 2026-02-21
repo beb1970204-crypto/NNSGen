@@ -195,13 +195,13 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `Research and transcribe the actual, COMPLETE chord chart for "${title}" by ${artist || 'Unknown'}.
+  const prompt = `Research and transcribe the actual chord progression for "${title}" by ${artist || 'Unknown'}.
 
 ${referenceText ? `Reference material:\n${referenceText}\n\n` : ''}
 
 REQUIREMENTS:
 1. Use the ACTUAL chords from the song — research the real progression, do not invent or guess
-2. Chart the ENTIRE song structure as it naturally occurs
+2. Chart the ENTIRE song structure as it naturally occurs (all song sections fully transcribed)
 3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
 4. Determine the actual key and mode from the song's real chords
 5. Return ONLY valid JSON, no explanation
@@ -234,7 +234,7 @@ EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple cho
   ]
 }
 
-Transcribe all the actual chords for "${title}" by ${artist || 'Unknown'}:`;
+Transcribe the actual chords for "${title}" by ${artist || 'Unknown'}:`;
 
   const schema = {
     type: "object",
