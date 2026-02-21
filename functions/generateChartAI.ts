@@ -195,18 +195,18 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `Research and transcribe the actual chord progression for "${title}" by ${artist || 'Unknown'}.
+  const prompt = `You are an expert session musician and music theorist. Your task is to transcribe the complete, accurate chord progression for "${title}" by ${artist || 'Unknown'}.
 
-${referenceText ? `Reference material:\n${referenceText}\n\n` : ''}
+${referenceText ? `### REFERENCE MATERIAL:\n${referenceText}\n\n` : ''}
 
-REQUIREMENTS:
-1. Use the ACTUAL chords from the song — research the real progression, do not invent or guess
-2. Chart the ENTIRE song structure as it naturally occurs (all song sections fully transcribed)
-3. Use ONLY these section labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro
-4. Determine the actual key and mode from the song's real chords
-5. Return ONLY valid JSON, no explanation
+### STRICT REQUIREMENTS:
+1. **NO TRUNCATION:** You must chart the ENTIRE song from start to finish. Do not summarize or skip repeating sections. Every single measure of the recorded song must be mapped out sequentially.
+2. **BEAT MATH:** The sum of the "beats" in each measure array MUST exactly equal the numerator of your "time_signature" (e.g., in 4/4 time, the beats for a single measure must add up to exactly 4).
+3. **SECTION LABELS:** Use ONLY these labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. You may append numbers if needed (e.g., Verse 1, Verse 2).
+4. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
+5. **OUTPUT FORMAT:** Return ONLY a valid JSON object matching the exact structure below. Do not wrap it in markdown code blocks (\`\`\`). Do not add introductory text, do not add concluding text, and do not add any new keys to the JSON.
 
-EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple chords per measure):
+### EXAMPLE OUTPUT SCHEMA (Shows required structure and beat math flexibility):
 {
   "key_tonic": "D",
   "key_mode": "major",
@@ -234,7 +234,8 @@ EXAMPLE OUTPUT (do not copy these chords — shows flexibility with multiple cho
   ]
 }
 
-Transcribe the actual chords for "${title}" by ${artist || 'Unknown'}:`;
+Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
+
 
   const schema = {
     type: "object",
