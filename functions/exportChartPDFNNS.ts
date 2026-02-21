@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      y += numRows * cellHeight + sectionSpacing;
+      y += numRows * cellHeight + sectionSpacing + 2;
 
       if (onRightColumn) {
         rightY = y;
