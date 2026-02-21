@@ -73,28 +73,33 @@ Deno.serve(async (req) => {
     let leftY = yPosition;
     let rightY = yPosition;
 
+    // Track which column we're currently filling (left first, then right)
+    let currentColumn = 'left'; // 'left' or 'right'
+
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       const numRows = Math.ceil(section.measures.length / measuresPerRow);
       const sectionHeight = 5 + (section.arrangement_cue ? 3.5 : 0) + (numRows * cellHeight);
 
-      // Determine which column to place this section
-      let isLeftColumn = leftY <= rightY;
+      let isLeftColumn = currentColumn === 'left';
       let x = isLeftColumn ? leftX : rightX;
       let y = isLeftColumn ? leftY : rightY;
 
       // Check if section fits in current column
       if (y + sectionHeight > pageHeight - margin) {
-        // Try the other column
-        isLeftColumn = !isLeftColumn;
-        x = isLeftColumn ? leftX : rightX;
-        y = isLeftColumn ? leftY : rightY;
-
-        // If still doesn't fit, move to new page
+        if (isLeftColumn) {
+          // Overflow from left to right column
+          currentColumn = 'right';
+          isLeftColumn = false;
+          x = rightX;
+          y = rightY;
+        }
+        // If right column is also full (or we're already on right), new page
         if (y + sectionHeight > pageHeight - margin) {
           doc.addPage();
           leftY = margin;
           rightY = margin;
+          currentColumn = 'left';
           isLeftColumn = true;
           x = leftX;
           y = margin;
