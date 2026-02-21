@@ -65,7 +65,8 @@ export default function ChartCreator() {
     } catch (error) {
       setIsGenerating(false);
       console.error('Chart generation error:', error);
-      toast.error(`Error: ${error.message}`);
+      const msg = error?.response?.data?.error || error.message || 'Something went wrong. Please try again.';
+      toast.error(msg, { duration: 6000 });
     }
   };
 
