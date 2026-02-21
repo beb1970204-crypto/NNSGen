@@ -322,7 +322,7 @@ function validateChartOutput(sections) {
   if (!sections || sections.length < 1) {
     return { valid: false, reason: 'No sections generated' };
   }
-  if (sections.length > 12) {
+  if (sections.length > 20) {
     return { valid: false, reason: 'Too many sections (likely fragmented)' };
   }
 
@@ -359,7 +359,7 @@ function validateChartOutput(sections) {
 
   // Flag extreme hallucination only
   const expectedMaxChords = Math.ceil(totalMeasures / 2) + 15;
-  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 30) {
+  if (uniqueChords.size > expectedMaxChords && uniqueChords.size > 50) {
     return { valid: false, reason: `Unusually high chord density (${uniqueChords.size} unique chords), likely hallucination` };
   }
 
