@@ -277,7 +277,7 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
         }
       }
     },
-    required: ["key_tonic", "key_mode", "time_signature", "sections"]
+    required: ["_structural_plan", "key", "time_signature", "sections"]
   };
 
   let response;
