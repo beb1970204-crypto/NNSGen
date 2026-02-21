@@ -132,13 +132,30 @@ Deno.serve(async (req) => {
         // Draw cell border
         doc.rect(mx, my, cellWidth, cellHeight);
 
-        // Draw centered chords
+        // Draw chords — proportional beat widths for multi-chord measures
         if (measure.chords && measure.chords.length > 0) {
-          const chordText = measure.chords.map(c => c.chord).join(' ');
-          doc.text(chordText, mx + cellWidth / 2, my + cellHeight / 2 + 0.5, { 
-            align: 'center',
-            maxWidth: cellWidth - 2
-          });
+          const chords = measure.chords;
+          const centerY = my + cellHeight / 2 + 0.5;
+          if (chords.length === 1) {
+            doc.setFontSize(9);
+            doc.text(chords[0].chord || '-', mx + cellWidth / 2, centerY, { align: 'center', maxWidth: cellWidth - 2 });
+          } else {
+            const totalBeats = chords.reduce((s, c) => s + (c.beats || 4), 0);
+            let slotX = mx;
+            chords.forEach((chordObj, ci) => {
+              const slotW = ((chordObj.beats || 4) / totalBeats) * cellWidth;
+              doc.setFontSize(7);
+              doc.text(chordObj.chord || '-', slotX + slotW / 2, centerY, { align: 'center', maxWidth: slotW - 1 });
+              // Divider between chords
+              if (ci < chords.length - 1) {
+                doc.setDrawColor(180, 180, 180);
+                doc.line(slotX + slotW, my + 1.5, slotX + slotW, my + cellHeight - 1.5);
+                doc.setDrawColor(0, 0, 0);
+              }
+              slotX += slotW;
+            });
+            doc.setFontSize(9);
+          }
         }
 
         // Draw cue if present

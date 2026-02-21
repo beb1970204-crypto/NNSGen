@@ -94,11 +94,13 @@ export default function ChartDisplay({
 
   const renderMeasureCell = (measure, measureIdx, section) => {
     const chordCount = measure.chords?.length || 0;
-    const hasSplit = chordCount === 2;
     const isSelected = selectedSectionId === section.id && selectedMeasureIndex === measureIdx;
 
+    // Calculate total beats in this measure for proportional sizing
+    const totalBeats = measure.chords?.reduce((sum, c) => sum + (c.beats || 4), 0) || 4;
+
     const chordContent = (
-      <div className={`text-white ${baseFontSize} font-bold chart-chord`}>
+      <div className={`text-white ${baseFontSize} font-bold chart-chord w-full`}>
         {chordCount === 1 && (
           <div className="flex items-center justify-center">
             <span className={measure.chords[0].chord === '-' ? 'text-[#3a3a3a]' : ''}>
@@ -109,26 +111,28 @@ export default function ChartDisplay({
             )}
           </div>
         )}
-        {hasSplit && (
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center justify-around w-full">
-              {measure.chords.map((chordObj, i) => (
-                <div key={i} className="flex-1 text-center">
-                  <span className={chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}>{renderChord(chordObj)}</span>
-                </div>
-              ))}
+        {chordCount >= 2 && (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center w-full">
+              {measure.chords.map((chordObj, i) => {
+                const beatPct = ((chordObj.beats || 4) / totalBeats) * 100;
+                const isLast = i === chordCount - 1;
+                return (
+                  <div
+                    key={i}
+                    className={`text-center ${chordCount > 2 ? 'text-sm' : ''} ${chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''} ${!isLast ? 'border-r border-[#3a3a3a]' : ''}`}
+                    style={{ width: `${beatPct}%` }}
+                  >
+                    {renderChord(chordObj)}
+                    {chordObj.symbols?.length > 0 && (
+                      <span className="ml-0.5 text-xs text-yellow-500">{renderSymbols(chordObj.symbols)}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div className="w-full h-0.5 bg-[#4a4a4a]" />
+            <div className="w-full h-px bg-[#3a3a3a]" />
           </div>
-        )}
-        {chordCount > 2 && (
-         <div className="flex items-center justify-around w-full gap-1">
-           {measure.chords.map((chordObj, i) => (
-             <div key={i} className={`flex-1 text-center text-sm ${chordObj.chord === '-' ? 'text-[#3a3a3a]' : ''}`}>
-               {renderChord(chordObj)}
-             </div>
-           ))}
-         </div>
         )}
       </div>
     );

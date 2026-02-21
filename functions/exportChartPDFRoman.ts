@@ -119,18 +119,26 @@ function drawChordWithSup(doc, chordStr, cx, cy, mainSize, supSize) {
   }
 }
 
-// Draw all chords in a measure cell with superscript notation
+// Draw all chords in a measure cell with superscript notation, beat-proportional widths
 function drawMeasureChords(doc, chords, mx, my, cellWidth, cellHeight, converterFn, chartKey) {
   const centerY = my + cellHeight / 2 + 0.5;
   if (chords.length === 1) {
     const converted = converterFn(chords[0].chord, chartKey);
     drawChordWithSup(doc, converted, mx + cellWidth / 2, centerY, 9, 6.5);
   } else {
-    const slotWidth = cellWidth / chords.length;
+    const totalBeats = chords.reduce((s, c) => s + (c.beats || 4), 0);
+    let slotX = mx;
     chords.forEach((chordObj, i) => {
+      const slotW = ((chordObj.beats || 4) / totalBeats) * cellWidth;
       const converted = converterFn(chordObj.chord, chartKey);
-      const cx = mx + (i + 0.5) * slotWidth;
-      drawChordWithSup(doc, converted, cx, centerY, 7, 5);
+      drawChordWithSup(doc, converted, slotX + slotW / 2, centerY, 7, 5);
+      // Divider between chords
+      if (i < chords.length - 1) {
+        doc.setDrawColor(180, 180, 180);
+        doc.line(slotX + slotW, my + 1.5, slotX + slotW, my + cellHeight - 1.5);
+        doc.setDrawColor(0, 0, 0);
+      }
+      slotX += slotW;
     });
     doc.setFontSize(9);
   }
