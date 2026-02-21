@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
       const numRows = Math.ceil(section.measures.length / measuresPerRow);
-      const sectionHeight = 5 + (section.arrangement_cue ? 3.5 : 0) + (numRows * cellHeight);
+      const sectionHeight = 6 + (section.arrangement_cue ? 4.5 : 0) + (numRows * cellHeight);
 
       let x = onRightColumn ? rightX : leftX;
       let y = onRightColumn ? rightY : leftY;
