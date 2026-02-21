@@ -172,6 +172,45 @@ function parseChordonomiconSections(rawChords, beatsPerBar) {
   return sections;
 }
 
+// ─── chord_string → measures parser ──────────────────────────────────────────
+// The LLM provides a simple linear chord string per section.
+// Format: pipe-separated bars, each bar is space-separated chords with optional beat counts.
+//   "G7 | G7 | G7 | G7 | C7 | C7 | G7 | G7 | D7 | C7 | G7 | D7"
+//   "D A | G | G"           (two chords sharing a bar, then single chord bars)
+//   "D*2 A*2 | G*4 | A*4"  (explicit beat counts via *N suffix)
+// One pipe segment = one measure. Beat math is enforced here, not by the LLM.
+
+function chordStringToMeasures(chordString, beatsPerMeasure) {
+  const bars = chordString.split('|').map(b => b.trim()).filter(Boolean);
+
+  return bars.map(bar => {
+    const tokens = bar.split(/\s+/).filter(Boolean);
+    const beatsPerChord = beatsPerMeasure / tokens.length;
+
+    const chords = tokens.map(token => {
+      // Support optional explicit beat count via "Chord*N" (e.g. "D*2")
+      const starIdx = token.indexOf('*');
+      if (starIdx !== -1) {
+        return {
+          chord: token.slice(0, starIdx),
+          beats: parseFloat(token.slice(starIdx + 1)) || beatsPerChord,
+          symbols: []
+        };
+      }
+      return { chord: token, beats: beatsPerChord, symbols: [] };
+    });
+
+    // Normalize so beats always sum to beatsPerMeasure
+    const total = chords.reduce((s, c) => s + c.beats, 0);
+    if (total !== beatsPerMeasure) {
+      const scale = beatsPerMeasure / total;
+      chords.forEach(c => { c.beats = Math.round(c.beats * scale * 100) / 100; });
+    }
+
+    return { chords, cue: '' };
+  });
+}
+
 // ─── LLM chart generation ─────────────────────────────────────────────────────
 
 async function generateWithLLM(base44, title, artist, reference_file_url) {
@@ -186,31 +225,18 @@ async function generateWithLLM(base44, title, artist, reference_file_url) {
     }
   }
 
-  const prompt = `You are an expert session musician and music theorist. Transcribe the complete, accurate chord chart for "${title}" by ${artist || 'Unknown'}.
+  const prompt = `You are an expert session musician and music theorist. Your task is to transcribe the complete, accurate chord progression for "${title}" by ${artist || 'Unknown'}.
 
 ${referenceText ? `### REFERENCE MATERIAL:\n${referenceText}\n\n` : ''}
 
-### RULES — READ CAREFULLY:
+### STRICT REQUIREMENTS:
+1. **NO TRUNCATION:** You must chart the ENTIRE song from start to finish. Do not summarize or skip repeating sections. Every single bar of the recorded song must be listed sequentially.
+2. **ONE BAR PER PIPE SEGMENT:** In the chord_string, each "|"-separated segment represents exactly one bar/measure. If the same chord lasts 4 bars, write it 4 times separated by pipes: "G | G | G | G". Never collapse multiple bars into one segment.
+3. **SPLIT BARS:** If two chords share a single bar, put both chords space-separated in that segment: "G F#7" means G and F#7 share one bar equally. Use "G*2 F#7*2" to be explicit about beat counts when unequal.
+4. **SECTION LABELS:** Use ONLY these labels: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. You may append numbers if needed (e.g., Verse 1, Verse 2).
+5. **ACCURACY:** Do not guess. Research the real progression and rely on the actual studio recording's structure.
 
-**RULE 1 — ONE BAR = ONE MEASURE OBJECT (MOST IMPORTANT)**
-Every single bar of music is its own measure object. Never combine multiple bars into one measure object, even if consecutive bars have the same chord. If "Bm" lasts for 4 bars, that is 4 separate measure objects, each with beats: 4.
-
-**RULE 2 — COUNT EVERY BAR IN EVERY SECTION**
-Before writing a section's measures array, count the exact number of bars in that section in the real recording. A 12-bar blues section has exactly 12 measure objects. A 4-bar intro has exactly 4 measure objects.
-
-**RULE 3 — INCLUDE ALL CHORDS IN A SECTION**
-A section includes ALL of its bars — including chord changes within it. For a 12-bar blues in Bm: bars 1-4 are Bm, bars 5-6 are Em, bars 7-8 are Bm, bar 9 is F#7, bar 10 is Em, bars 11-12 are Bm. All 12 measure objects belong in the same section, not split across sections.
-
-**RULE 4 — BEAT MATH**
-The sum of beats in a single measure's chords array must equal the time signature numerator (4 in 4/4). One chord per bar = beats: 4. Two chords splitting a bar = e.g. beats: 2 and beats: 2.
-
-**RULE 5 — SECTION LABELS**
-Use only: Intro, Verse, Pre, Chorus, Bridge, Instrumental Solo, Outro. You may number them (Verse 1, Verse 2).
-
-**RULE 6 — COMPLETE THE SONG**
-Chart the ENTIRE song. Do not skip or summarize repeated sections.
-
-### EXAMPLE — 12-bar blues in G (shows correct one-bar-per-measure-object format):
+### REQUIRED JSON SCHEMA (EXAMPLE ONLY — DO NOT COPY. A 12-bar blues in G):
 {
   "_structural_plan": "Intro -> Verse 1 -> Verse 2 -> Outro",
   "key": "G",
@@ -220,26 +246,18 @@ Chart the ENTIRE song. Do not skip or summarize repeated sections.
       "label": "Verse 1",
       "repeat_count": 1,
       "arrangement_cue": "",
-      "measures": [
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "C7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "C7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "D7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "C7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "G7", "beats": 4}], "cue": ""},
-        {"chords": [{"chord": "D7", "beats": 4}], "cue": ""}
-      ]
+      "chord_string": "G7 | G7 | G7 | G7 | C7 | C7 | G7 | G7 | D7 | C7 | G7 | D7"
+    },
+    {
+      "label": "Outro",
+      "repeat_count": 1,
+      "arrangement_cue": "",
+      "chord_string": "G7 | G7 | G7 G7*2 D7*2"
     }
   ]
 }
 
-Now transcribe "${title}" by ${artist || 'Unknown'} following these rules exactly:`;
-
+Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
 
   const schema = {
     type: "object",
@@ -255,29 +273,9 @@ Now transcribe "${title}" by ${artist || 'Unknown'} following these rules exactl
             label: { type: "string" },
             repeat_count: { type: "number" },
             arrangement_cue: { type: "string" },
-            measures: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  chords: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        chord: { type: "string" },
-                        beats: { type: "number" }
-                      },
-                      required: ["chord", "beats"]
-                    }
-                  },
-                  cue: { type: "string" }
-                },
-                required: ["chords"]
-              }
-            }
+            chord_string: { type: "string" }
           },
-          required: ["label", "measures"]
+          required: ["label", "chord_string"]
         }
       }
     },
@@ -301,12 +299,25 @@ Now transcribe "${title}" by ${artist || 'Unknown'} following these rules exactl
     throw new Error('LLM returned no sections');
   }
 
-  const completenessCheck = validateChartOutput(response);
+  // Convert each section's chord_string → measures array
+  const tsMatch = (response.time_signature || '4/4').match(/^(\d+)/);
+  const beatsPerMeasure = tsMatch ? parseInt(tsMatch[1], 10) : 4;
+
+  const sections = response.sections.map(section => ({
+    label: section.label,
+    repeat_count: Number(section.repeat_count) || 1,
+    arrangement_cue: section.arrangement_cue || '',
+    measures: chordStringToMeasures(section.chord_string || '', beatsPerMeasure)
+  }));
+
+  const built = { key: response.key || 'C', time_signature: response.time_signature || '4/4', sections };
+
+  const completenessCheck = validateChartOutput(built);
   if (!completenessCheck.valid) {
     throw new Error(`Chart validation failed: ${completenessCheck.reason}`);
   }
 
-  return { key: response.key || 'C', time_signature: response.time_signature || '4/4', sections: response.sections };
+  return built;
 }
 
 // ─── Output Validation ─────────────────────────────────────────────────────────
