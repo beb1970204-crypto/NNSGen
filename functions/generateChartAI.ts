@@ -302,7 +302,7 @@ Begin your complete transcription for "${title}" by ${artist || 'Unknown'}:`;
   }
 
   if (!response?.sections?.length) {
-    throw new Error('LLM returned no sections after all retries');
+    throw new Error('Unable to generate a chart for this song after multiple attempts. Please try again, or upload a reference file to improve accuracy.');
   }
 
   // Convert each section's chord_string → measures array
