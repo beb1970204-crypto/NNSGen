@@ -264,13 +264,13 @@ Deno.serve(async (req) => {
         ? `${section.label.toUpperCase()} x${section.repeat_count}`
         : section.label.toUpperCase();
       doc.text(sectionLabel, x, y);
-      y += 5;
+      y += 6;
 
       if (section.arrangement_cue) {
         doc.setFontSize(8);
         doc.setFont(undefined, 'italic');
         doc.text(section.arrangement_cue, x, y);
-        y += 3.5;
+        y += 4.5;
       }
 
       // Measures Grid
