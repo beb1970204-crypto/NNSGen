@@ -191,10 +191,22 @@ Now produce the full structured JSON for "${title}" by ${artist || 'Unknown'}:`;
       }))
     }));
 
+    // Normalize key from LLM output (e.g. "B minor" → "Bm", "C# major" → "C#")
+    const rawKey = response.key || key || 'C';
+    const normalizedKey = (() => {
+      const m = rawKey.match(/^([A-G][b#]?)\s*(major|minor|maj|min|m)?$/i);
+      if (!m) return rawKey;
+      const root = m[1];
+      const qual = (m[2] || '').toLowerCase();
+      if (qual === 'minor' || qual === 'min' || qual === 'm') return root + 'm';
+      return root;
+    })();
+
     return Response.json({
       success: true,
       message: 'Chart refined successfully',
-      sectionsData: refinedSections
+      sectionsData: refinedSections,
+      key: normalizedKey
     });
 
   } catch (error) {
