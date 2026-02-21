@@ -281,8 +281,8 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      source: dataSource,
-      message: dataSource === 'chordonomicon' ? 'Chart sourced from Chordonomicon' : 'Chart generated using AI',
+      source: 'llm',
+      message: 'Chart generated using AI',
       chartData,
       sectionsData
     });
