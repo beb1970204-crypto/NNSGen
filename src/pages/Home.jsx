@@ -51,27 +51,33 @@ export default function Home() {
   });
 
   const { data: charts, isLoading, error: chartsError } = useQuery({
-    queryKey: ['charts', currentView],
+    queryKey: ['charts', currentView, user?.email],
     queryFn: async () => {
-      const allCharts = await base44.entities.Chart.list('-updated_date');
-      
-      // Filter to shared charts when viewing "shared"
-      if (currentView === 'shared' && user?.email) {
-        return allCharts.filter(chart => 
-          chart.shared_with_users?.includes(user.email)
+      if (!user?.email) return [];
+
+      // "Shared with me" view: charts owned by others that include this user
+      if (currentView === 'shared') {
+        const allCharts = await base44.entities.Chart.list('-updated_date');
+        return allCharts.filter(chart =>
+          chart.created_by !== user.email &&
+          chart.shared_with?.some(share => share.email === user.email)
         );
       }
-      
-      return allCharts;
+
+      // All other views: only charts owned by the current user
+      return base44.entities.Chart.filter({ created_by: user.email }, '-updated_date');
     },
     initialData: [],
-    enabled: currentView !== 'shared' || !!user?.email,
+    enabled: !!user?.email,
   });
 
   const { data: setlists = [], error: setlistsError } = useQuery({
-    queryKey: ['setlists'],
-    queryFn: () => base44.entities.Setlist.list('-created_date'),
-    initialData: []
+    queryKey: ['setlists', user?.email],
+    queryFn: () => user?.email
+      ? base44.entities.Setlist.filter({ created_by: user.email }, '-created_date')
+      : [],
+    initialData: [],
+    enabled: !!user?.email,
   });
 
   const toggleStarred = useMutation({
