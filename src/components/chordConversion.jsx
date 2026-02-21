@@ -18,12 +18,16 @@ const ENHARMONIC_TO_FLAT = {
   'G#': 'Ab', 'A#': 'Bb', 'B#': 'C',
 };
 
+// Natural (no accidental) keys that conventionally use flats: F, Bb, Eb, Ab, Db, Gb
+const FLAT_KEYS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
+
 function normalizeEnharmonic(noteStr, keyRoot) {
-  // If keyRoot uses flats, normalize chord tonic to flats too (and vice versa)
-  const keyUsesFlatSystem = keyRoot.includes('b') && !keyRoot.includes('#');
-  const keyUsesSharpSystem = keyRoot.includes('#');
+  const keyUsesFlatSystem = keyRoot.includes('b') || FLAT_KEYS.has(keyRoot);
+  const keyUsesSharpSystem = keyRoot.includes('#') && !keyUsesFlatSystem;
   if (keyUsesSharpSystem && ENHARMONIC_TO_SHARP[noteStr]) return ENHARMONIC_TO_SHARP[noteStr];
   if (keyUsesFlatSystem && ENHARMONIC_TO_FLAT[noteStr]) return ENHARMONIC_TO_FLAT[noteStr];
+  // Natural keys with no accidentals (C, D, E, G, A, B) — default to sharps
+  if (!keyUsesFlatSystem && !keyUsesSharpSystem && ENHARMONIC_TO_SHARP[noteStr]) return ENHARMONIC_TO_SHARP[noteStr];
   return noteStr;
 }
 
