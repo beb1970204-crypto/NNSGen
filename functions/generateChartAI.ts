@@ -275,10 +275,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Chart validation failed: ${validation.reason}. Please try again or provide a reference.` }, { status: 400 });
     }
 
+    // Normalize key from LLM output (e.g. "B minor" → "Bm", "C# major" → "C#")
+    const rawKey = key || llm.key || 'C';
+    const normalizedKey = (() => {
+      const m = rawKey.match(/^([A-G][b#]?)\s*(major|minor|maj|min|m)?$/i);
+      if (!m) return rawKey;
+      const root = m[1];
+      const qual = (m[2] || '').toLowerCase();
+      if (qual === 'minor' || qual === 'min' || qual === 'm') return root + 'm';
+      return root;
+    })();
+
     let chartData = {
       title,
       artist: artist || 'Unknown',
-      key: key || llm.key,
+      key: normalizedKey,
       time_signature: time_signature || llm.time_signature,
       reference_file_url,
       data_source: 'llm'
